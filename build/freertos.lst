@@ -1,0 +1,1272 @@
+ARM GAS  /tmp/ccClMZ2p.s 			page 1
+
+
+   1              		.cpu cortex-m3
+   2              		.eabi_attribute 20, 1
+   3              		.eabi_attribute 21, 1
+   4              		.eabi_attribute 23, 3
+   5              		.eabi_attribute 24, 1
+   6              		.eabi_attribute 25, 1
+   7              		.eabi_attribute 26, 1
+   8              		.eabi_attribute 30, 1
+   9              		.eabi_attribute 34, 1
+  10              		.eabi_attribute 18, 4
+  11              		.file	"freertos.c"
+  12              		.text
+  13              	.Ltext0:
+  14              		.cfi_sections	.debug_frame
+  15              		.section	.text.HMI_ReadKey,"ax",%progbits
+  16              		.align	1
+  17              		.arch armv7-m
+  18              		.syntax unified
+  19              		.thumb
+  20              		.thumb_func
+  21              		.fpu softvfp
+  23              	HMI_ReadKey:
+  24              	.LFB75:
+  25              		.file 1 "Core/Src/freertos.c"
+   1:Core/Src/freertos.c **** /* USER CODE BEGIN Header */
+   2:Core/Src/freertos.c **** /**
+   3:Core/Src/freertos.c ****   ******************************************************************************
+   4:Core/Src/freertos.c ****   * File Name          : freertos.c
+   5:Core/Src/freertos.c ****   * Description        : Code for freertos applications
+   6:Core/Src/freertos.c ****   ******************************************************************************
+   7:Core/Src/freertos.c ****   * @attention
+   8:Core/Src/freertos.c ****   *
+   9:Core/Src/freertos.c ****   * Copyright (c) 2026 STMicroelectronics.
+  10:Core/Src/freertos.c ****   * All rights reserved.
+  11:Core/Src/freertos.c ****   *
+  12:Core/Src/freertos.c ****   * This software is licensed under terms that can be found in the LICENSE file
+  13:Core/Src/freertos.c ****   * in the root directory of this software component.
+  14:Core/Src/freertos.c ****   * If no LICENSE file comes with this software, it is provided AS-IS.
+  15:Core/Src/freertos.c ****   *
+  16:Core/Src/freertos.c ****   ******************************************************************************
+  17:Core/Src/freertos.c ****   */
+  18:Core/Src/freertos.c **** /* USER CODE END Header */
+  19:Core/Src/freertos.c **** 
+  20:Core/Src/freertos.c **** /* Includes ------------------------------------------------------------------*/
+  21:Core/Src/freertos.c **** #include "FreeRTOS.h"
+  22:Core/Src/freertos.c **** #include "task.h"
+  23:Core/Src/freertos.c **** #include "main.h"
+  24:Core/Src/freertos.c **** #include "cmsis_os.h"
+  25:Core/Src/freertos.c **** 
+  26:Core/Src/freertos.c **** /* Private includes ----------------------------------------------------------*/
+  27:Core/Src/freertos.c **** /* USER CODE BEGIN Includes */
+  28:Core/Src/freertos.c **** #include "app_menu.h"
+  29:Core/Src/freertos.c **** #include "app_param_dict.h"
+  30:Core/Src/freertos.c **** #include "app_uart_proto.h"
+  31:Core/Src/freertos.c **** #include "app_uart_rx.h"
+  32:Core/Src/freertos.c **** #include "bsp.h"
+  33:Core/Src/freertos.c **** 
+ARM GAS  /tmp/ccClMZ2p.s 			page 2
+
+
+  34:Core/Src/freertos.c **** /* USER CODE END Includes */
+  35:Core/Src/freertos.c **** 
+  36:Core/Src/freertos.c **** /* Private typedef -----------------------------------------------------------*/
+  37:Core/Src/freertos.c **** /* USER CODE BEGIN PTD */
+  38:Core/Src/freertos.c **** 
+  39:Core/Src/freertos.c **** /* USER CODE END PTD */
+  40:Core/Src/freertos.c **** 
+  41:Core/Src/freertos.c **** /* Private define ------------------------------------------------------------*/
+  42:Core/Src/freertos.c **** /* USER CODE BEGIN PD */
+  43:Core/Src/freertos.c **** 
+  44:Core/Src/freertos.c **** /* USER CODE END PD */
+  45:Core/Src/freertos.c **** 
+  46:Core/Src/freertos.c **** /* Private macro -------------------------------------------------------------*/
+  47:Core/Src/freertos.c **** /* USER CODE BEGIN PM */
+  48:Core/Src/freertos.c **** 
+  49:Core/Src/freertos.c **** /* USER CODE END PM */
+  50:Core/Src/freertos.c **** 
+  51:Core/Src/freertos.c **** /* Private variables ---------------------------------------------------------*/
+  52:Core/Src/freertos.c **** /* USER CODE BEGIN Variables */
+  53:Core/Src/freertos.c **** 
+  54:Core/Src/freertos.c **** /* Mutex to protect global parameter dictionary */
+  55:Core/Src/freertos.c **** osMutexId_t gParamMutexHandle;
+  56:Core/Src/freertos.c **** const osMutexAttr_t gParamMutex_attributes = {
+  57:Core/Src/freertos.c ****   .name = "ParamDictMutex"
+  58:Core/Src/freertos.c **** };
+  59:Core/Src/freertos.c **** 
+  60:Core/Src/freertos.c **** /* Message queue for parameter update notifications: HMI -> UART task */
+  61:Core/Src/freertos.c **** typedef struct
+  62:Core/Src/freertos.c **** {
+  63:Core/Src/freertos.c ****   ParamId_t id;
+  64:Core/Src/freertos.c ****   int32_t   value;
+  65:Core/Src/freertos.c **** } ParamUpdateMsg_t;
+  66:Core/Src/freertos.c **** 
+  67:Core/Src/freertos.c **** osMessageQueueId_t gParamUpdateQueueHandle;
+  68:Core/Src/freertos.c **** const osMessageQueueAttr_t gParamUpdateQueue_attributes = {
+  69:Core/Src/freertos.c ****   .name = "ParamUpdateQueue"
+  70:Core/Src/freertos.c **** };
+  71:Core/Src/freertos.c **** 
+  72:Core/Src/freertos.c **** /* USER CODE END Variables */
+  73:Core/Src/freertos.c **** /* Definitions for HMI_Task */
+  74:Core/Src/freertos.c **** osThreadId_t HMI_TaskHandle;
+  75:Core/Src/freertos.c **** const osThreadAttr_t HMI_Task_attributes = {
+  76:Core/Src/freertos.c ****   .name = "HMI_Task",
+  77:Core/Src/freertos.c ****   .stack_size = 128 * 4,
+  78:Core/Src/freertos.c ****   .priority = (osPriority_t) osPriorityNormal,
+  79:Core/Src/freertos.c **** };
+  80:Core/Src/freertos.c **** /* Definitions for UART_Task */
+  81:Core/Src/freertos.c **** osThreadId_t UART_TaskHandle;
+  82:Core/Src/freertos.c **** const osThreadAttr_t UART_Task_attributes = {
+  83:Core/Src/freertos.c ****   .name = "UART_Task",
+  84:Core/Src/freertos.c ****   .stack_size = 128 * 4,
+  85:Core/Src/freertos.c ****   .priority = (osPriority_t) osPriorityAboveNormal,
+  86:Core/Src/freertos.c **** };
+  87:Core/Src/freertos.c **** /* Definitions for Logic_Task */
+  88:Core/Src/freertos.c **** osThreadId_t Logic_TaskHandle;
+  89:Core/Src/freertos.c **** const osThreadAttr_t Logic_Task_attributes = {
+  90:Core/Src/freertos.c ****   .name = "Logic_Task",
+ARM GAS  /tmp/ccClMZ2p.s 			page 3
+
+
+  91:Core/Src/freertos.c ****   .stack_size = 128 * 4,
+  92:Core/Src/freertos.c ****   .priority = (osPriority_t) osPriorityBelowNormal,
+  93:Core/Src/freertos.c **** };
+  94:Core/Src/freertos.c **** 
+  95:Core/Src/freertos.c **** /* Private function prototypes -----------------------------------------------*/
+  96:Core/Src/freertos.c **** /* USER CODE BEGIN FunctionPrototypes */
+  97:Core/Src/freertos.c **** static MenuKey_t HMI_ReadKey(void);
+  98:Core/Src/freertos.c **** 
+  99:Core/Src/freertos.c **** /* Simple helpers for locking/unlocking parameter dictionary */
+ 100:Core/Src/freertos.c **** static inline void ParamDict_Lock(void)
+ 101:Core/Src/freertos.c **** {
+ 102:Core/Src/freertos.c ****   (void)osMutexAcquire(gParamMutexHandle, osWaitForever);
+ 103:Core/Src/freertos.c **** }
+ 104:Core/Src/freertos.c **** 
+ 105:Core/Src/freertos.c **** static inline void ParamDict_Unlock(void)
+ 106:Core/Src/freertos.c **** {
+ 107:Core/Src/freertos.c ****   (void)osMutexRelease(gParamMutexHandle);
+ 108:Core/Src/freertos.c **** }
+ 109:Core/Src/freertos.c **** 
+ 110:Core/Src/freertos.c **** /* Map ParamUpdateMsg to UART write-frame payload and send it (example). */
+ 111:Core/Src/freertos.c **** static void UART_SendParamWrite(const ParamUpdateMsg_t *msg);
+ 112:Core/Src/freertos.c **** /* USER CODE END FunctionPrototypes */
+ 113:Core/Src/freertos.c **** 
+ 114:Core/Src/freertos.c **** void StartDefaultTask(void *argument);
+ 115:Core/Src/freertos.c **** void StartTask02(void *argument);
+ 116:Core/Src/freertos.c **** void StartTask03(void *argument);
+ 117:Core/Src/freertos.c **** 
+ 118:Core/Src/freertos.c **** void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
+ 119:Core/Src/freertos.c **** 
+ 120:Core/Src/freertos.c **** /**
+ 121:Core/Src/freertos.c ****   * @brief  FreeRTOS initialization
+ 122:Core/Src/freertos.c ****   * @param  None
+ 123:Core/Src/freertos.c ****   * @retval None
+ 124:Core/Src/freertos.c ****   */
+ 125:Core/Src/freertos.c **** void MX_FREERTOS_Init(void) {
+ 126:Core/Src/freertos.c ****   /* USER CODE BEGIN Init */
+ 127:Core/Src/freertos.c **** 
+ 128:Core/Src/freertos.c ****   /* USER CODE END Init */
+ 129:Core/Src/freertos.c **** 
+ 130:Core/Src/freertos.c ****   /* USER CODE BEGIN RTOS_MUTEX */
+ 131:Core/Src/freertos.c ****   /* add mutexes, ... */
+ 132:Core/Src/freertos.c ****   gParamMutexHandle = osMutexNew(&gParamMutex_attributes);
+ 133:Core/Src/freertos.c ****   /* USER CODE END RTOS_MUTEX */
+ 134:Core/Src/freertos.c **** 
+ 135:Core/Src/freertos.c ****   /* USER CODE BEGIN RTOS_SEMAPHORES */
+ 136:Core/Src/freertos.c ****   /* add semaphores, ... */
+ 137:Core/Src/freertos.c ****   /* USER CODE END RTOS_SEMAPHORES */
+ 138:Core/Src/freertos.c **** 
+ 139:Core/Src/freertos.c ****   /* USER CODE BEGIN RTOS_TIMERS */
+ 140:Core/Src/freertos.c ****   /* start timers, add new ones, ... */
+ 141:Core/Src/freertos.c ****   /* USER CODE END RTOS_TIMERS */
+ 142:Core/Src/freertos.c **** 
+ 143:Core/Src/freertos.c ****   /* USER CODE BEGIN RTOS_QUEUES */
+ 144:Core/Src/freertos.c ****   /* add queues, ... */
+ 145:Core/Src/freertos.c ****   gParamUpdateQueueHandle = osMessageQueueNew(
+ 146:Core/Src/freertos.c ****       8,                               /* queue length: can be tuned */
+ 147:Core/Src/freertos.c ****       sizeof(ParamUpdateMsg_t),        /* each item size */
+ARM GAS  /tmp/ccClMZ2p.s 			page 4
+
+
+ 148:Core/Src/freertos.c ****       &gParamUpdateQueue_attributes);
+ 149:Core/Src/freertos.c ****   /* USER CODE END RTOS_QUEUES */
+ 150:Core/Src/freertos.c **** 
+ 151:Core/Src/freertos.c ****   /* Create the thread(s) */
+ 152:Core/Src/freertos.c ****   /* creation of HMI_Task */
+ 153:Core/Src/freertos.c ****   HMI_TaskHandle = osThreadNew(StartDefaultTask, NULL, &HMI_Task_attributes);
+ 154:Core/Src/freertos.c **** 
+ 155:Core/Src/freertos.c ****   /* creation of UART_Task */
+ 156:Core/Src/freertos.c ****   UART_TaskHandle = osThreadNew(StartTask02, NULL, &UART_Task_attributes);
+ 157:Core/Src/freertos.c **** 
+ 158:Core/Src/freertos.c ****   /* creation of Logic_Task */
+ 159:Core/Src/freertos.c ****   Logic_TaskHandle = osThreadNew(StartTask03, NULL, &Logic_Task_attributes);
+ 160:Core/Src/freertos.c **** 
+ 161:Core/Src/freertos.c ****   /* USER CODE BEGIN RTOS_THREADS */
+ 162:Core/Src/freertos.c ****   /* add threads, ... */
+ 163:Core/Src/freertos.c ****   /* USER CODE END RTOS_THREADS */
+ 164:Core/Src/freertos.c **** 
+ 165:Core/Src/freertos.c ****   /* USER CODE BEGIN RTOS_EVENTS */
+ 166:Core/Src/freertos.c ****   /* add events, ... */
+ 167:Core/Src/freertos.c ****   /* USER CODE END RTOS_EVENTS */
+ 168:Core/Src/freertos.c **** 
+ 169:Core/Src/freertos.c **** }
+ 170:Core/Src/freertos.c **** 
+ 171:Core/Src/freertos.c **** /* USER CODE BEGIN Header_StartDefaultTask */
+ 172:Core/Src/freertos.c **** /**
+ 173:Core/Src/freertos.c ****   * @brief  Function implementing the HMI_Task thread.
+ 174:Core/Src/freertos.c ****   * @param  argument: Not used
+ 175:Core/Src/freertos.c ****   * @retval None
+ 176:Core/Src/freertos.c ****   */
+ 177:Core/Src/freertos.c **** /* USER CODE END Header_StartDefaultTask */
+ 178:Core/Src/freertos.c **** void StartDefaultTask(void *argument)
+ 179:Core/Src/freertos.c **** {
+ 180:Core/Src/freertos.c ****   /* USER CODE BEGIN StartDefaultTask */
+ 181:Core/Src/freertos.c ****   /* Initialize BSP (LED / LCD / Keys / UART helpers) and menu state machine */
+ 182:Core/Src/freertos.c ****   BSP_Init();
+ 183:Core/Src/freertos.c ****   BSP_Lcd_Init();
+ 184:Core/Src/freertos.c ****   BSP_Keys_Init();
+ 185:Core/Src/freertos.c ****   (void)APP_Menu_Init();
+ 186:Core/Src/freertos.c **** 
+ 187:Core/Src/freertos.c ****   /* Infinite loop */
+ 188:Core/Src/freertos.c ****   for(;;)
+ 189:Core/Src/freertos.c ****   {
+ 190:Core/Src/freertos.c ****     int32_t workModeBefore = 0;
+ 191:Core/Src/freertos.c ****     (void)APP_ParamDict_GetValue(PARAM_ID_WORK_MODE, &workModeBefore);
+ 192:Core/Src/freertos.c **** 
+ 193:Core/Src/freertos.c ****     /* 1. Read key input (polling or from buffer) */
+ 194:Core/Src/freertos.c ****     MenuKey_t key = HMI_ReadKey();
+ 195:Core/Src/freertos.c **** 
+ 196:Core/Src/freertos.c ****     /* 2. Drive menu state machine if there is a key event */
+ 197:Core/Src/freertos.c ****     if (key != MENU_KEY_NONE)
+ 198:Core/Src/freertos.c ****     {
+ 199:Core/Src/freertos.c ****       (void)APP_Menu_HandleKey(key);
+ 200:Core/Src/freertos.c **** 
+ 201:Core/Src/freertos.c ****       int32_t workModeAfter = workModeBefore;
+ 202:Core/Src/freertos.c ****       if (APP_ParamDict_GetValue(PARAM_ID_WORK_MODE, &workModeAfter) &&
+ 203:Core/Src/freertos.c ****           (workModeAfter != workModeBefore) &&
+ 204:Core/Src/freertos.c ****           (gParamUpdateQueueHandle != NULL))
+ARM GAS  /tmp/ccClMZ2p.s 			page 5
+
+
+ 205:Core/Src/freertos.c ****       {
+ 206:Core/Src/freertos.c ****         ParamUpdateMsg_t txMsg;
+ 207:Core/Src/freertos.c ****         txMsg.id = PARAM_ID_WORK_MODE;
+ 208:Core/Src/freertos.c ****         txMsg.value = workModeAfter;
+ 209:Core/Src/freertos.c ****         (void)osMessageQueuePut(gParamUpdateQueueHandle, &txMsg, 0U, 0U);
+ 210:Core/Src/freertos.c ****       }
+ 211:Core/Src/freertos.c ****     }
+ 212:Core/Src/freertos.c **** 
+ 213:Core/Src/freertos.c ****     /* 3. Delay to control polling period (e.g. 10ms) */
+ 214:Core/Src/freertos.c ****     osDelay(10);
+ 215:Core/Src/freertos.c ****   }
+ 216:Core/Src/freertos.c ****   /* USER CODE END StartDefaultTask */
+ 217:Core/Src/freertos.c **** }
+ 218:Core/Src/freertos.c **** 
+ 219:Core/Src/freertos.c **** /* USER CODE BEGIN Header_StartTask02 */
+ 220:Core/Src/freertos.c **** /**
+ 221:Core/Src/freertos.c **** * @brief Function implementing the UART_Task thread.
+ 222:Core/Src/freertos.c **** * @param argument: Not used
+ 223:Core/Src/freertos.c **** * @retval None
+ 224:Core/Src/freertos.c **** */
+ 225:Core/Src/freertos.c **** /* USER CODE END Header_StartTask02 */
+ 226:Core/Src/freertos.c **** void StartTask02(void *argument)
+ 227:Core/Src/freertos.c **** {
+ 228:Core/Src/freertos.c ****   /* USER CODE BEGIN StartTask02 */
+ 229:Core/Src/freertos.c ****   /* UART_Comm_Task: wait for parameter update messages and send via UART (skeleton) */
+ 230:Core/Src/freertos.c ****   ParamUpdateMsg_t msg;
+ 231:Core/Src/freertos.c **** 
+ 232:Core/Src/freertos.c ****   /* Infinite loop */
+ 233:Core/Src/freertos.c ****   for(;;)
+ 234:Core/Src/freertos.c ****   {
+ 235:Core/Src/freertos.c ****     /* Block until there is a new parameter update request from HMI */
+ 236:Core/Src/freertos.c ****     if (osMessageQueueGet(gParamUpdateQueueHandle, &msg, NULL, osWaitForever) == osOK)
+ 237:Core/Src/freertos.c ****     {
+ 238:Core/Src/freertos.c ****       /* Assemble UART frame and transmit according to protocol. */
+ 239:Core/Src/freertos.c ****       UART_SendParamWrite(&msg);
+ 240:Core/Src/freertos.c ****     }
+ 241:Core/Src/freertos.c ****   }
+ 242:Core/Src/freertos.c ****   /* USER CODE END StartTask02 */
+ 243:Core/Src/freertos.c **** }
+ 244:Core/Src/freertos.c **** 
+ 245:Core/Src/freertos.c **** /* USER CODE BEGIN Header_StartTask03 */
+ 246:Core/Src/freertos.c **** /**
+ 247:Core/Src/freertos.c **** * @brief Function implementing the Logic_Task thread.
+ 248:Core/Src/freertos.c **** * @param argument: Not used
+ 249:Core/Src/freertos.c **** * @retval None
+ 250:Core/Src/freertos.c **** */
+ 251:Core/Src/freertos.c **** /* USER CODE END Header_StartTask03 */
+ 252:Core/Src/freertos.c **** void StartTask03(void *argument)
+ 253:Core/Src/freertos.c **** {
+ 254:Core/Src/freertos.c ****   /* USER CODE BEGIN StartTask03 */
+ 255:Core/Src/freertos.c ****   /* Infinite loop */
+ 256:Core/Src/freertos.c ****   for(;;)
+ 257:Core/Src/freertos.c ****   {
+ 258:Core/Src/freertos.c ****     APP_UartRx_ProcessPending();
+ 259:Core/Src/freertos.c ****     osDelay(5);
+ 260:Core/Src/freertos.c ****   }
+ 261:Core/Src/freertos.c ****   /* USER CODE END StartTask03 */
+ARM GAS  /tmp/ccClMZ2p.s 			page 6
+
+
+ 262:Core/Src/freertos.c **** }
+ 263:Core/Src/freertos.c **** 
+ 264:Core/Src/freertos.c **** /* Private application code --------------------------------------------------*/
+ 265:Core/Src/freertos.c **** /* USER CODE BEGIN Application */
+ 266:Core/Src/freertos.c **** /**
+ 267:Core/Src/freertos.c ****   * @brief Simple placeholder for HMI key reading.
+ 268:Core/Src/freertos.c ****   *
+ 269:Core/Src/freertos.c ****   * 后续可在此处实现矩阵键盘扫描或从按键中断队列读取事件，
+ 270:Core/Src/freertos.c ****   * 目前默认不产生按键（返回 MENU_KEY_NONE），仅保证 HMI_Task
+ 271:Core/Src/freertos.c ****   * 已经正确调用菜单状态机接口。
+ 272:Core/Src/freertos.c ****   */
+ 273:Core/Src/freertos.c **** static MenuKey_t HMI_ReadKey(void)
+ 274:Core/Src/freertos.c **** {
+  26              		.loc 1 274 1 view -0
+  27              		.cfi_startproc
+  28              		@ args = 0, pretend = 0, frame = 8
+  29              		@ frame_needed = 0, uses_anonymous_args = 0
+  30 0000 00B5     		push	{lr}
+  31              	.LCFI0:
+  32              		.cfi_def_cfa_offset 4
+  33              		.cfi_offset 14, -4
+  34 0002 83B0     		sub	sp, sp, #12
+  35              	.LCFI1:
+  36              		.cfi_def_cfa_offset 16
+ 275:Core/Src/freertos.c ****   KeyEvent ev;
+  37              		.loc 1 275 3 view .LVU1
+ 276:Core/Src/freertos.c ****   if (!BSP_Keys_GetEvent(&ev))
+  38              		.loc 1 276 3 view .LVU2
+  39              		.loc 1 276 8 is_stmt 0 view .LVU3
+  40 0004 01A8     		add	r0, sp, #4
+  41 0006 FFF7FEFF 		bl	BSP_Keys_GetEvent
+  42              	.LVL0:
+  43              		.loc 1 276 6 view .LVU4
+  44 000a 68B1     		cbz	r0, .L5
+ 277:Core/Src/freertos.c ****   {
+ 278:Core/Src/freertos.c ****     return MENU_KEY_NONE;
+ 279:Core/Src/freertos.c ****   }
+ 280:Core/Src/freertos.c **** 
+ 281:Core/Src/freertos.c ****   /* 仅对“按下”事件做处理，松开忽略 */
+ 282:Core/Src/freertos.c ****   if (!ev.pressed)
+  45              		.loc 1 282 3 is_stmt 1 view .LVU5
+  46              		.loc 1 282 10 is_stmt 0 view .LVU6
+  47 000c 9DF80530 		ldrb	r3, [sp, #5]	@ zero_extendqisi2
+  48              		.loc 1 282 6 view .LVU7
+  49 0010 73B1     		cbz	r3, .L6
+ 283:Core/Src/freertos.c ****   {
+ 284:Core/Src/freertos.c ****     return MENU_KEY_NONE;
+ 285:Core/Src/freertos.c ****   }
+ 286:Core/Src/freertos.c **** 
+ 287:Core/Src/freertos.c ****   switch (ev.code)
+  50              		.loc 1 287 3 is_stmt 1 view .LVU8
+  51              		.loc 1 287 13 is_stmt 0 view .LVU9
+  52 0012 9DF80400 		ldrb	r0, [sp, #4]	@ zero_extendqisi2
+  53              		.loc 1 287 3 view .LVU10
+  54 0016 431E     		subs	r3, r0, #1
+  55 0018 032B     		cmp	r3, #3
+  56 001a 03D8     		bhi	.L3
+ARM GAS  /tmp/ccClMZ2p.s 			page 7
+
+
+  57 001c DFE803F0 		tbb	[pc, r3]
+  58              	.L4:
+  59 0020 05       		.byte	(.L2-.L4)/2
+  60 0021 05       		.byte	(.L2-.L4)/2
+  61 0022 05       		.byte	(.L2-.L4)/2
+  62 0023 05       		.byte	(.L2-.L4)/2
+  63              		.p2align 1
+  64              	.L3:
+ 288:Core/Src/freertos.c ****   {
+ 289:Core/Src/freertos.c ****     case KEY_UP:   return MENU_KEY_UP;
+ 290:Core/Src/freertos.c ****     case KEY_DOWN: return MENU_KEY_DOWN;
+ 291:Core/Src/freertos.c ****     case KEY_OK:   return MENU_KEY_OK;
+ 292:Core/Src/freertos.c ****     case KEY_BACK: return MENU_KEY_BACK;
+ 293:Core/Src/freertos.c ****     default:       return MENU_KEY_NONE;
+  65              		.loc 1 293 20 is_stmt 1 view .LVU11
+  66              		.loc 1 293 27 is_stmt 0 view .LVU12
+  67 0024 0020     		movs	r0, #0
+  68 0026 00E0     		b	.L2
+  69              	.L5:
+ 278:Core/Src/freertos.c ****   }
+  70              		.loc 1 278 12 view .LVU13
+  71 0028 0020     		movs	r0, #0
+  72              	.L2:
+ 294:Core/Src/freertos.c ****   }
+ 295:Core/Src/freertos.c **** 
+ 296:Core/Src/freertos.c ****   return MENU_KEY_NONE;
+ 297:Core/Src/freertos.c **** }
+  73              		.loc 1 297 1 view .LVU14
+  74 002a 03B0     		add	sp, sp, #12
+  75              	.LCFI2:
+  76              		.cfi_remember_state
+  77              		.cfi_def_cfa_offset 4
+  78              		@ sp needed
+  79 002c 5DF804FB 		ldr	pc, [sp], #4
+  80              	.L6:
+  81              	.LCFI3:
+  82              		.cfi_restore_state
+ 284:Core/Src/freertos.c ****   }
+  83              		.loc 1 284 12 view .LVU15
+  84 0030 0020     		movs	r0, #0
+  85 0032 FAE7     		b	.L2
+  86              		.cfi_endproc
+  87              	.LFE75:
+  89              		.section	.text.StartDefaultTask,"ax",%progbits
+  90              		.align	1
+  91              		.global	StartDefaultTask
+  92              		.syntax unified
+  93              		.thumb
+  94              		.thumb_func
+  95              		.fpu softvfp
+  97              	StartDefaultTask:
+  98              	.LVL1:
+  99              	.LFB72:
+ 179:Core/Src/freertos.c ****   /* USER CODE BEGIN StartDefaultTask */
+ 100              		.loc 1 179 1 is_stmt 1 view -0
+ 101              		.cfi_startproc
+ 102              		@ args = 0, pretend = 0, frame = 16
+ARM GAS  /tmp/ccClMZ2p.s 			page 8
+
+
+ 103              		@ frame_needed = 0, uses_anonymous_args = 0
+ 179:Core/Src/freertos.c ****   /* USER CODE BEGIN StartDefaultTask */
+ 104              		.loc 1 179 1 is_stmt 0 view .LVU17
+ 105 0000 00B5     		push	{lr}
+ 106              	.LCFI4:
+ 107              		.cfi_def_cfa_offset 4
+ 108              		.cfi_offset 14, -4
+ 109 0002 85B0     		sub	sp, sp, #20
+ 110              	.LCFI5:
+ 111              		.cfi_def_cfa_offset 24
+ 182:Core/Src/freertos.c ****   BSP_Lcd_Init();
+ 112              		.loc 1 182 3 is_stmt 1 view .LVU18
+ 113 0004 FFF7FEFF 		bl	BSP_Init
+ 114              	.LVL2:
+ 183:Core/Src/freertos.c ****   BSP_Keys_Init();
+ 115              		.loc 1 183 3 view .LVU19
+ 116 0008 FFF7FEFF 		bl	BSP_Lcd_Init
+ 117              	.LVL3:
+ 184:Core/Src/freertos.c ****   (void)APP_Menu_Init();
+ 118              		.loc 1 184 3 view .LVU20
+ 119 000c FFF7FEFF 		bl	BSP_Keys_Init
+ 120              	.LVL4:
+ 185:Core/Src/freertos.c **** 
+ 121              		.loc 1 185 3 view .LVU21
+ 185:Core/Src/freertos.c **** 
+ 122              		.loc 1 185 9 is_stmt 0 view .LVU22
+ 123 0010 FFF7FEFF 		bl	APP_Menu_Init
+ 124              	.LVL5:
+ 125 0014 0BE0     		b	.L11
+ 126              	.LVL6:
+ 127              	.L13:
+ 128              	.LBB2:
+ 129              	.LBB3:
+ 130              	.LBB4:
+ 206:Core/Src/freertos.c ****         txMsg.id = PARAM_ID_WORK_MODE;
+ 131              		.loc 1 206 9 is_stmt 1 view .LVU23
+ 207:Core/Src/freertos.c ****         txMsg.value = workModeAfter;
+ 132              		.loc 1 207 9 view .LVU24
+ 207:Core/Src/freertos.c ****         txMsg.value = workModeAfter;
+ 133              		.loc 1 207 18 is_stmt 0 view .LVU25
+ 134 0016 0122     		movs	r2, #1
+ 135 0018 ADF80820 		strh	r2, [sp, #8]	@ movhi
+ 208:Core/Src/freertos.c ****         (void)osMessageQueuePut(gParamUpdateQueueHandle, &txMsg, 0U, 0U);
+ 136              		.loc 1 208 9 is_stmt 1 view .LVU26
+ 208:Core/Src/freertos.c ****         (void)osMessageQueuePut(gParamUpdateQueueHandle, &txMsg, 0U, 0U);
+ 137              		.loc 1 208 21 is_stmt 0 view .LVU27
+ 138 001c 0393     		str	r3, [sp, #12]
+ 209:Core/Src/freertos.c ****       }
+ 139              		.loc 1 209 9 is_stmt 1 view .LVU28
+ 209:Core/Src/freertos.c ****       }
+ 140              		.loc 1 209 15 is_stmt 0 view .LVU29
+ 141 001e 0023     		movs	r3, #0
+ 142 0020 1A46     		mov	r2, r3
+ 143 0022 02A9     		add	r1, sp, #8
+ 144 0024 FFF7FEFF 		bl	osMessageQueuePut
+ 145              	.LVL7:
+ 146              	.L9:
+ARM GAS  /tmp/ccClMZ2p.s 			page 9
+
+
+ 147              	.LBE4:
+ 148              	.LBE3:
+ 214:Core/Src/freertos.c ****   }
+ 149              		.loc 1 214 5 is_stmt 1 discriminator 2 view .LVU30
+ 150 0028 0A20     		movs	r0, #10
+ 151 002a FFF7FEFF 		bl	osDelay
+ 152              	.LVL8:
+ 153              	.LBE2:
+ 188:Core/Src/freertos.c ****   {
+ 154              		.loc 1 188 8 discriminator 2 view .LVU31
+ 155              	.L11:
+ 188:Core/Src/freertos.c ****   {
+ 156              		.loc 1 188 3 view .LVU32
+ 157              	.LBB6:
+ 190:Core/Src/freertos.c ****     (void)APP_ParamDict_GetValue(PARAM_ID_WORK_MODE, &workModeBefore);
+ 158              		.loc 1 190 5 view .LVU33
+ 190:Core/Src/freertos.c ****     (void)APP_ParamDict_GetValue(PARAM_ID_WORK_MODE, &workModeBefore);
+ 159              		.loc 1 190 13 is_stmt 0 view .LVU34
+ 160 002e 0023     		movs	r3, #0
+ 161 0030 0093     		str	r3, [sp]
+ 191:Core/Src/freertos.c **** 
+ 162              		.loc 1 191 5 is_stmt 1 view .LVU35
+ 191:Core/Src/freertos.c **** 
+ 163              		.loc 1 191 11 is_stmt 0 view .LVU36
+ 164 0032 6946     		mov	r1, sp
+ 165 0034 0120     		movs	r0, #1
+ 166 0036 FFF7FEFF 		bl	APP_ParamDict_GetValue
+ 167              	.LVL9:
+ 194:Core/Src/freertos.c **** 
+ 168              		.loc 1 194 5 is_stmt 1 view .LVU37
+ 194:Core/Src/freertos.c **** 
+ 169              		.loc 1 194 21 is_stmt 0 view .LVU38
+ 170 003a FFF7FEFF 		bl	HMI_ReadKey
+ 171              	.LVL10:
+ 197:Core/Src/freertos.c ****     {
+ 172              		.loc 1 197 5 is_stmt 1 view .LVU39
+ 197:Core/Src/freertos.c ****     {
+ 173              		.loc 1 197 8 is_stmt 0 view .LVU40
+ 174 003e 0028     		cmp	r0, #0
+ 175 0040 F2D0     		beq	.L9
+ 176              	.LBB5:
+ 199:Core/Src/freertos.c **** 
+ 177              		.loc 1 199 7 is_stmt 1 view .LVU41
+ 199:Core/Src/freertos.c **** 
+ 178              		.loc 1 199 13 is_stmt 0 view .LVU42
+ 179 0042 FFF7FEFF 		bl	APP_Menu_HandleKey
+ 180              	.LVL11:
+ 201:Core/Src/freertos.c ****       if (APP_ParamDict_GetValue(PARAM_ID_WORK_MODE, &workModeAfter) &&
+ 181              		.loc 1 201 7 is_stmt 1 view .LVU43
+ 201:Core/Src/freertos.c ****       if (APP_ParamDict_GetValue(PARAM_ID_WORK_MODE, &workModeAfter) &&
+ 182              		.loc 1 201 15 is_stmt 0 view .LVU44
+ 183 0046 009B     		ldr	r3, [sp]
+ 184 0048 0193     		str	r3, [sp, #4]
+ 202:Core/Src/freertos.c ****           (workModeAfter != workModeBefore) &&
+ 185              		.loc 1 202 7 is_stmt 1 view .LVU45
+ 202:Core/Src/freertos.c ****           (workModeAfter != workModeBefore) &&
+ 186              		.loc 1 202 11 is_stmt 0 view .LVU46
+ARM GAS  /tmp/ccClMZ2p.s 			page 10
+
+
+ 187 004a 01A9     		add	r1, sp, #4
+ 188 004c 0120     		movs	r0, #1
+ 189 004e FFF7FEFF 		bl	APP_ParamDict_GetValue
+ 190              	.LVL12:
+ 202:Core/Src/freertos.c ****           (workModeAfter != workModeBefore) &&
+ 191              		.loc 1 202 10 view .LVU47
+ 192 0052 0028     		cmp	r0, #0
+ 193 0054 E8D0     		beq	.L9
+ 203:Core/Src/freertos.c ****           (gParamUpdateQueueHandle != NULL))
+ 194              		.loc 1 203 26 discriminator 1 view .LVU48
+ 195 0056 019B     		ldr	r3, [sp, #4]
+ 196 0058 009A     		ldr	r2, [sp]
+ 202:Core/Src/freertos.c ****           (workModeAfter != workModeBefore) &&
+ 197              		.loc 1 202 70 discriminator 1 view .LVU49
+ 198 005a 9342     		cmp	r3, r2
+ 199 005c E4D0     		beq	.L9
+ 204:Core/Src/freertos.c ****       {
+ 200              		.loc 1 204 36 view .LVU50
+ 201 005e 024A     		ldr	r2, .L14
+ 202 0060 1068     		ldr	r0, [r2]
+ 203:Core/Src/freertos.c ****           (gParamUpdateQueueHandle != NULL))
+ 203              		.loc 1 203 45 view .LVU51
+ 204 0062 0028     		cmp	r0, #0
+ 205 0064 D7D1     		bne	.L13
+ 206 0066 DFE7     		b	.L9
+ 207              	.L15:
+ 208              		.align	2
+ 209              	.L14:
+ 210 0068 00000000 		.word	.LANCHOR0
+ 211              	.LBE5:
+ 212              	.LBE6:
+ 213              		.cfi_endproc
+ 214              	.LFE72:
+ 216              		.section	.text.UART_SendParamWrite,"ax",%progbits
+ 217              		.align	1
+ 218              		.syntax unified
+ 219              		.thumb
+ 220              		.thumb_func
+ 221              		.fpu softvfp
+ 223              	UART_SendParamWrite:
+ 224              	.LVL13:
+ 225              	.LFB76:
+ 298:Core/Src/freertos.c **** 
+ 299:Core/Src/freertos.c **** /* Example: build a "write parameter" command payload based on ParamId,
+ 300:Core/Src/freertos.c ****  * then send it using the generic UART protocol framing helper.
+ 301:Core/Src/freertos.c ****  *
+ 302:Core/Src/freertos.c ****  * Payload layout (see 协议.md):
+ 303:Core/Src/freertos.c ****  *  - length (1B): 1(cmd) + 4(addr) + value_len
+ 304:Core/Src/freertos.c ****  *  - value_addr (4B, big-endian)
+ 305:Core/Src/freertos.c ****  *  - value (1/2/4B)
+ 306:Core/Src/freertos.c ****  *
+ 307:Core/Src/freertos.c ****  * 这里以“路由协议”参数为示例，对应地址 0x12310000。
+ 308:Core/Src/freertos.c ****  */
+ 309:Core/Src/freertos.c **** static void UART_SendParamWrite(const ParamUpdateMsg_t *msg)
+ 310:Core/Src/freertos.c **** {
+ 226              		.loc 1 310 1 is_stmt 1 view -0
+ 227              		.cfi_startproc
+ARM GAS  /tmp/ccClMZ2p.s 			page 11
+
+
+ 228              		@ args = 0, pretend = 0, frame = 16
+ 229              		@ frame_needed = 0, uses_anonymous_args = 0
+ 311:Core/Src/freertos.c ****   if (msg == NULL)
+ 230              		.loc 1 311 3 view .LVU53
+ 231              		.loc 1 311 6 is_stmt 0 view .LVU54
+ 232 0000 0028     		cmp	r0, #0
+ 233 0002 38D0     		beq	.L25
+ 310:Core/Src/freertos.c ****   if (msg == NULL)
+ 234              		.loc 1 310 1 view .LVU55
+ 235 0004 00B5     		push	{lr}
+ 236              	.LCFI6:
+ 237              		.cfi_def_cfa_offset 4
+ 238              		.cfi_offset 14, -4
+ 239 0006 85B0     		sub	sp, sp, #20
+ 240              	.LCFI7:
+ 241              		.cfi_def_cfa_offset 24
+ 312:Core/Src/freertos.c ****   {
+ 313:Core/Src/freertos.c ****     return;
+ 314:Core/Src/freertos.c ****   }
+ 315:Core/Src/freertos.c **** 
+ 316:Core/Src/freertos.c ****   uint8_t payload[1U + 4U + 4U]; /* 最大预留 4 字节 value */
+ 242              		.loc 1 316 3 is_stmt 1 view .LVU56
+ 317:Core/Src/freertos.c ****   uint16_t payloadLen = 0U;
+ 243              		.loc 1 317 3 view .LVU57
+ 244              	.LVL14:
+ 318:Core/Src/freertos.c **** 
+ 319:Core/Src/freertos.c ****   uint32_t addr = 0U;
+ 245              		.loc 1 319 3 view .LVU58
+ 320:Core/Src/freertos.c ****   uint8_t  valueBytes[4] = {0};
+ 246              		.loc 1 320 3 view .LVU59
+ 247              		.loc 1 320 12 is_stmt 0 view .LVU60
+ 248 0008 0023     		movs	r3, #0
+ 249 000a 0093     		str	r3, [sp]
+ 321:Core/Src/freertos.c ****   uint8_t  valueLen = 0U;
+ 250              		.loc 1 321 3 is_stmt 1 view .LVU61
+ 251              	.LVL15:
+ 322:Core/Src/freertos.c **** 
+ 323:Core/Src/freertos.c ****   switch (msg->id)
+ 252              		.loc 1 323 3 view .LVU62
+ 253              		.loc 1 323 14 is_stmt 0 view .LVU63
+ 254 000c 0388     		ldrh	r3, [r0]
+ 255              		.loc 1 323 3 view .LVU64
+ 256 000e 012B     		cmp	r3, #1
+ 257 0010 06D0     		beq	.L18
+ 258 0012 0A2B     		cmp	r3, #10
+ 259 0014 1ED1     		bne	.L16
+ 324:Core/Src/freertos.c ****   {
+ 325:Core/Src/freertos.c ****     case PARAM_ID_WORK_MODE:
+ 326:Core/Src/freertos.c ****       /* 地址 0x12340000 (PARAM_CH1_FREQ_HOPPING_MODE) */
+ 327:Core/Src/freertos.c ****       addr = 0x12340000u;
+ 328:Core/Src/freertos.c ****       valueBytes[0] = (uint8_t)(msg->value & 0xFF);
+ 329:Core/Src/freertos.c ****       valueLen = 1U;
+ 330:Core/Src/freertos.c ****       break;
+ 331:Core/Src/freertos.c **** 
+ 332:Core/Src/freertos.c ****     case PARAM_ID_ROUTING_PROTOCOL:
+ 333:Core/Src/freertos.c ****       /* 地址 0x12310000 (PARAM_CH1_ROUTING_PROTOCOL) */
+ 334:Core/Src/freertos.c ****       addr = 0x12310000u;
+ARM GAS  /tmp/ccClMZ2p.s 			page 12
+
+
+ 260              		.loc 1 334 7 is_stmt 1 view .LVU65
+ 261              	.LVL16:
+ 335:Core/Src/freertos.c ****       valueBytes[0] = (uint8_t)(msg->value & 0xFF);
+ 262              		.loc 1 335 7 view .LVU66
+ 263              		.loc 1 335 23 is_stmt 0 view .LVU67
+ 264 0016 0379     		ldrb	r3, [r0, #4]	@ zero_extendqisi2
+ 265              		.loc 1 335 21 view .LVU68
+ 266 0018 8DF80030 		strb	r3, [sp]
+ 336:Core/Src/freertos.c ****       valueLen = 1U;
+ 267              		.loc 1 336 7 is_stmt 1 view .LVU69
+ 268              	.LVL17:
+ 337:Core/Src/freertos.c ****       break;
+ 269              		.loc 1 337 7 view .LVU70
+ 334:Core/Src/freertos.c ****       valueBytes[0] = (uint8_t)(msg->value & 0xFF);
+ 270              		.loc 1 334 12 is_stmt 0 view .LVU71
+ 271 001c 164B     		ldr	r3, .L28
+ 272              		.loc 1 337 7 view .LVU72
+ 273 001e 03E0     		b	.L20
+ 274              	.LVL18:
+ 275              	.L18:
+ 327:Core/Src/freertos.c ****       valueBytes[0] = (uint8_t)(msg->value & 0xFF);
+ 276              		.loc 1 327 7 is_stmt 1 view .LVU73
+ 328:Core/Src/freertos.c ****       valueLen = 1U;
+ 277              		.loc 1 328 7 view .LVU74
+ 328:Core/Src/freertos.c ****       valueLen = 1U;
+ 278              		.loc 1 328 23 is_stmt 0 view .LVU75
+ 279 0020 0379     		ldrb	r3, [r0, #4]	@ zero_extendqisi2
+ 328:Core/Src/freertos.c ****       valueLen = 1U;
+ 280              		.loc 1 328 21 view .LVU76
+ 281 0022 8DF80030 		strb	r3, [sp]
+ 329:Core/Src/freertos.c ****       break;
+ 282              		.loc 1 329 7 is_stmt 1 view .LVU77
+ 283              	.LVL19:
+ 330:Core/Src/freertos.c **** 
+ 284              		.loc 1 330 7 view .LVU78
+ 327:Core/Src/freertos.c ****       valueBytes[0] = (uint8_t)(msg->value & 0xFF);
+ 285              		.loc 1 327 12 is_stmt 0 view .LVU79
+ 286 0026 154B     		ldr	r3, .L28+4
+ 287              	.LVL20:
+ 288              	.L20:
+ 338:Core/Src/freertos.c **** 
+ 339:Core/Src/freertos.c ****     default:
+ 340:Core/Src/freertos.c ****       /* 未映射的参数暂不下发 */
+ 341:Core/Src/freertos.c ****       return;
+ 342:Core/Src/freertos.c ****   }
+ 343:Core/Src/freertos.c **** 
+ 344:Core/Src/freertos.c ****   /* 长度字段: 命令字(1) + 地址(4) + valueLen */
+ 345:Core/Src/freertos.c ****   const uint8_t lengthField = (uint8_t)(1U + 4U + valueLen);
+ 289              		.loc 1 345 3 is_stmt 1 view .LVU80
+ 346:Core/Src/freertos.c **** 
+ 347:Core/Src/freertos.c ****   uint16_t idx = 0U;
+ 290              		.loc 1 347 3 view .LVU81
+ 348:Core/Src/freertos.c ****   payload[idx++] = lengthField;
+ 291              		.loc 1 348 3 view .LVU82
+ 292              		.loc 1 348 18 is_stmt 0 view .LVU83
+ 293 0028 0622     		movs	r2, #6
+ 294 002a 8DF80420 		strb	r2, [sp, #4]
+ARM GAS  /tmp/ccClMZ2p.s 			page 13
+
+
+ 349:Core/Src/freertos.c **** 
+ 350:Core/Src/freertos.c ****   /* 写入 4 字节地址（大端） */
+ 351:Core/Src/freertos.c ****   payload[idx++] = (uint8_t)((addr >> 24) & 0xFFu);
+ 295              		.loc 1 351 3 is_stmt 1 view .LVU84
+ 296              	.LVL21:
+ 297              		.loc 1 351 20 is_stmt 0 view .LVU85
+ 298 002e 1A0E     		lsrs	r2, r3, #24
+ 299              		.loc 1 351 18 view .LVU86
+ 300 0030 8DF80520 		strb	r2, [sp, #5]
+ 352:Core/Src/freertos.c ****   payload[idx++] = (uint8_t)((addr >> 16) & 0xFFu);
+ 301              		.loc 1 352 3 is_stmt 1 view .LVU87
+ 302              		.loc 1 352 36 is_stmt 0 view .LVU88
+ 303 0034 1A0C     		lsrs	r2, r3, #16
+ 304              	.LVL22:
+ 305              		.loc 1 352 18 view .LVU89
+ 306 0036 8DF80620 		strb	r2, [sp, #6]
+ 353:Core/Src/freertos.c ****   payload[idx++] = (uint8_t)((addr >> 8)  & 0xFFu);
+ 307              		.loc 1 353 3 is_stmt 1 view .LVU90
+ 308              	.LVL23:
+ 309              		.loc 1 353 20 is_stmt 0 view .LVU91
+ 310 003a 0022     		movs	r2, #0
+ 311              		.loc 1 353 18 view .LVU92
+ 312 003c 8DF80720 		strb	r2, [sp, #7]
+ 354:Core/Src/freertos.c ****   payload[idx++] = (uint8_t)(addr & 0xFFu);
+ 313              		.loc 1 354 3 is_stmt 1 view .LVU93
+ 314              	.LVL24:
+ 315              		.loc 1 354 20 is_stmt 0 view .LVU94
+ 316 0040 DBB2     		uxtb	r3, r3
+ 317              	.LVL25:
+ 318              		.loc 1 354 18 view .LVU95
+ 319 0042 8DF80830 		strb	r3, [sp, #8]
+ 355:Core/Src/freertos.c **** 
+ 356:Core/Src/freertos.c ****   /* 写入 value */
+ 357:Core/Src/freertos.c ****   for (uint8_t i = 0U; i < valueLen; ++i)
+ 320              		.loc 1 357 3 is_stmt 1 view .LVU96
+ 321              	.LBB7:
+ 322              		.loc 1 357 8 view .LVU97
+ 323              	.LVL26:
+ 324              		.loc 1 357 8 is_stmt 0 view .LVU98
+ 325              	.LBE7:
+ 354:Core/Src/freertos.c ****   payload[idx++] = (uint8_t)(addr & 0xFFu);
+ 326              		.loc 1 354 14 view .LVU99
+ 327 0046 0523     		movs	r3, #5
+ 328              	.LVL27:
+ 329              	.L21:
+ 330              	.LBB8:
+ 331              		.loc 1 357 24 is_stmt 1 discriminator 1 view .LVU100
+ 332              		.loc 1 357 3 is_stmt 0 discriminator 1 view .LVU101
+ 333 0048 3AB1     		cbz	r2, .L22
+ 334              	.LBE8:
+ 358:Core/Src/freertos.c ****   {
+ 359:Core/Src/freertos.c ****     payload[idx++] = valueBytes[i];
+ 360:Core/Src/freertos.c ****   }
+ 361:Core/Src/freertos.c **** 
+ 362:Core/Src/freertos.c ****   payloadLen = idx;
+ 335              		.loc 1 362 3 is_stmt 1 view .LVU102
+ 336              	.LVL28:
+ARM GAS  /tmp/ccClMZ2p.s 			page 14
+
+
+ 363:Core/Src/freertos.c **** 
+ 364:Core/Src/freertos.c ****   /* 命令字选择：根据协议设计，这里假设 0x04 为“写寄存器”命令，
+ 365:Core/Src/freertos.c ****    * 消息类型使用 0xFF 表示主动请求。具体值可根据实际 enum 定义调整。
+ 366:Core/Src/freertos.c ****    */
+ 367:Core/Src/freertos.c ****   (void)APP_UartProto_SendRaw(0x04u, 0xFFu, payload, payloadLen);
+ 337              		.loc 1 367 3 view .LVU103
+ 338              		.loc 1 367 9 is_stmt 0 view .LVU104
+ 339 004a 01AA     		add	r2, sp, #4
+ 340              	.LVL29:
+ 341              		.loc 1 367 9 view .LVU105
+ 342 004c FF21     		movs	r1, #255
+ 343 004e 0420     		movs	r0, #4
+ 344 0050 FFF7FEFF 		bl	APP_UartProto_SendRaw
+ 345              	.LVL30:
+ 346              	.L16:
+ 368:Core/Src/freertos.c **** }
+ 347              		.loc 1 368 1 view .LVU106
+ 348 0054 05B0     		add	sp, sp, #20
+ 349              	.LCFI8:
+ 350              		.cfi_remember_state
+ 351              		.cfi_def_cfa_offset 4
+ 352              		@ sp needed
+ 353 0056 5DF804FB 		ldr	pc, [sp], #4
+ 354              	.LVL31:
+ 355              	.L22:
+ 356              	.LCFI9:
+ 357              		.cfi_restore_state
+ 358              	.LBB9:
+ 359:Core/Src/freertos.c ****   }
+ 359              		.loc 1 359 5 is_stmt 1 discriminator 3 view .LVU107
+ 359:Core/Src/freertos.c ****   }
+ 360              		.loc 1 359 16 is_stmt 0 discriminator 3 view .LVU108
+ 361 005a 591C     		adds	r1, r3, #1
+ 362              	.LVL32:
+ 359:Core/Src/freertos.c ****   }
+ 363              		.loc 1 359 32 discriminator 3 view .LVU109
+ 364 005c 02F11000 		add	r0, r2, #16
+ 365 0060 6844     		add	r0, sp, r0
+ 366 0062 10F8100C 		ldrb	r0, [r0, #-16]	@ zero_extendqisi2
+ 359:Core/Src/freertos.c ****   }
+ 367              		.loc 1 359 20 discriminator 3 view .LVU110
+ 368 0066 1033     		adds	r3, r3, #16
+ 369 0068 6B44     		add	r3, sp, r3
+ 370 006a 03F80C0C 		strb	r0, [r3, #-12]
+ 357:Core/Src/freertos.c ****   {
+ 371              		.loc 1 357 38 is_stmt 1 discriminator 3 view .LVU111
+ 372 006e 0132     		adds	r2, r2, #1
+ 373              	.LVL33:
+ 357:Core/Src/freertos.c ****   {
+ 374              		.loc 1 357 38 is_stmt 0 discriminator 3 view .LVU112
+ 375 0070 D2B2     		uxtb	r2, r2
+ 376              	.LVL34:
+ 359:Core/Src/freertos.c ****   }
+ 377              		.loc 1 359 16 discriminator 3 view .LVU113
+ 378 0072 8BB2     		uxth	r3, r1
+ 379 0074 E8E7     		b	.L21
+ 380              	.LVL35:
+ARM GAS  /tmp/ccClMZ2p.s 			page 15
+
+
+ 381              	.L25:
+ 382              	.LCFI10:
+ 383              		.cfi_def_cfa_offset 0
+ 384              		.cfi_restore 14
+ 359:Core/Src/freertos.c ****   }
+ 385              		.loc 1 359 16 discriminator 3 view .LVU114
+ 386 0076 7047     		bx	lr
+ 387              	.L29:
+ 388              		.align	2
+ 389              	.L28:
+ 390 0078 00003112 		.word	305201152
+ 391 007c 00003412 		.word	305397760
+ 392              	.LBE9:
+ 393              		.cfi_endproc
+ 394              	.LFE76:
+ 396              		.section	.text.StartTask02,"ax",%progbits
+ 397              		.align	1
+ 398              		.global	StartTask02
+ 399              		.syntax unified
+ 400              		.thumb
+ 401              		.thumb_func
+ 402              		.fpu softvfp
+ 404              	StartTask02:
+ 405              	.LFB73:
+ 227:Core/Src/freertos.c ****   /* USER CODE BEGIN StartTask02 */
+ 406              		.loc 1 227 1 is_stmt 1 view -0
+ 407              		.cfi_startproc
+ 408              		@ Volatile: function does not return.
+ 409              		@ args = 0, pretend = 0, frame = 8
+ 410              		@ frame_needed = 0, uses_anonymous_args = 0
+ 411              	.LVL36:
+ 227:Core/Src/freertos.c ****   /* USER CODE BEGIN StartTask02 */
+ 412              		.loc 1 227 1 is_stmt 0 view .LVU116
+ 413 0000 00B5     		push	{lr}
+ 414              	.LCFI11:
+ 415              		.cfi_def_cfa_offset 4
+ 416              		.cfi_offset 14, -4
+ 417 0002 83B0     		sub	sp, sp, #12
+ 418              	.LCFI12:
+ 419              		.cfi_def_cfa_offset 16
+ 420              	.LVL37:
+ 421              	.L31:
+ 230:Core/Src/freertos.c **** 
+ 422              		.loc 1 230 3 is_stmt 1 view .LVU117
+ 233:Core/Src/freertos.c ****   {
+ 423              		.loc 1 233 3 view .LVU118
+ 236:Core/Src/freertos.c ****     {
+ 424              		.loc 1 236 5 view .LVU119
+ 236:Core/Src/freertos.c ****     {
+ 425              		.loc 1 236 9 is_stmt 0 view .LVU120
+ 426 0004 4FF0FF33 		mov	r3, #-1
+ 427 0008 0022     		movs	r2, #0
+ 428 000a 6946     		mov	r1, sp
+ 429 000c 0448     		ldr	r0, .L34
+ 430 000e 0068     		ldr	r0, [r0]
+ 431 0010 FFF7FEFF 		bl	osMessageQueueGet
+ 432              	.LVL38:
+ARM GAS  /tmp/ccClMZ2p.s 			page 16
+
+
+ 236:Core/Src/freertos.c ****     {
+ 433              		.loc 1 236 8 view .LVU121
+ 434 0014 0028     		cmp	r0, #0
+ 435 0016 F5D1     		bne	.L31
+ 239:Core/Src/freertos.c ****     }
+ 436              		.loc 1 239 7 is_stmt 1 view .LVU122
+ 437 0018 6846     		mov	r0, sp
+ 438 001a FFF7FEFF 		bl	UART_SendParamWrite
+ 439              	.LVL39:
+ 440 001e F1E7     		b	.L31
+ 441              	.L35:
+ 442              		.align	2
+ 443              	.L34:
+ 444 0020 00000000 		.word	.LANCHOR0
+ 445              		.cfi_endproc
+ 446              	.LFE73:
+ 448              		.section	.text.StartTask03,"ax",%progbits
+ 449              		.align	1
+ 450              		.global	StartTask03
+ 451              		.syntax unified
+ 452              		.thumb
+ 453              		.thumb_func
+ 454              		.fpu softvfp
+ 456              	StartTask03:
+ 457              	.LFB74:
+ 253:Core/Src/freertos.c ****   /* USER CODE BEGIN StartTask03 */
+ 458              		.loc 1 253 1 view -0
+ 459              		.cfi_startproc
+ 460              		@ Volatile: function does not return.
+ 461              		@ args = 0, pretend = 0, frame = 0
+ 462              		@ frame_needed = 0, uses_anonymous_args = 0
+ 463              	.LVL40:
+ 253:Core/Src/freertos.c ****   /* USER CODE BEGIN StartTask03 */
+ 464              		.loc 1 253 1 is_stmt 0 view .LVU124
+ 465 0000 08B5     		push	{r3, lr}
+ 466              	.LCFI13:
+ 467              		.cfi_def_cfa_offset 8
+ 468              		.cfi_offset 3, -8
+ 469              		.cfi_offset 14, -4
+ 470              	.LVL41:
+ 471              	.L37:
+ 256:Core/Src/freertos.c ****   {
+ 472              		.loc 1 256 3 is_stmt 1 discriminator 1 view .LVU125
+ 258:Core/Src/freertos.c ****     osDelay(5);
+ 473              		.loc 1 258 5 discriminator 1 view .LVU126
+ 474 0002 FFF7FEFF 		bl	APP_UartRx_ProcessPending
+ 475              	.LVL42:
+ 259:Core/Src/freertos.c ****   }
+ 476              		.loc 1 259 5 discriminator 1 view .LVU127
+ 477 0006 0520     		movs	r0, #5
+ 478 0008 FFF7FEFF 		bl	osDelay
+ 479              	.LVL43:
+ 256:Core/Src/freertos.c ****   {
+ 480              		.loc 1 256 8 discriminator 1 view .LVU128
+ 481 000c F9E7     		b	.L37
+ 482              		.cfi_endproc
+ 483              	.LFE74:
+ARM GAS  /tmp/ccClMZ2p.s 			page 17
+
+
+ 485              		.section	.text.MX_FREERTOS_Init,"ax",%progbits
+ 486              		.align	1
+ 487              		.global	MX_FREERTOS_Init
+ 488              		.syntax unified
+ 489              		.thumb
+ 490              		.thumb_func
+ 491              		.fpu softvfp
+ 493              	MX_FREERTOS_Init:
+ 494              	.LFB71:
+ 125:Core/Src/freertos.c ****   /* USER CODE BEGIN Init */
+ 495              		.loc 1 125 29 view -0
+ 496              		.cfi_startproc
+ 497              		@ args = 0, pretend = 0, frame = 0
+ 498              		@ frame_needed = 0, uses_anonymous_args = 0
+ 499 0000 08B5     		push	{r3, lr}
+ 500              	.LCFI14:
+ 501              		.cfi_def_cfa_offset 8
+ 502              		.cfi_offset 3, -8
+ 503              		.cfi_offset 14, -4
+ 132:Core/Src/freertos.c ****   /* USER CODE END RTOS_MUTEX */
+ 504              		.loc 1 132 3 view .LVU130
+ 132:Core/Src/freertos.c ****   /* USER CODE END RTOS_MUTEX */
+ 505              		.loc 1 132 23 is_stmt 0 view .LVU131
+ 506 0002 1148     		ldr	r0, .L41
+ 507 0004 FFF7FEFF 		bl	osMutexNew
+ 508              	.LVL44:
+ 132:Core/Src/freertos.c ****   /* USER CODE END RTOS_MUTEX */
+ 509              		.loc 1 132 21 view .LVU132
+ 510 0008 104B     		ldr	r3, .L41+4
+ 511 000a 1860     		str	r0, [r3]
+ 145:Core/Src/freertos.c ****       8,                               /* queue length: can be tuned */
+ 512              		.loc 1 145 3 is_stmt 1 view .LVU133
+ 145:Core/Src/freertos.c ****       8,                               /* queue length: can be tuned */
+ 513              		.loc 1 145 29 is_stmt 0 view .LVU134
+ 514 000c 104A     		ldr	r2, .L41+8
+ 515 000e 0821     		movs	r1, #8
+ 516 0010 0846     		mov	r0, r1
+ 517 0012 FFF7FEFF 		bl	osMessageQueueNew
+ 518              	.LVL45:
+ 145:Core/Src/freertos.c ****       8,                               /* queue length: can be tuned */
+ 519              		.loc 1 145 27 view .LVU135
+ 520 0016 0F4B     		ldr	r3, .L41+12
+ 521 0018 1860     		str	r0, [r3]
+ 153:Core/Src/freertos.c **** 
+ 522              		.loc 1 153 3 is_stmt 1 view .LVU136
+ 153:Core/Src/freertos.c **** 
+ 523              		.loc 1 153 20 is_stmt 0 view .LVU137
+ 524 001a 0F4A     		ldr	r2, .L41+16
+ 525 001c 0021     		movs	r1, #0
+ 526 001e 0F48     		ldr	r0, .L41+20
+ 527 0020 FFF7FEFF 		bl	osThreadNew
+ 528              	.LVL46:
+ 153:Core/Src/freertos.c **** 
+ 529              		.loc 1 153 18 view .LVU138
+ 530 0024 0E4B     		ldr	r3, .L41+24
+ 531 0026 1860     		str	r0, [r3]
+ 156:Core/Src/freertos.c **** 
+ARM GAS  /tmp/ccClMZ2p.s 			page 18
+
+
+ 532              		.loc 1 156 3 is_stmt 1 view .LVU139
+ 156:Core/Src/freertos.c **** 
+ 533              		.loc 1 156 21 is_stmt 0 view .LVU140
+ 534 0028 0E4A     		ldr	r2, .L41+28
+ 535 002a 0021     		movs	r1, #0
+ 536 002c 0E48     		ldr	r0, .L41+32
+ 537 002e FFF7FEFF 		bl	osThreadNew
+ 538              	.LVL47:
+ 156:Core/Src/freertos.c **** 
+ 539              		.loc 1 156 19 view .LVU141
+ 540 0032 0E4B     		ldr	r3, .L41+36
+ 541 0034 1860     		str	r0, [r3]
+ 159:Core/Src/freertos.c **** 
+ 542              		.loc 1 159 3 is_stmt 1 view .LVU142
+ 159:Core/Src/freertos.c **** 
+ 543              		.loc 1 159 22 is_stmt 0 view .LVU143
+ 544 0036 0E4A     		ldr	r2, .L41+40
+ 545 0038 0021     		movs	r1, #0
+ 546 003a 0E48     		ldr	r0, .L41+44
+ 547 003c FFF7FEFF 		bl	osThreadNew
+ 548              	.LVL48:
+ 159:Core/Src/freertos.c **** 
+ 549              		.loc 1 159 20 view .LVU144
+ 550 0040 0D4B     		ldr	r3, .L41+48
+ 551 0042 1860     		str	r0, [r3]
+ 169:Core/Src/freertos.c **** 
+ 552              		.loc 1 169 1 view .LVU145
+ 553 0044 08BD     		pop	{r3, pc}
+ 554              	.L42:
+ 555 0046 00BF     		.align	2
+ 556              	.L41:
+ 557 0048 00000000 		.word	.LANCHOR1
+ 558 004c 00000000 		.word	.LANCHOR2
+ 559 0050 00000000 		.word	.LANCHOR3
+ 560 0054 00000000 		.word	.LANCHOR0
+ 561 0058 00000000 		.word	.LANCHOR4
+ 562 005c 00000000 		.word	StartDefaultTask
+ 563 0060 00000000 		.word	.LANCHOR5
+ 564 0064 00000000 		.word	.LANCHOR6
+ 565 0068 00000000 		.word	StartTask02
+ 566 006c 00000000 		.word	.LANCHOR7
+ 567 0070 00000000 		.word	.LANCHOR8
+ 568 0074 00000000 		.word	StartTask03
+ 569 0078 00000000 		.word	.LANCHOR9
+ 570              		.cfi_endproc
+ 571              	.LFE71:
+ 573              		.global	Logic_Task_attributes
+ 574              		.section	.rodata.str1.4,"aMS",%progbits,1
+ 575              		.align	2
+ 576              	.LC0:
+ 577 0000 4C6F6769 		.ascii	"Logic_Task\000"
+ 577      635F5461 
+ 577      736B00
+ 578              		.global	Logic_TaskHandle
+ 579              		.global	UART_Task_attributes
+ 580 000b 00       		.align	2
+ 581              	.LC1:
+ARM GAS  /tmp/ccClMZ2p.s 			page 19
+
+
+ 582 000c 55415254 		.ascii	"UART_Task\000"
+ 582      5F546173 
+ 582      6B00
+ 583              		.global	UART_TaskHandle
+ 584              		.global	HMI_Task_attributes
+ 585 0016 0000     		.align	2
+ 586              	.LC2:
+ 587 0018 484D495F 		.ascii	"HMI_Task\000"
+ 587      5461736B 
+ 587      00
+ 588              		.global	HMI_TaskHandle
+ 589              		.global	gParamUpdateQueue_attributes
+ 590 0021 000000   		.align	2
+ 591              	.LC3:
+ 592 0024 50617261 		.ascii	"ParamUpdateQueue\000"
+ 592      6D557064 
+ 592      61746551 
+ 592      75657565 
+ 592      00
+ 593              		.global	gParamUpdateQueueHandle
+ 594              		.global	gParamMutex_attributes
+ 595 0035 000000   		.align	2
+ 596              	.LC4:
+ 597 0038 50617261 		.ascii	"ParamDictMutex\000"
+ 597      6D446963 
+ 597      744D7574 
+ 597      657800
+ 598              		.global	gParamMutexHandle
+ 599              		.section	.bss.HMI_TaskHandle,"aw",%nobits
+ 600              		.align	2
+ 601              		.set	.LANCHOR5,. + 0
+ 604              	HMI_TaskHandle:
+ 605 0000 00000000 		.space	4
+ 606              		.section	.bss.Logic_TaskHandle,"aw",%nobits
+ 607              		.align	2
+ 608              		.set	.LANCHOR9,. + 0
+ 611              	Logic_TaskHandle:
+ 612 0000 00000000 		.space	4
+ 613              		.section	.bss.UART_TaskHandle,"aw",%nobits
+ 614              		.align	2
+ 615              		.set	.LANCHOR7,. + 0
+ 618              	UART_TaskHandle:
+ 619 0000 00000000 		.space	4
+ 620              		.section	.bss.gParamMutexHandle,"aw",%nobits
+ 621              		.align	2
+ 622              		.set	.LANCHOR2,. + 0
+ 625              	gParamMutexHandle:
+ 626 0000 00000000 		.space	4
+ 627              		.section	.bss.gParamUpdateQueueHandle,"aw",%nobits
+ 628              		.align	2
+ 629              		.set	.LANCHOR0,. + 0
+ 632              	gParamUpdateQueueHandle:
+ 633 0000 00000000 		.space	4
+ 634              		.section	.rodata.HMI_Task_attributes,"a"
+ 635              		.align	2
+ 636              		.set	.LANCHOR4,. + 0
+ 639              	HMI_Task_attributes:
+ARM GAS  /tmp/ccClMZ2p.s 			page 20
+
+
+ 640 0000 18000000 		.word	.LC2
+ 641 0004 00000000 		.space	16
+ 641      00000000 
+ 641      00000000 
+ 641      00000000 
+ 642 0014 00020000 		.word	512
+ 643 0018 18000000 		.word	24
+ 644 001c 00000000 		.space	8
+ 644      00000000 
+ 645              		.section	.rodata.Logic_Task_attributes,"a"
+ 646              		.align	2
+ 647              		.set	.LANCHOR8,. + 0
+ 650              	Logic_Task_attributes:
+ 651 0000 00000000 		.word	.LC0
+ 652 0004 00000000 		.space	16
+ 652      00000000 
+ 652      00000000 
+ 652      00000000 
+ 653 0014 00020000 		.word	512
+ 654 0018 10000000 		.word	16
+ 655 001c 00000000 		.space	8
+ 655      00000000 
+ 656              		.section	.rodata.UART_Task_attributes,"a"
+ 657              		.align	2
+ 658              		.set	.LANCHOR6,. + 0
+ 661              	UART_Task_attributes:
+ 662 0000 0C000000 		.word	.LC1
+ 663 0004 00000000 		.space	16
+ 663      00000000 
+ 663      00000000 
+ 663      00000000 
+ 664 0014 00020000 		.word	512
+ 665 0018 20000000 		.word	32
+ 666 001c 00000000 		.space	8
+ 666      00000000 
+ 667              		.section	.rodata.gParamMutex_attributes,"a"
+ 668              		.align	2
+ 669              		.set	.LANCHOR1,. + 0
+ 672              	gParamMutex_attributes:
+ 673 0000 38000000 		.word	.LC4
+ 674 0004 00000000 		.space	12
+ 674      00000000 
+ 674      00000000 
+ 675              		.section	.rodata.gParamUpdateQueue_attributes,"a"
+ 676              		.align	2
+ 677              		.set	.LANCHOR3,. + 0
+ 680              	gParamUpdateQueue_attributes:
+ 681 0000 24000000 		.word	.LC3
+ 682 0004 00000000 		.space	20
+ 682      00000000 
+ 682      00000000 
+ 682      00000000 
+ 682      00000000 
+ 683              		.text
+ 684              	.Letext0:
+ 685              		.file 2 "/usr/lib/gcc/arm-none-eabi/10.3.1/include/stdint.h"
+ 686              		.file 3 "Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.h"
+ARM GAS  /tmp/ccClMZ2p.s 			page 21
+
+
+ 687              		.file 4 "Core/Inc/app_menu.h"
+ 688              		.file 5 "Core/Inc/app_param_dict.h"
+ 689              		.file 6 "Core/Inc/bsp.h"
+ 690              		.file 7 "Core/Inc/app_uart_proto.h"
+ 691              		.file 8 "Core/Inc/app_uart_rx.h"
+ARM GAS  /tmp/ccClMZ2p.s 			page 22
+
+
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 freertos.c
+     /tmp/ccClMZ2p.s:16     .text.HMI_ReadKey:0000000000000000 $t
+     /tmp/ccClMZ2p.s:23     .text.HMI_ReadKey:0000000000000000 HMI_ReadKey
+     /tmp/ccClMZ2p.s:59     .text.HMI_ReadKey:0000000000000020 $d
+     /tmp/ccClMZ2p.s:63     .text.HMI_ReadKey:0000000000000024 $t
+     /tmp/ccClMZ2p.s:90     .text.StartDefaultTask:0000000000000000 $t
+     /tmp/ccClMZ2p.s:97     .text.StartDefaultTask:0000000000000000 StartDefaultTask
+     /tmp/ccClMZ2p.s:210    .text.StartDefaultTask:0000000000000068 $d
+     /tmp/ccClMZ2p.s:217    .text.UART_SendParamWrite:0000000000000000 $t
+     /tmp/ccClMZ2p.s:223    .text.UART_SendParamWrite:0000000000000000 UART_SendParamWrite
+     /tmp/ccClMZ2p.s:390    .text.UART_SendParamWrite:0000000000000078 $d
+     /tmp/ccClMZ2p.s:397    .text.StartTask02:0000000000000000 $t
+     /tmp/ccClMZ2p.s:404    .text.StartTask02:0000000000000000 StartTask02
+     /tmp/ccClMZ2p.s:444    .text.StartTask02:0000000000000020 $d
+     /tmp/ccClMZ2p.s:449    .text.StartTask03:0000000000000000 $t
+     /tmp/ccClMZ2p.s:456    .text.StartTask03:0000000000000000 StartTask03
+     /tmp/ccClMZ2p.s:486    .text.MX_FREERTOS_Init:0000000000000000 $t
+     /tmp/ccClMZ2p.s:493    .text.MX_FREERTOS_Init:0000000000000000 MX_FREERTOS_Init
+     /tmp/ccClMZ2p.s:557    .text.MX_FREERTOS_Init:0000000000000048 $d
+     /tmp/ccClMZ2p.s:650    .rodata.Logic_Task_attributes:0000000000000000 Logic_Task_attributes
+     /tmp/ccClMZ2p.s:575    .rodata.str1.4:0000000000000000 $d
+     /tmp/ccClMZ2p.s:611    .bss.Logic_TaskHandle:0000000000000000 Logic_TaskHandle
+     /tmp/ccClMZ2p.s:661    .rodata.UART_Task_attributes:0000000000000000 UART_Task_attributes
+     /tmp/ccClMZ2p.s:618    .bss.UART_TaskHandle:0000000000000000 UART_TaskHandle
+     /tmp/ccClMZ2p.s:639    .rodata.HMI_Task_attributes:0000000000000000 HMI_Task_attributes
+     /tmp/ccClMZ2p.s:604    .bss.HMI_TaskHandle:0000000000000000 HMI_TaskHandle
+     /tmp/ccClMZ2p.s:680    .rodata.gParamUpdateQueue_attributes:0000000000000000 gParamUpdateQueue_attributes
+     /tmp/ccClMZ2p.s:632    .bss.gParamUpdateQueueHandle:0000000000000000 gParamUpdateQueueHandle
+     /tmp/ccClMZ2p.s:672    .rodata.gParamMutex_attributes:0000000000000000 gParamMutex_attributes
+     /tmp/ccClMZ2p.s:625    .bss.gParamMutexHandle:0000000000000000 gParamMutexHandle
+     /tmp/ccClMZ2p.s:600    .bss.HMI_TaskHandle:0000000000000000 $d
+     /tmp/ccClMZ2p.s:607    .bss.Logic_TaskHandle:0000000000000000 $d
+     /tmp/ccClMZ2p.s:614    .bss.UART_TaskHandle:0000000000000000 $d
+     /tmp/ccClMZ2p.s:621    .bss.gParamMutexHandle:0000000000000000 $d
+     /tmp/ccClMZ2p.s:628    .bss.gParamUpdateQueueHandle:0000000000000000 $d
+     /tmp/ccClMZ2p.s:635    .rodata.HMI_Task_attributes:0000000000000000 $d
+     /tmp/ccClMZ2p.s:646    .rodata.Logic_Task_attributes:0000000000000000 $d
+     /tmp/ccClMZ2p.s:657    .rodata.UART_Task_attributes:0000000000000000 $d
+     /tmp/ccClMZ2p.s:668    .rodata.gParamMutex_attributes:0000000000000000 $d
+     /tmp/ccClMZ2p.s:676    .rodata.gParamUpdateQueue_attributes:0000000000000000 $d
+
+UNDEFINED SYMBOLS
+BSP_Keys_GetEvent
+BSP_Init
+BSP_Lcd_Init
+BSP_Keys_Init
+APP_Menu_Init
+osMessageQueuePut
+osDelay
+APP_ParamDict_GetValue
+APP_Menu_HandleKey
+APP_UartProto_SendRaw
+osMessageQueueGet
+APP_UartRx_ProcessPending
+osMutexNew
+osMessageQueueNew
+ARM GAS  /tmp/ccClMZ2p.s 			page 23
+
+
+osThreadNew

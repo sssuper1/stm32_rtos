@@ -1,0 +1,2161 @@
+ARM GAS  /tmp/ccc3Ih49.s 			page 1
+
+
+   1              		.cpu cortex-m3
+   2              		.eabi_attribute 20, 1
+   3              		.eabi_attribute 21, 1
+   4              		.eabi_attribute 23, 3
+   5              		.eabi_attribute 24, 1
+   6              		.eabi_attribute 25, 1
+   7              		.eabi_attribute 26, 1
+   8              		.eabi_attribute 30, 1
+   9              		.eabi_attribute 34, 1
+  10              		.eabi_attribute 18, 4
+  11              		.file	"app_menu.c"
+  12              		.text
+  13              	.Ltext0:
+  14              		.cfi_sections	.debug_frame
+  15              		.section	.text.menu_default_navigate,"ax",%progbits
+  16              		.align	1
+  17              		.arch armv7-m
+  18              		.syntax unified
+  19              		.thumb
+  20              		.thumb_func
+  21              		.fpu softvfp
+  23              	menu_default_navigate:
+  24              	.LVL0:
+  25              	.LFB7:
+  26              		.file 1 "Core/Src/app_menu.c"
+   1:Core/Src/app_menu.c **** #include "app_menu.h"
+   2:Core/Src/app_menu.c **** #include "app_param_dict.h"
+   3:Core/Src/app_menu.c **** #include "bsp.h"
+   4:Core/Src/app_menu.c **** #include <stdio.h>
+   5:Core/Src/app_menu.c **** 
+   6:Core/Src/app_menu.c **** /* -------------------- 静态菜单节点定义（示例） -------------------- */
+   7:Core/Src/app_menu.c **** 
+   8:Core/Src/app_menu.c **** /* 预声明节点，以便互相引用 */
+   9:Core/Src/app_menu.c **** static const MenuNode_t s_root;
+  10:Core/Src/app_menu.c **** static const MenuNode_t s_operation;
+  11:Core/Src/app_menu.c **** static const MenuNode_t s_function;
+  12:Core/Src/app_menu.c **** static const MenuNode_t s_setting;
+  13:Core/Src/app_menu.c **** static const MenuNode_t s_operation_mode;
+  14:Core/Src/app_menu.c **** static const MenuNode_t s_operation_param;
+  15:Core/Src/app_menu.c **** static const MenuNode_t s_setting_net;
+  16:Core/Src/app_menu.c **** static const MenuNode_t s_setting_uart;
+  17:Core/Src/app_menu.c **** static const MenuNode_t s_setting_uart_baud;
+  18:Core/Src/app_menu.c **** 
+  19:Core/Src/app_menu.c **** /* 前置声明：串口波特率编辑按键处理回调 */
+  20:Core/Src/app_menu.c **** static int MenuKeyHandler_WorkMode(MenuKey_t key);
+  21:Core/Src/app_menu.c **** static int MenuKeyHandler_UartBaud(MenuKey_t key);
+  22:Core/Src/app_menu.c **** 
+  23:Core/Src/app_menu.c **** static void Menu_RenderBlankRows(uint8_t startRow, uint8_t endRow)
+  24:Core/Src/app_menu.c **** {
+  25:Core/Src/app_menu.c ****   for (uint8_t row = startRow; row <= endRow; ++row)
+  26:Core/Src/app_menu.c ****   {
+  27:Core/Src/app_menu.c ****     BSP_Lcd_PrintLine(row, "");
+  28:Core/Src/app_menu.c ****   }
+  29:Core/Src/app_menu.c **** }
+  30:Core/Src/app_menu.c **** 
+  31:Core/Src/app_menu.c **** /* 叶子节点暂不指定 key_cb，后续在参数编辑时挂载 */
+  32:Core/Src/app_menu.c **** 
+ARM GAS  /tmp/ccc3Ih49.s 			page 2
+
+
+  33:Core/Src/app_menu.c **** static const MenuNode_t s_operation_mode =
+  34:Core/Src/app_menu.c **** {
+  35:Core/Src/app_menu.c ****   .id       = MENU_ID_OPERATION_MODE,
+  36:Core/Src/app_menu.c ****   .title    = "OP MODE",
+  37:Core/Src/app_menu.c ****   .parent   = &s_operation,
+  38:Core/Src/app_menu.c ****   .child    = 0,
+  39:Core/Src/app_menu.c ****   .sibling  = &s_operation_param,
+  40:Core/Src/app_menu.c ****   .render_cb = APP_Menu_DefaultRender,
+  41:Core/Src/app_menu.c ****   .key_cb    = MenuKeyHandler_WorkMode
+  42:Core/Src/app_menu.c **** };
+  43:Core/Src/app_menu.c **** 
+  44:Core/Src/app_menu.c **** static const MenuNode_t s_operation_param =
+  45:Core/Src/app_menu.c **** {
+  46:Core/Src/app_menu.c ****   .id       = MENU_ID_OPERATION_PARAM,
+  47:Core/Src/app_menu.c ****   .title    = "PARAM",
+  48:Core/Src/app_menu.c ****   .parent   = &s_operation,
+  49:Core/Src/app_menu.c ****   .child    = 0,
+  50:Core/Src/app_menu.c ****   .sibling  = 0,
+  51:Core/Src/app_menu.c ****   .render_cb = APP_Menu_DefaultRender,
+  52:Core/Src/app_menu.c ****   .key_cb    = 0
+  53:Core/Src/app_menu.c **** };
+  54:Core/Src/app_menu.c **** 
+  55:Core/Src/app_menu.c **** static const MenuNode_t s_operation =
+  56:Core/Src/app_menu.c **** {
+  57:Core/Src/app_menu.c ****   .id       = MENU_ID_OPERATION,
+  58:Core/Src/app_menu.c ****   .title    = "OPERATION",
+  59:Core/Src/app_menu.c ****   .parent   = &s_root,
+  60:Core/Src/app_menu.c ****   .child    = &s_operation_mode,
+  61:Core/Src/app_menu.c ****   .sibling  = &s_function,
+  62:Core/Src/app_menu.c ****   .render_cb = APP_Menu_DefaultRender,
+  63:Core/Src/app_menu.c ****   .key_cb    = 0
+  64:Core/Src/app_menu.c **** };
+  65:Core/Src/app_menu.c **** 
+  66:Core/Src/app_menu.c **** static const MenuNode_t s_setting_net =
+  67:Core/Src/app_menu.c **** {
+  68:Core/Src/app_menu.c ****   .id       = MENU_ID_SETTING_NET,
+  69:Core/Src/app_menu.c ****   .title    = "NET",
+  70:Core/Src/app_menu.c ****   .parent   = &s_setting,
+  71:Core/Src/app_menu.c ****   .child    = 0,
+  72:Core/Src/app_menu.c ****   .sibling  = &s_setting_uart,
+  73:Core/Src/app_menu.c ****   .render_cb = APP_Menu_DefaultRender,
+  74:Core/Src/app_menu.c ****   .key_cb    = 0
+  75:Core/Src/app_menu.c **** };
+  76:Core/Src/app_menu.c **** 
+  77:Core/Src/app_menu.c **** static const MenuNode_t s_setting_uart =
+  78:Core/Src/app_menu.c **** {
+  79:Core/Src/app_menu.c ****   .id       = MENU_ID_SETTING_UART,
+  80:Core/Src/app_menu.c ****   .title    = "UART",
+  81:Core/Src/app_menu.c ****   .parent   = &s_setting,
+  82:Core/Src/app_menu.c ****   .child    = &s_setting_uart_baud,
+  83:Core/Src/app_menu.c ****   .sibling  = 0,
+  84:Core/Src/app_menu.c ****   .render_cb = APP_Menu_DefaultRender,
+  85:Core/Src/app_menu.c ****   .key_cb    = 0
+  86:Core/Src/app_menu.c **** };
+  87:Core/Src/app_menu.c **** 
+  88:Core/Src/app_menu.c **** static const MenuNode_t s_setting_uart_baud =
+  89:Core/Src/app_menu.c **** {
+ARM GAS  /tmp/ccc3Ih49.s 			page 3
+
+
+  90:Core/Src/app_menu.c ****   .id       = MENU_ID_SETTING_UART_BAUD,
+  91:Core/Src/app_menu.c ****   .title    = "BAUD",
+  92:Core/Src/app_menu.c ****   .parent   = &s_setting_uart,
+  93:Core/Src/app_menu.c ****   .child    = 0,
+  94:Core/Src/app_menu.c ****   .sibling  = 0,
+  95:Core/Src/app_menu.c ****   .render_cb = APP_Menu_DefaultRender,
+  96:Core/Src/app_menu.c ****   .key_cb    = MenuKeyHandler_UartBaud
+  97:Core/Src/app_menu.c **** };
+  98:Core/Src/app_menu.c **** 
+  99:Core/Src/app_menu.c **** static const MenuNode_t s_setting =
+ 100:Core/Src/app_menu.c **** {
+ 101:Core/Src/app_menu.c ****   .id       = MENU_ID_SETTING,
+ 102:Core/Src/app_menu.c ****   .title    = "SETTING",
+ 103:Core/Src/app_menu.c ****   .parent   = &s_root,
+ 104:Core/Src/app_menu.c ****   .child    = &s_setting_net,
+ 105:Core/Src/app_menu.c ****   .sibling  = 0,
+ 106:Core/Src/app_menu.c ****   .render_cb = APP_Menu_DefaultRender,
+ 107:Core/Src/app_menu.c ****   .key_cb    = 0
+ 108:Core/Src/app_menu.c **** };
+ 109:Core/Src/app_menu.c **** 
+ 110:Core/Src/app_menu.c **** static const MenuNode_t s_function =
+ 111:Core/Src/app_menu.c **** {
+ 112:Core/Src/app_menu.c ****   .id       = MENU_ID_FUNCTION,
+ 113:Core/Src/app_menu.c ****   .title    = "FUNCTION",
+ 114:Core/Src/app_menu.c ****   .parent   = &s_root,
+ 115:Core/Src/app_menu.c ****   .child    = 0,            /* 示例中暂不展开子菜单 */
+ 116:Core/Src/app_menu.c ****   .sibling  = &s_setting,
+ 117:Core/Src/app_menu.c ****   .render_cb = APP_Menu_DefaultRender,
+ 118:Core/Src/app_menu.c ****   .key_cb    = 0
+ 119:Core/Src/app_menu.c **** };
+ 120:Core/Src/app_menu.c **** 
+ 121:Core/Src/app_menu.c **** static const MenuNode_t s_root =
+ 122:Core/Src/app_menu.c **** {
+ 123:Core/Src/app_menu.c ****   .id       = MENU_ID_ROOT,
+ 124:Core/Src/app_menu.c ****   .title    = "MAIN",
+ 125:Core/Src/app_menu.c ****   .parent   = 0,
+ 126:Core/Src/app_menu.c ****   .child    = &s_operation, /* 第一級：操作 / 功能 / 設置 */
+ 127:Core/Src/app_menu.c ****   .sibling  = 0,
+ 128:Core/Src/app_menu.c ****   .render_cb = APP_Menu_DefaultRender,
+ 129:Core/Src/app_menu.c ****   .key_cb    = 0
+ 130:Core/Src/app_menu.c **** };
+ 131:Core/Src/app_menu.c **** 
+ 132:Core/Src/app_menu.c **** /* -------------------- 狀態機內部變量 -------------------- */
+ 133:Core/Src/app_menu.c **** 
+ 134:Core/Src/app_menu.c **** static const MenuNode_t *s_current = &s_root;
+ 135:Core/Src/app_menu.c **** 
+ 136:Core/Src/app_menu.c **** /* -------------------- 對外接口實現 -------------------- */
+ 137:Core/Src/app_menu.c **** 
+ 138:Core/Src/app_menu.c **** const MenuNode_t *APP_Menu_Init(void)
+ 139:Core/Src/app_menu.c **** {
+ 140:Core/Src/app_menu.c ****   s_current = &s_root;
+ 141:Core/Src/app_menu.c ****   if (s_current->render_cb != 0)
+ 142:Core/Src/app_menu.c ****   {
+ 143:Core/Src/app_menu.c ****     s_current->render_cb(s_current);
+ 144:Core/Src/app_menu.c ****   }
+ 145:Core/Src/app_menu.c ****   return s_current;
+ 146:Core/Src/app_menu.c **** }
+ARM GAS  /tmp/ccc3Ih49.s 			page 4
+
+
+ 147:Core/Src/app_menu.c **** 
+ 148:Core/Src/app_menu.c **** const MenuNode_t *APP_Menu_GetCurrent(void)
+ 149:Core/Src/app_menu.c **** {
+ 150:Core/Src/app_menu.c ****   return s_current;
+ 151:Core/Src/app_menu.c **** }
+ 152:Core/Src/app_menu.c **** 
+ 153:Core/Src/app_menu.c **** void APP_Menu_RefreshCurrent(void)
+ 154:Core/Src/app_menu.c **** {
+ 155:Core/Src/app_menu.c ****   if ((s_current != 0) && (s_current->render_cb != 0))
+ 156:Core/Src/app_menu.c ****   {
+ 157:Core/Src/app_menu.c ****     s_current->render_cb(s_current);
+ 158:Core/Src/app_menu.c ****   }
+ 159:Core/Src/app_menu.c **** }
+ 160:Core/Src/app_menu.c **** 
+ 161:Core/Src/app_menu.c **** static void menu_default_navigate(MenuKey_t key)
+ 162:Core/Src/app_menu.c **** {
+  27              		.loc 1 162 1 view -0
+  28              		.cfi_startproc
+  29              		@ args = 0, pretend = 0, frame = 0
+  30              		@ frame_needed = 0, uses_anonymous_args = 0
+  31              		.loc 1 162 1 is_stmt 0 view .LVU1
+  32 0000 08B5     		push	{r3, lr}
+  33              	.LCFI0:
+  34              		.cfi_def_cfa_offset 8
+  35              		.cfi_offset 3, -8
+  36              		.cfi_offset 14, -4
+ 163:Core/Src/app_menu.c ****   if (s_current == 0)
+  37              		.loc 1 163 3 is_stmt 1 view .LVU2
+  38              		.loc 1 163 17 is_stmt 0 view .LVU3
+  39 0002 184B     		ldr	r3, .L14
+  40 0004 1A68     		ldr	r2, [r3]
+  41              		.loc 1 163 6 view .LVU4
+  42 0006 FAB1     		cbz	r2, .L1
+ 164:Core/Src/app_menu.c ****   {
+ 165:Core/Src/app_menu.c ****     return;
+ 166:Core/Src/app_menu.c ****   }
+ 167:Core/Src/app_menu.c **** 
+ 168:Core/Src/app_menu.c ****   switch (key)
+  43              		.loc 1 168 3 is_stmt 1 view .LVU5
+  44 0008 0138     		subs	r0, r0, #1
+  45              	.LVL1:
+  46              		.loc 1 168 3 is_stmt 0 view .LVU6
+  47 000a 0328     		cmp	r0, #3
+  48 000c 16D8     		bhi	.L3
+  49 000e DFE800F0 		tbb	[pc, r0]
+  50              	.L5:
+  51 0012 02       		.byte	(.L8-.L5)/2
+  52 0013 11       		.byte	(.L7-.L5)/2
+  53 0014 1C       		.byte	(.L6-.L5)/2
+  54 0015 22       		.byte	(.L4-.L5)/2
+  55              		.p2align 1
+  56              	.L8:
+ 169:Core/Src/app_menu.c ****   {
+ 170:Core/Src/app_menu.c ****     case MENU_KEY_UP:
+ 171:Core/Src/app_menu.c ****       /* 查找上一個兄弟節點（需要從父節點開始遍歷） */
+ 172:Core/Src/app_menu.c ****       if ((s_current->parent != 0) && (s_current->parent->child != 0))
+  57              		.loc 1 172 7 is_stmt 1 view .LVU7
+ARM GAS  /tmp/ccc3Ih49.s 			page 5
+
+
+  58              		.loc 1 172 21 is_stmt 0 view .LVU8
+  59 0016 9368     		ldr	r3, [r2, #8]
+  60              		.loc 1 172 10 view .LVU9
+  61 0018 83B1     		cbz	r3, .L3
+  62              		.loc 1 172 57 discriminator 1 view .LVU10
+  63 001a DB68     		ldr	r3, [r3, #12]
+  64              		.loc 1 172 36 discriminator 1 view .LVU11
+  65 001c 73B1     		cbz	r3, .L3
+  66              	.LBB2:
+ 173:Core/Src/app_menu.c ****       {
+ 174:Core/Src/app_menu.c ****         const MenuNode_t *node = s_current->parent->child;
+ 175:Core/Src/app_menu.c ****         const MenuNode_t *prev = 0;
+  67              		.loc 1 175 27 view .LVU12
+  68 001e 0021     		movs	r1, #0
+  69 0020 01E0     		b	.L9
+  70              	.LVL2:
+  71              	.L11:
+ 176:Core/Src/app_menu.c ****         while ((node != 0) && (node != s_current))
+ 177:Core/Src/app_menu.c ****         {
+ 178:Core/Src/app_menu.c ****           prev = node;
+  72              		.loc 1 178 11 is_stmt 1 view .LVU13
+ 179:Core/Src/app_menu.c ****           node = node->sibling;
+  73              		.loc 1 179 11 view .LVU14
+ 178:Core/Src/app_menu.c ****           node = node->sibling;
+  74              		.loc 1 178 16 is_stmt 0 view .LVU15
+  75 0022 1946     		mov	r1, r3
+  76              		.loc 1 179 16 view .LVU16
+  77 0024 1B69     		ldr	r3, [r3, #16]
+  78              	.LVL3:
+  79              	.L9:
+ 176:Core/Src/app_menu.c ****         while ((node != 0) && (node != s_current))
+  80              		.loc 1 176 15 is_stmt 1 view .LVU17
+  81 0026 0BB1     		cbz	r3, .L10
+ 176:Core/Src/app_menu.c ****         while ((node != 0) && (node != s_current))
+  82              		.loc 1 176 28 is_stmt 0 discriminator 1 view .LVU18
+  83 0028 9A42     		cmp	r2, r3
+  84 002a FAD1     		bne	.L11
+  85              	.L10:
+ 180:Core/Src/app_menu.c ****         }
+ 181:Core/Src/app_menu.c ****         if (prev != 0)
+  86              		.loc 1 181 9 is_stmt 1 view .LVU19
+  87              		.loc 1 181 12 is_stmt 0 view .LVU20
+  88 002c 31B1     		cbz	r1, .L3
+ 182:Core/Src/app_menu.c ****         {
+ 183:Core/Src/app_menu.c ****           s_current = prev;
+  89              		.loc 1 183 11 is_stmt 1 view .LVU21
+  90              		.loc 1 183 21 is_stmt 0 view .LVU22
+  91 002e 0D4B     		ldr	r3, .L14
+  92              	.LVL4:
+  93              		.loc 1 183 21 view .LVU23
+  94 0030 1960     		str	r1, [r3]
+  95 0032 03E0     		b	.L3
+  96              	.LVL5:
+  97              	.L7:
+  98              		.loc 1 183 21 view .LVU24
+  99              	.LBE2:
+ 184:Core/Src/app_menu.c ****         }
+ARM GAS  /tmp/ccc3Ih49.s 			page 6
+
+
+ 185:Core/Src/app_menu.c ****       }
+ 186:Core/Src/app_menu.c ****       break;
+ 187:Core/Src/app_menu.c **** 
+ 188:Core/Src/app_menu.c ****     case MENU_KEY_DOWN:
+ 189:Core/Src/app_menu.c ****       if (s_current->sibling != 0)
+ 100              		.loc 1 189 7 is_stmt 1 view .LVU25
+ 101              		.loc 1 189 20 is_stmt 0 view .LVU26
+ 102 0034 1369     		ldr	r3, [r2, #16]
+ 103              		.loc 1 189 10 view .LVU27
+ 104 0036 0BB1     		cbz	r3, .L3
+ 190:Core/Src/app_menu.c ****       {
+ 191:Core/Src/app_menu.c ****         s_current = s_current->sibling;
+ 105              		.loc 1 191 9 is_stmt 1 view .LVU28
+ 106              		.loc 1 191 19 is_stmt 0 view .LVU29
+ 107 0038 0A4A     		ldr	r2, .L14
+ 108 003a 1360     		str	r3, [r2]
+ 109              	.L3:
+ 192:Core/Src/app_menu.c ****       }
+ 193:Core/Src/app_menu.c ****       break;
+ 194:Core/Src/app_menu.c **** 
+ 195:Core/Src/app_menu.c ****     case MENU_KEY_OK:
+ 196:Core/Src/app_menu.c ****       if (s_current->child != 0)
+ 197:Core/Src/app_menu.c ****       {
+ 198:Core/Src/app_menu.c ****         s_current = s_current->child;
+ 199:Core/Src/app_menu.c ****       }
+ 200:Core/Src/app_menu.c ****       break;
+ 201:Core/Src/app_menu.c **** 
+ 202:Core/Src/app_menu.c ****     case MENU_KEY_BACK:
+ 203:Core/Src/app_menu.c ****       if (s_current->parent != 0)
+ 204:Core/Src/app_menu.c ****       {
+ 205:Core/Src/app_menu.c ****         s_current = s_current->parent;
+ 206:Core/Src/app_menu.c ****       }
+ 207:Core/Src/app_menu.c ****       break;
+ 208:Core/Src/app_menu.c **** 
+ 209:Core/Src/app_menu.c ****     default:
+ 210:Core/Src/app_menu.c ****       /* do nothing */
+ 211:Core/Src/app_menu.c ****       break;
+ 212:Core/Src/app_menu.c ****   }
+ 213:Core/Src/app_menu.c **** 
+ 214:Core/Src/app_menu.c ****   if ((s_current != 0) && (s_current->render_cb != 0))
+ 110              		.loc 1 214 3 is_stmt 1 view .LVU30
+ 111              		.loc 1 214 18 is_stmt 0 view .LVU31
+ 112 003c 094B     		ldr	r3, .L14
+ 113 003e 1868     		ldr	r0, [r3]
+ 114              		.loc 1 214 6 view .LVU32
+ 115 0040 10B1     		cbz	r0, .L1
+ 116              		.loc 1 214 37 discriminator 1 view .LVU33
+ 117 0042 4369     		ldr	r3, [r0, #20]
+ 118              		.loc 1 214 24 discriminator 1 view .LVU34
+ 119 0044 03B1     		cbz	r3, .L1
+ 215:Core/Src/app_menu.c ****   {
+ 216:Core/Src/app_menu.c ****     s_current->render_cb(s_current);
+ 120              		.loc 1 216 5 is_stmt 1 view .LVU35
+ 121 0046 9847     		blx	r3
+ 122              	.LVL6:
+ 123              	.L1:
+ 217:Core/Src/app_menu.c ****   }
+ARM GAS  /tmp/ccc3Ih49.s 			page 7
+
+
+ 218:Core/Src/app_menu.c **** }
+ 124              		.loc 1 218 1 is_stmt 0 view .LVU36
+ 125 0048 08BD     		pop	{r3, pc}
+ 126              	.L6:
+ 196:Core/Src/app_menu.c ****       {
+ 127              		.loc 1 196 7 is_stmt 1 view .LVU37
+ 196:Core/Src/app_menu.c ****       {
+ 128              		.loc 1 196 20 is_stmt 0 view .LVU38
+ 129 004a D368     		ldr	r3, [r2, #12]
+ 196:Core/Src/app_menu.c ****       {
+ 130              		.loc 1 196 10 view .LVU39
+ 131 004c 002B     		cmp	r3, #0
+ 132 004e F5D0     		beq	.L3
+ 198:Core/Src/app_menu.c ****       }
+ 133              		.loc 1 198 9 is_stmt 1 view .LVU40
+ 198:Core/Src/app_menu.c ****       }
+ 134              		.loc 1 198 19 is_stmt 0 view .LVU41
+ 135 0050 044A     		ldr	r2, .L14
+ 136 0052 1360     		str	r3, [r2]
+ 137 0054 F2E7     		b	.L3
+ 138              	.L4:
+ 203:Core/Src/app_menu.c ****       {
+ 139              		.loc 1 203 7 is_stmt 1 view .LVU42
+ 203:Core/Src/app_menu.c ****       {
+ 140              		.loc 1 203 20 is_stmt 0 view .LVU43
+ 141 0056 9368     		ldr	r3, [r2, #8]
+ 203:Core/Src/app_menu.c ****       {
+ 142              		.loc 1 203 10 view .LVU44
+ 143 0058 002B     		cmp	r3, #0
+ 144 005a EFD0     		beq	.L3
+ 205:Core/Src/app_menu.c ****       }
+ 145              		.loc 1 205 9 is_stmt 1 view .LVU45
+ 205:Core/Src/app_menu.c ****       }
+ 146              		.loc 1 205 19 is_stmt 0 view .LVU46
+ 147 005c 014A     		ldr	r2, .L14
+ 148 005e 1360     		str	r3, [r2]
+ 149 0060 ECE7     		b	.L3
+ 150              	.L15:
+ 151 0062 00BF     		.align	2
+ 152              	.L14:
+ 153 0064 00000000 		.word	.LANCHOR0
+ 154              		.cfi_endproc
+ 155              	.LFE7:
+ 157              		.section	.text.MenuKeyHandler_UartBaud,"ax",%progbits
+ 158              		.align	1
+ 159              		.syntax unified
+ 160              		.thumb
+ 161              		.thumb_func
+ 162              		.fpu softvfp
+ 164              	MenuKeyHandler_UartBaud:
+ 165              	.LVL7:
+ 166              	.LFB11:
+ 219:Core/Src/app_menu.c **** 
+ 220:Core/Src/app_menu.c **** const MenuNode_t *APP_Menu_HandleKey(MenuKey_t key)
+ 221:Core/Src/app_menu.c **** {
+ 222:Core/Src/app_menu.c ****   if (key == MENU_KEY_NONE)
+ 223:Core/Src/app_menu.c ****   {
+ARM GAS  /tmp/ccc3Ih49.s 			page 8
+
+
+ 224:Core/Src/app_menu.c ****     return s_current;
+ 225:Core/Src/app_menu.c ****   }
+ 226:Core/Src/app_menu.c **** 
+ 227:Core/Src/app_menu.c ****   /* 先讓當前節點有機會“攔截”按鍵（例如在參數編輯模式） */
+ 228:Core/Src/app_menu.c ****   if ((s_current != 0) && (s_current->key_cb != 0))
+ 229:Core/Src/app_menu.c ****   {
+ 230:Core/Src/app_menu.c ****     int handled = s_current->key_cb(key);
+ 231:Core/Src/app_menu.c ****     if (handled != 0)
+ 232:Core/Src/app_menu.c ****     {
+ 233:Core/Src/app_menu.c ****       if (s_current->render_cb != 0)
+ 234:Core/Src/app_menu.c ****       {
+ 235:Core/Src/app_menu.c ****         s_current->render_cb(s_current);
+ 236:Core/Src/app_menu.c ****       }
+ 237:Core/Src/app_menu.c ****       return s_current;
+ 238:Core/Src/app_menu.c ****     }
+ 239:Core/Src/app_menu.c ****   }
+ 240:Core/Src/app_menu.c **** 
+ 241:Core/Src/app_menu.c ****   /* 未被攔截則執行默認導航行為 */
+ 242:Core/Src/app_menu.c ****   menu_default_navigate(key);
+ 243:Core/Src/app_menu.c ****   return s_current;
+ 244:Core/Src/app_menu.c **** }
+ 245:Core/Src/app_menu.c **** 
+ 246:Core/Src/app_menu.c **** void APP_Menu_DefaultRender(const MenuNode_t *node)
+ 247:Core/Src/app_menu.c **** {
+ 248:Core/Src/app_menu.c ****   if (node == 0)
+ 249:Core/Src/app_menu.c ****   {
+ 250:Core/Src/app_menu.c ****     return;
+ 251:Core/Src/app_menu.c ****   }
+ 252:Core/Src/app_menu.c **** 
+ 253:Core/Src/app_menu.c ****   /* 行 0 显示当前菜单标题 */
+ 254:Core/Src/app_menu.c ****   BSP_Lcd_PrintLine(0, node->title);
+ 255:Core/Src/app_menu.c **** 
+ 256:Core/Src/app_menu.c ****   /* 默认先清理子行，防止页面切换残留 */
+ 257:Core/Src/app_menu.c ****   Menu_RenderBlankRows(1, 7);
+ 258:Core/Src/app_menu.c **** 
+ 259:Core/Src/app_menu.c ****   /* 如果是“串口设置 -> 波特率”节点，顺便在第 1 行显示当前波特率数值
+ 260:Core/Src/app_menu.c ****   if (node->id == MENU_ID_SETTING_UART_BAUD)
+ 261:Core/Src/app_menu.c ****   {
+ 262:Core/Src/app_menu.c ****     int32_t baud = 0;
+ 263:Core/Src/app_menu.c ****     if (APP_ParamDict_GetValue(PARAM_ID_UART_BAUDRATE, &baud))
+ 264:Core/Src/app_menu.c ****     {
+ 265:Core/Src/app_menu.c ****       char buf[32];
+ 266:Core/Src/app_menu.c ****       (void)snprintf(buf, sizeof(buf), "BAUD:%ld", (long)baud);
+ 267:Core/Src/app_menu.c ****       BSP_Lcd_PrintLine(1, buf);
+ 268:Core/Src/app_menu.c ****     }
+ 269:Core/Src/app_menu.c ****     return;
+ 270:Core/Src/app_menu.c ****   }
+ 271:Core/Src/app_menu.c **** 
+ 272:Core/Src/app_menu.c ****   if (node->id == MENU_ID_OPERATION_MODE)
+ 273:Core/Src/app_menu.c ****   {
+ 274:Core/Src/app_menu.c ****     int32_t mode = 0;
+ 275:Core/Src/app_menu.c ****     if (APP_ParamDict_GetValue(PARAM_ID_WORK_MODE, &mode))
+ 276:Core/Src/app_menu.c ****     {
+ 277:Core/Src/app_menu.c ****       char buf[32];
+ 278:Core/Src/app_menu.c ****       (void)snprintf(buf, sizeof(buf), "MODE:%ld", (long)mode);
+ 279:Core/Src/app_menu.c ****       BSP_Lcd_PrintLine(1, buf);
+ 280:Core/Src/app_menu.c ****     }
+ARM GAS  /tmp/ccc3Ih49.s 			page 9
+
+
+ 281:Core/Src/app_menu.c ****     return;
+ 282:Core/Src/app_menu.c ****   }
+ 283:Core/Src/app_menu.c **** 
+ 284:Core/Src/app_menu.c ****   if (node->id == MENU_ID_FUNCTION)
+ 285:Core/Src/app_menu.c ****   {
+ 286:Core/Src/app_menu.c ****     int32_t ip = 0;
+ 287:Core/Src/app_menu.c ****     int32_t et = 0, er = 0, vt = 0, vr = 0;
+ 288:Core/Src/app_menu.c ****     int32_t bat = 0, tmp = 0, sat = 0, fan = 0;
+ 289:Core/Src/app_menu.c ****     int32_t nb = 0, rssi = 0;
+ 290:Core/Src/app_menu.c **** 
+ 291:Core/Src/app_menu.c ****     (void)APP_ParamDict_GetValue(PARAM_ID_NET_IP_ADDR, &ip);
+ 292:Core/Src/app_menu.c ****     (void)APP_ParamDict_GetValue(PARAM_ID_ETH_TX_CNT, &et);
+ 293:Core/Src/app_menu.c ****     (void)APP_ParamDict_GetValue(PARAM_ID_ETH_RX_CNT, &er);
+ 294:Core/Src/app_menu.c ****     (void)APP_ParamDict_GetValue(PARAM_ID_VOICE_TX_CNT, &vt);
+ 295:Core/Src/app_menu.c ****     (void)APP_ParamDict_GetValue(PARAM_ID_VOICE_RX_CNT, &vr);
+ 296:Core/Src/app_menu.c ****     (void)APP_ParamDict_GetValue(PARAM_ID_BATTERY_CAP, &bat);
+ 297:Core/Src/app_menu.c ****     (void)APP_ParamDict_GetValue(PARAM_ID_ENV_TEMPERATURE, &tmp);
+ 298:Core/Src/app_menu.c ****     (void)APP_ParamDict_GetValue(PARAM_ID_SAT_LOCK, &sat);
+ 299:Core/Src/app_menu.c ****     (void)APP_ParamDict_GetValue(PARAM_ID_FAN_STATE, &fan);
+ 300:Core/Src/app_menu.c ****     (void)APP_ParamDict_GetValue(PARAM_ID_NEIGHBOR_COUNT, &nb);
+ 301:Core/Src/app_menu.c ****     (void)APP_ParamDict_GetValue(PARAM_ID_NEIGHBOR_RSSI, &rssi);
+ 302:Core/Src/app_menu.c **** 
+ 303:Core/Src/app_menu.c ****     {
+ 304:Core/Src/app_menu.c ****       uint32_t ipu = (uint32_t)ip;
+ 305:Core/Src/app_menu.c ****       char buf[32];
+ 306:Core/Src/app_menu.c ****       (void)snprintf(buf, sizeof(buf), "IP:%lu.%lu.%lu.%lu",
+ 307:Core/Src/app_menu.c ****                      (unsigned long)((ipu >> 24) & 0xFFu),
+ 308:Core/Src/app_menu.c ****                      (unsigned long)((ipu >> 16) & 0xFFu),
+ 309:Core/Src/app_menu.c ****                      (unsigned long)((ipu >> 8) & 0xFFu),
+ 310:Core/Src/app_menu.c ****                      (unsigned long)(ipu & 0xFFu));
+ 311:Core/Src/app_menu.c ****       BSP_Lcd_PrintLine(1, buf);
+ 312:Core/Src/app_menu.c ****     }
+ 313:Core/Src/app_menu.c **** 
+ 314:Core/Src/app_menu.c ****     {
+ 315:Core/Src/app_menu.c ****       char buf[32];
+ 316:Core/Src/app_menu.c ****       (void)snprintf(buf, sizeof(buf), "ET:%ld ER:%ld", (long)et, (long)er);
+ 317:Core/Src/app_menu.c ****       BSP_Lcd_PrintLine(2, buf);
+ 318:Core/Src/app_menu.c ****     }
+ 319:Core/Src/app_menu.c **** 
+ 320:Core/Src/app_menu.c ****     {
+ 321:Core/Src/app_menu.c ****       char buf[32];
+ 322:Core/Src/app_menu.c ****       (void)snprintf(buf, sizeof(buf), "VT:%ld VR:%ld", (long)vt, (long)vr);
+ 323:Core/Src/app_menu.c ****       BSP_Lcd_PrintLine(3, buf);
+ 324:Core/Src/app_menu.c ****     }
+ 325:Core/Src/app_menu.c **** 
+ 326:Core/Src/app_menu.c ****     {
+ 327:Core/Src/app_menu.c ****       char buf[32];
+ 328:Core/Src/app_menu.c ****       long t10 = (long)tmp;
+ 329:Core/Src/app_menu.c ****       char sign = (t10 < 0) ? '-' : '+';
+ 330:Core/Src/app_menu.c ****       if (t10 < 0)
+ 331:Core/Src/app_menu.c ****       {
+ 332:Core/Src/app_menu.c ****         t10 = -t10;
+ 333:Core/Src/app_menu.c ****       }
+ 334:Core/Src/app_menu.c ****       (void)snprintf(buf, sizeof(buf), "BAT:%ld T:%c%ld.%ld", (long)bat, sign, t10 / 10, t10 % 10);
+ 335:Core/Src/app_menu.c ****       BSP_Lcd_PrintLine(4, buf);
+ 336:Core/Src/app_menu.c ****     }
+ 337:Core/Src/app_menu.c **** 
+ARM GAS  /tmp/ccc3Ih49.s 			page 10
+
+
+ 338:Core/Src/app_menu.c ****     {
+ 339:Core/Src/app_menu.c ****       char buf[32];
+ 340:Core/Src/app_menu.c ****       (void)snprintf(buf, sizeof(buf), "SAT:%ld FAN:%ld", (long)sat, (long)fan);
+ 341:Core/Src/app_menu.c ****       BSP_Lcd_PrintLine(5, buf);
+ 342:Core/Src/app_menu.c ****     }
+ 343:Core/Src/app_menu.c **** 
+ 344:Core/Src/app_menu.c ****     {
+ 345:Core/Src/app_menu.c ****       char buf[32];
+ 346:Core/Src/app_menu.c ****       (void)snprintf(buf, sizeof(buf), "NB:%ld RSSI:%ld", (long)nb, (long)rssi);
+ 347:Core/Src/app_menu.c ****       BSP_Lcd_PrintLine(6, buf);
+ 348:Core/Src/app_menu.c ****     }
+ 349:Core/Src/app_menu.c **** 
+ 350:Core/Src/app_menu.c ****     {
+ 351:Core/Src/app_menu.c ****       int32_t mode = 0;
+ 352:Core/Src/app_menu.c ****       (void)APP_ParamDict_GetValue(PARAM_ID_WORK_MODE, &mode);
+ 353:Core/Src/app_menu.c ****       char buf[24];
+ 354:Core/Src/app_menu.c ****       (void)snprintf(buf, sizeof(buf), "MODE:%ld", (long)mode);
+ 355:Core/Src/app_menu.c ****       BSP_Lcd_PrintLine(7, buf);
+ 356:Core/Src/app_menu.c ****     }
+ 357:Core/Src/app_menu.c ****     return;
+ 358:Core/Src/app_menu.c ****   }
+ 359:Core/Src/app_menu.c **** }
+ 360:Core/Src/app_menu.c **** 
+ 361:Core/Src/app_menu.c **** /* 工作模式编辑逻辑示例：
+ 362:Core/Src/app_menu.c ****  * - 在“操作模式设置”菜单下，UP/DOWN 在 0~3 范围内切换
+ 363:Core/Src/app_menu.c ****  * - OK / BACK 不拦截，交给默认导航
+ 364:Core/Src/app_menu.c ****  */
+ 365:Core/Src/app_menu.c **** static int MenuKeyHandler_WorkMode(MenuKey_t key)
+ 366:Core/Src/app_menu.c **** {
+ 367:Core/Src/app_menu.c ****   int32_t current = 0;
+ 368:Core/Src/app_menu.c ****   if (!APP_ParamDict_GetValue(PARAM_ID_WORK_MODE, &current))
+ 369:Core/Src/app_menu.c ****   {
+ 370:Core/Src/app_menu.c ****     return 0;
+ 371:Core/Src/app_menu.c ****   }
+ 372:Core/Src/app_menu.c **** 
+ 373:Core/Src/app_menu.c ****   if (key == MENU_KEY_UP)
+ 374:Core/Src/app_menu.c ****   {
+ 375:Core/Src/app_menu.c ****     if (current > 0)
+ 376:Core/Src/app_menu.c ****     {
+ 377:Core/Src/app_menu.c ****       (void)APP_ParamDict_TrySetValue(PARAM_ID_WORK_MODE, current - 1);
+ 378:Core/Src/app_menu.c ****     }
+ 379:Core/Src/app_menu.c ****     return 1;
+ 380:Core/Src/app_menu.c ****   }
+ 381:Core/Src/app_menu.c **** 
+ 382:Core/Src/app_menu.c ****   if (key == MENU_KEY_DOWN)
+ 383:Core/Src/app_menu.c ****   {
+ 384:Core/Src/app_menu.c ****     if (current < 3)
+ 385:Core/Src/app_menu.c ****     {
+ 386:Core/Src/app_menu.c ****       (void)APP_ParamDict_TrySetValue(PARAM_ID_WORK_MODE, current + 1);
+ 387:Core/Src/app_menu.c ****     }
+ 388:Core/Src/app_menu.c ****     return 1;
+ 389:Core/Src/app_menu.c ****   }
+ 390:Core/Src/app_menu.c **** 
+ 391:Core/Src/app_menu.c ****   return 0;
+ 392:Core/Src/app_menu.c **** }
+ 393:Core/Src/app_menu.c **** 
+ 394:Core/Src/app_menu.c **** /* 串口波特率编辑逻辑示例：
+ARM GAS  /tmp/ccc3Ih49.s 			page 11
+
+
+ 395:Core/Src/app_menu.c ****  * - 在“波特率”菜单下，UP/DOWN 用于在几个常见波特率间切换
+ 396:Core/Src/app_menu.c ****  * - OK / BACK 目前不做特殊处理，返回 0 让默認導航生效
+ 397:Core/Src/app_menu.c ****  */
+ 398:Core/Src/app_menu.c **** static int MenuKeyHandler_UartBaud(MenuKey_t key)
+ 399:Core/Src/app_menu.c **** {
+ 167              		.loc 1 399 1 is_stmt 1 view -0
+ 168              		.cfi_startproc
+ 169              		@ args = 0, pretend = 0, frame = 8
+ 170              		@ frame_needed = 0, uses_anonymous_args = 0
+ 171              		.loc 1 399 1 is_stmt 0 view .LVU48
+ 172 0000 10B5     		push	{r4, lr}
+ 173              	.LCFI1:
+ 174              		.cfi_def_cfa_offset 8
+ 175              		.cfi_offset 4, -8
+ 176              		.cfi_offset 14, -4
+ 177 0002 82B0     		sub	sp, sp, #8
+ 178              	.LCFI2:
+ 179              		.cfi_def_cfa_offset 16
+ 180 0004 0446     		mov	r4, r0
+ 400:Core/Src/app_menu.c ****   int32_t current = 0;
+ 181              		.loc 1 400 3 is_stmt 1 view .LVU49
+ 182              		.loc 1 400 11 is_stmt 0 view .LVU50
+ 183 0006 0023     		movs	r3, #0
+ 184 0008 0193     		str	r3, [sp, #4]
+ 401:Core/Src/app_menu.c ****   if (!APP_ParamDict_GetValue(PARAM_ID_UART_BAUDRATE, &current))
+ 185              		.loc 1 401 3 is_stmt 1 view .LVU51
+ 186              		.loc 1 401 8 is_stmt 0 view .LVU52
+ 187 000a 01A9     		add	r1, sp, #4
+ 188 000c 0320     		movs	r0, #3
+ 189              	.LVL8:
+ 190              		.loc 1 401 8 view .LVU53
+ 191 000e FFF7FEFF 		bl	APP_ParamDict_GetValue
+ 192              	.LVL9:
+ 193              		.loc 1 401 6 view .LVU54
+ 194 0012 D0B1     		cbz	r0, .L16
+ 195              	.LBB3:
+ 402:Core/Src/app_menu.c ****   {
+ 403:Core/Src/app_menu.c ****     return 0;
+ 404:Core/Src/app_menu.c ****   }
+ 405:Core/Src/app_menu.c **** 
+ 406:Core/Src/app_menu.c ****   /* 常见波特率表 */
+ 407:Core/Src/app_menu.c ****   static const int32_t baudList[] = {9600, 19200, 38400, 57600, 115200, 230400};
+ 408:Core/Src/app_menu.c ****   const uint32_t baudCount = (uint32_t)(sizeof(baudList) / sizeof(baudList[0]));
+ 409:Core/Src/app_menu.c **** 
+ 410:Core/Src/app_menu.c ****   /* 找到当前所在索引 */
+ 411:Core/Src/app_menu.c ****   uint32_t index = 0U;
+ 412:Core/Src/app_menu.c ****   for (uint32_t i = 0U; i < baudCount; ++i)
+ 196              		.loc 1 412 17 view .LVU55
+ 197 0014 0023     		movs	r3, #0
+ 198              	.L17:
+ 199              	.LVL10:
+ 200              		.loc 1 412 25 is_stmt 1 discriminator 1 view .LVU56
+ 201              		.loc 1 412 3 is_stmt 0 discriminator 1 view .LVU57
+ 202 0016 052B     		cmp	r3, #5
+ 203 0018 07D8     		bhi	.L27
+ 413:Core/Src/app_menu.c ****   {
+ 414:Core/Src/app_menu.c ****     if (baudList[i] == current)
+ARM GAS  /tmp/ccc3Ih49.s 			page 12
+
+
+ 204              		.loc 1 414 5 is_stmt 1 view .LVU58
+ 205              		.loc 1 414 17 is_stmt 0 view .LVU59
+ 206 001a 0F4A     		ldr	r2, .L30
+ 207 001c 52F82310 		ldr	r1, [r2, r3, lsl #2]
+ 208              		.loc 1 414 21 view .LVU60
+ 209 0020 019A     		ldr	r2, [sp, #4]
+ 210              		.loc 1 414 8 view .LVU61
+ 211 0022 9142     		cmp	r1, r2
+ 212 0024 02D0     		beq	.L19
+ 412:Core/Src/app_menu.c ****   {
+ 213              		.loc 1 412 40 is_stmt 1 discriminator 2 view .LVU62
+ 214 0026 0133     		adds	r3, r3, #1
+ 215              	.LVL11:
+ 412:Core/Src/app_menu.c ****   {
+ 216              		.loc 1 412 40 is_stmt 0 discriminator 2 view .LVU63
+ 217 0028 F5E7     		b	.L17
+ 218              	.L27:
+ 412:Core/Src/app_menu.c ****   {
+ 219              		.loc 1 412 40 discriminator 2 view .LVU64
+ 220              	.LBE3:
+ 411:Core/Src/app_menu.c ****   for (uint32_t i = 0U; i < baudCount; ++i)
+ 221              		.loc 1 411 12 view .LVU65
+ 222 002a 0023     		movs	r3, #0
+ 223              	.LVL12:
+ 224              	.L19:
+ 415:Core/Src/app_menu.c ****     {
+ 416:Core/Src/app_menu.c ****       index = i;
+ 417:Core/Src/app_menu.c ****       break;
+ 418:Core/Src/app_menu.c ****     }
+ 419:Core/Src/app_menu.c ****   }
+ 420:Core/Src/app_menu.c **** 
+ 421:Core/Src/app_menu.c ****   int handled = 0;
+ 225              		.loc 1 421 3 is_stmt 1 view .LVU66
+ 422:Core/Src/app_menu.c **** 
+ 423:Core/Src/app_menu.c ****   if (key == MENU_KEY_UP)
+ 226              		.loc 1 423 3 view .LVU67
+ 227              		.loc 1 423 6 is_stmt 0 view .LVU68
+ 228 002c 012C     		cmp	r4, #1
+ 229 002e 03D0     		beq	.L28
+ 424:Core/Src/app_menu.c ****   {
+ 425:Core/Src/app_menu.c ****     if (index > 0U)
+ 426:Core/Src/app_menu.c ****     {
+ 427:Core/Src/app_menu.c ****       index--;
+ 428:Core/Src/app_menu.c ****     }
+ 429:Core/Src/app_menu.c ****     handled = 1;
+ 430:Core/Src/app_menu.c ****   }
+ 431:Core/Src/app_menu.c ****   else if (key == MENU_KEY_DOWN)
+ 230              		.loc 1 431 8 is_stmt 1 view .LVU69
+ 231              		.loc 1 431 11 is_stmt 0 view .LVU70
+ 232 0030 022C     		cmp	r4, #2
+ 233 0032 0CD0     		beq	.L29
+ 432:Core/Src/app_menu.c ****   {
+ 433:Core/Src/app_menu.c ****     if ((index + 1U) < baudCount)
+ 434:Core/Src/app_menu.c ****     {
+ 435:Core/Src/app_menu.c ****       index++;
+ 436:Core/Src/app_menu.c ****     }
+ 437:Core/Src/app_menu.c ****     handled = 1;
+ARM GAS  /tmp/ccc3Ih49.s 			page 13
+
+
+ 438:Core/Src/app_menu.c ****   }
+ 439:Core/Src/app_menu.c ****   else
+ 440:Core/Src/app_menu.c ****   {
+ 441:Core/Src/app_menu.c ****     /* 其他按鍵暫不攔截，交給默認導航（例如 BACK 返回上級） */
+ 442:Core/Src/app_menu.c ****     handled = 0;
+ 234              		.loc 1 442 13 view .LVU71
+ 235 0034 0020     		movs	r0, #0
+ 236              	.LVL13:
+ 237              		.loc 1 442 13 view .LVU72
+ 238 0036 08E0     		b	.L16
+ 239              	.LVL14:
+ 240              	.L28:
+ 425:Core/Src/app_menu.c ****     {
+ 241              		.loc 1 425 5 is_stmt 1 view .LVU73
+ 425:Core/Src/app_menu.c ****     {
+ 242              		.loc 1 425 8 is_stmt 0 view .LVU74
+ 243 0038 03B1     		cbz	r3, .L22
+ 427:Core/Src/app_menu.c ****     }
+ 244              		.loc 1 427 7 is_stmt 1 view .LVU75
+ 427:Core/Src/app_menu.c ****     }
+ 245              		.loc 1 427 12 is_stmt 0 view .LVU76
+ 246 003a 013B     		subs	r3, r3, #1
+ 247              	.LVL15:
+ 248              	.L22:
+ 443:Core/Src/app_menu.c ****   }
+ 444:Core/Src/app_menu.c **** 
+ 445:Core/Src/app_menu.c ****   if (handled != 0)
+ 446:Core/Src/app_menu.c ****   {
+ 447:Core/Src/app_menu.c ****     (void)APP_ParamDict_TrySetValue(PARAM_ID_UART_BAUDRATE, baudList[index]);
+ 249              		.loc 1 447 5 is_stmt 1 view .LVU77
+ 250              		.loc 1 447 11 is_stmt 0 view .LVU78
+ 251 003c 064A     		ldr	r2, .L30
+ 252 003e 52F82310 		ldr	r1, [r2, r3, lsl #2]
+ 253 0042 0320     		movs	r0, #3
+ 254 0044 FFF7FEFF 		bl	APP_ParamDict_TrySetValue
+ 255              	.LVL16:
+ 256 0048 0120     		movs	r0, #1
+ 257              	.L16:
+ 448:Core/Src/app_menu.c ****     /* 理論上此處還應觸發 UI 重繪當前數值，後續可在渲染函數中
+ 449:Core/Src/app_menu.c ****      * 根據 PARAM_ID_UART_BAUDRATE 的值展示具體數字。 */
+ 450:Core/Src/app_menu.c ****   }
+ 451:Core/Src/app_menu.c **** 
+ 452:Core/Src/app_menu.c ****   return handled;
+ 453:Core/Src/app_menu.c **** }
+ 258              		.loc 1 453 1 view .LVU79
+ 259 004a 02B0     		add	sp, sp, #8
+ 260              	.LCFI3:
+ 261              		.cfi_remember_state
+ 262              		.cfi_def_cfa_offset 8
+ 263              		@ sp needed
+ 264 004c 10BD     		pop	{r4, pc}
+ 265              	.LVL17:
+ 266              	.L29:
+ 267              	.LCFI4:
+ 268              		.cfi_restore_state
+ 433:Core/Src/app_menu.c ****     {
+ 269              		.loc 1 433 5 is_stmt 1 view .LVU80
+ARM GAS  /tmp/ccc3Ih49.s 			page 14
+
+
+ 433:Core/Src/app_menu.c ****     {
+ 270              		.loc 1 433 16 is_stmt 0 view .LVU81
+ 271 004e 5A1C     		adds	r2, r3, #1
+ 433:Core/Src/app_menu.c ****     {
+ 272              		.loc 1 433 8 view .LVU82
+ 273 0050 052A     		cmp	r2, #5
+ 274 0052 F3D8     		bhi	.L22
+ 435:Core/Src/app_menu.c ****     }
+ 275              		.loc 1 435 12 view .LVU83
+ 276 0054 1346     		mov	r3, r2
+ 277              	.LVL18:
+ 435:Core/Src/app_menu.c ****     }
+ 278              		.loc 1 435 12 view .LVU84
+ 279 0056 F1E7     		b	.L22
+ 280              	.L31:
+ 281              		.align	2
+ 282              	.L30:
+ 283 0058 00000000 		.word	.LANCHOR1
+ 284              		.cfi_endproc
+ 285              	.LFE11:
+ 287              		.section	.text.MenuKeyHandler_WorkMode,"ax",%progbits
+ 288              		.align	1
+ 289              		.syntax unified
+ 290              		.thumb
+ 291              		.thumb_func
+ 292              		.fpu softvfp
+ 294              	MenuKeyHandler_WorkMode:
+ 295              	.LVL19:
+ 296              	.LFB10:
+ 366:Core/Src/app_menu.c ****   int32_t current = 0;
+ 297              		.loc 1 366 1 is_stmt 1 view -0
+ 298              		.cfi_startproc
+ 299              		@ args = 0, pretend = 0, frame = 8
+ 300              		@ frame_needed = 0, uses_anonymous_args = 0
+ 366:Core/Src/app_menu.c ****   int32_t current = 0;
+ 301              		.loc 1 366 1 is_stmt 0 view .LVU86
+ 302 0000 10B5     		push	{r4, lr}
+ 303              	.LCFI5:
+ 304              		.cfi_def_cfa_offset 8
+ 305              		.cfi_offset 4, -8
+ 306              		.cfi_offset 14, -4
+ 307 0002 82B0     		sub	sp, sp, #8
+ 308              	.LCFI6:
+ 309              		.cfi_def_cfa_offset 16
+ 310 0004 0446     		mov	r4, r0
+ 367:Core/Src/app_menu.c ****   if (!APP_ParamDict_GetValue(PARAM_ID_WORK_MODE, &current))
+ 311              		.loc 1 367 3 is_stmt 1 view .LVU87
+ 367:Core/Src/app_menu.c ****   if (!APP_ParamDict_GetValue(PARAM_ID_WORK_MODE, &current))
+ 312              		.loc 1 367 11 is_stmt 0 view .LVU88
+ 313 0006 0023     		movs	r3, #0
+ 314 0008 0193     		str	r3, [sp, #4]
+ 368:Core/Src/app_menu.c ****   {
+ 315              		.loc 1 368 3 is_stmt 1 view .LVU89
+ 368:Core/Src/app_menu.c ****   {
+ 316              		.loc 1 368 8 is_stmt 0 view .LVU90
+ 317 000a 01A9     		add	r1, sp, #4
+ 318 000c 0120     		movs	r0, #1
+ARM GAS  /tmp/ccc3Ih49.s 			page 15
+
+
+ 319              	.LVL20:
+ 368:Core/Src/app_menu.c ****   {
+ 320              		.loc 1 368 8 view .LVU91
+ 321 000e FFF7FEFF 		bl	APP_ParamDict_GetValue
+ 322              	.LVL21:
+ 368:Core/Src/app_menu.c ****   {
+ 323              		.loc 1 368 6 view .LVU92
+ 324 0012 D0B1     		cbz	r0, .L37
+ 373:Core/Src/app_menu.c ****   {
+ 325              		.loc 1 373 3 is_stmt 1 view .LVU93
+ 373:Core/Src/app_menu.c ****   {
+ 326              		.loc 1 373 6 is_stmt 0 view .LVU94
+ 327 0014 012C     		cmp	r4, #1
+ 328 0016 04D0     		beq	.L40
+ 382:Core/Src/app_menu.c ****   {
+ 329              		.loc 1 382 3 is_stmt 1 view .LVU95
+ 382:Core/Src/app_menu.c ****   {
+ 330              		.loc 1 382 6 is_stmt 0 view .LVU96
+ 331 0018 022C     		cmp	r4, #2
+ 332 001a 0CD0     		beq	.L41
+ 391:Core/Src/app_menu.c **** }
+ 333              		.loc 1 391 10 view .LVU97
+ 334 001c 0020     		movs	r0, #0
+ 335              	.L32:
+ 392:Core/Src/app_menu.c **** 
+ 336              		.loc 1 392 1 view .LVU98
+ 337 001e 02B0     		add	sp, sp, #8
+ 338              	.LCFI7:
+ 339              		.cfi_remember_state
+ 340              		.cfi_def_cfa_offset 8
+ 341              		@ sp needed
+ 342 0020 10BD     		pop	{r4, pc}
+ 343              	.L40:
+ 344              	.LCFI8:
+ 345              		.cfi_restore_state
+ 375:Core/Src/app_menu.c ****     {
+ 346              		.loc 1 375 5 is_stmt 1 view .LVU99
+ 375:Core/Src/app_menu.c ****     {
+ 347              		.loc 1 375 17 is_stmt 0 view .LVU100
+ 348 0022 0199     		ldr	r1, [sp, #4]
+ 375:Core/Src/app_menu.c ****     {
+ 349              		.loc 1 375 8 view .LVU101
+ 350 0024 0029     		cmp	r1, #0
+ 351 0026 01DC     		bgt	.L42
+ 352              	.L35:
+ 379:Core/Src/app_menu.c ****   }
+ 353              		.loc 1 379 5 is_stmt 1 view .LVU102
+ 379:Core/Src/app_menu.c ****   }
+ 354              		.loc 1 379 12 is_stmt 0 view .LVU103
+ 355 0028 0120     		movs	r0, #1
+ 356 002a F8E7     		b	.L32
+ 357              	.L42:
+ 377:Core/Src/app_menu.c ****     }
+ 358              		.loc 1 377 7 is_stmt 1 view .LVU104
+ 377:Core/Src/app_menu.c ****     }
+ 359              		.loc 1 377 13 is_stmt 0 view .LVU105
+ 360 002c 0139     		subs	r1, r1, #1
+ARM GAS  /tmp/ccc3Ih49.s 			page 16
+
+
+ 361 002e 0120     		movs	r0, #1
+ 362 0030 FFF7FEFF 		bl	APP_ParamDict_TrySetValue
+ 363              	.LVL22:
+ 364 0034 F8E7     		b	.L35
+ 365              	.L41:
+ 384:Core/Src/app_menu.c ****     {
+ 366              		.loc 1 384 5 is_stmt 1 view .LVU106
+ 384:Core/Src/app_menu.c ****     {
+ 367              		.loc 1 384 17 is_stmt 0 view .LVU107
+ 368 0036 0199     		ldr	r1, [sp, #4]
+ 384:Core/Src/app_menu.c ****     {
+ 369              		.loc 1 384 8 view .LVU108
+ 370 0038 0229     		cmp	r1, #2
+ 371 003a 01DD     		ble	.L43
+ 372              	.L36:
+ 388:Core/Src/app_menu.c ****   }
+ 373              		.loc 1 388 5 is_stmt 1 view .LVU109
+ 388:Core/Src/app_menu.c ****   }
+ 374              		.loc 1 388 12 is_stmt 0 view .LVU110
+ 375 003c 0120     		movs	r0, #1
+ 376 003e EEE7     		b	.L32
+ 377              	.L43:
+ 386:Core/Src/app_menu.c ****     }
+ 378              		.loc 1 386 7 is_stmt 1 view .LVU111
+ 386:Core/Src/app_menu.c ****     }
+ 379              		.loc 1 386 13 is_stmt 0 view .LVU112
+ 380 0040 0131     		adds	r1, r1, #1
+ 381 0042 0120     		movs	r0, #1
+ 382 0044 FFF7FEFF 		bl	APP_ParamDict_TrySetValue
+ 383              	.LVL23:
+ 384 0048 F8E7     		b	.L36
+ 385              	.L37:
+ 370:Core/Src/app_menu.c ****   }
+ 386              		.loc 1 370 12 view .LVU113
+ 387 004a 0020     		movs	r0, #0
+ 388 004c E7E7     		b	.L32
+ 389              		.cfi_endproc
+ 390              	.LFE10:
+ 392              		.section	.rodata.Menu_RenderBlankRows.str1.4,"aMS",%progbits,1
+ 393              		.align	2
+ 394              	.LC0:
+ 395 0000 00       		.ascii	"\000"
+ 396              		.section	.text.Menu_RenderBlankRows,"ax",%progbits
+ 397              		.align	1
+ 398              		.syntax unified
+ 399              		.thumb
+ 400              		.thumb_func
+ 401              		.fpu softvfp
+ 403              	Menu_RenderBlankRows:
+ 404              	.LVL24:
+ 405              	.LFB3:
+  24:Core/Src/app_menu.c ****   for (uint8_t row = startRow; row <= endRow; ++row)
+ 406              		.loc 1 24 1 is_stmt 1 view -0
+ 407              		.cfi_startproc
+ 408              		@ args = 0, pretend = 0, frame = 0
+ 409              		@ frame_needed = 0, uses_anonymous_args = 0
+  24:Core/Src/app_menu.c ****   for (uint8_t row = startRow; row <= endRow; ++row)
+ARM GAS  /tmp/ccc3Ih49.s 			page 17
+
+
+ 410              		.loc 1 24 1 is_stmt 0 view .LVU115
+ 411 0000 38B5     		push	{r3, r4, r5, lr}
+ 412              	.LCFI9:
+ 413              		.cfi_def_cfa_offset 16
+ 414              		.cfi_offset 3, -16
+ 415              		.cfi_offset 4, -12
+ 416              		.cfi_offset 5, -8
+ 417              		.cfi_offset 14, -4
+ 418 0002 0446     		mov	r4, r0
+ 419 0004 0D46     		mov	r5, r1
+  25:Core/Src/app_menu.c ****   {
+ 420              		.loc 1 25 3 is_stmt 1 view .LVU116
+ 421              	.LBB4:
+  25:Core/Src/app_menu.c ****   {
+ 422              		.loc 1 25 8 view .LVU117
+ 423              	.LVL25:
+  25:Core/Src/app_menu.c ****   {
+ 424              		.loc 1 25 3 is_stmt 0 view .LVU118
+ 425 0006 05E0     		b	.L45
+ 426              	.LVL26:
+ 427              	.L46:
+  27:Core/Src/app_menu.c ****   }
+ 428              		.loc 1 27 5 is_stmt 1 discriminator 3 view .LVU119
+ 429 0008 0449     		ldr	r1, .L48
+ 430 000a 2046     		mov	r0, r4
+ 431 000c FFF7FEFF 		bl	BSP_Lcd_PrintLine
+ 432              	.LVL27:
+  25:Core/Src/app_menu.c ****   {
+ 433              		.loc 1 25 47 discriminator 3 view .LVU120
+ 434 0010 0134     		adds	r4, r4, #1
+ 435              	.LVL28:
+  25:Core/Src/app_menu.c ****   {
+ 436              		.loc 1 25 47 is_stmt 0 discriminator 3 view .LVU121
+ 437 0012 E4B2     		uxtb	r4, r4
+ 438              	.LVL29:
+ 439              	.L45:
+  25:Core/Src/app_menu.c ****   {
+ 440              		.loc 1 25 32 is_stmt 1 discriminator 1 view .LVU122
+  25:Core/Src/app_menu.c ****   {
+ 441              		.loc 1 25 3 is_stmt 0 discriminator 1 view .LVU123
+ 442 0014 AC42     		cmp	r4, r5
+ 443 0016 F7D9     		bls	.L46
+  25:Core/Src/app_menu.c ****   {
+ 444              		.loc 1 25 3 discriminator 1 view .LVU124
+ 445              	.LBE4:
+  29:Core/Src/app_menu.c **** 
+ 446              		.loc 1 29 1 view .LVU125
+ 447 0018 38BD     		pop	{r3, r4, r5, pc}
+ 448              	.LVL30:
+ 449              	.L49:
+  29:Core/Src/app_menu.c **** 
+ 450              		.loc 1 29 1 view .LVU126
+ 451 001a 00BF     		.align	2
+ 452              	.L48:
+ 453 001c 00000000 		.word	.LC0
+ 454              		.cfi_endproc
+ 455              	.LFE3:
+ARM GAS  /tmp/ccc3Ih49.s 			page 18
+
+
+ 457              		.section	.rodata.APP_Menu_DefaultRender.str1.4,"aMS",%progbits,1
+ 458              		.align	2
+ 459              	.LC1:
+ 460 0000 42415544 		.ascii	"BAUD:%ld\000"
+ 460      3A256C64 
+ 460      00
+ 461 0009 000000   		.align	2
+ 462              	.LC2:
+ 463 000c 4D4F4445 		.ascii	"MODE:%ld\000"
+ 463      3A256C64 
+ 463      00
+ 464 0015 000000   		.align	2
+ 465              	.LC3:
+ 466 0018 49503A25 		.ascii	"IP:%lu.%lu.%lu.%lu\000"
+ 466      6C752E25 
+ 466      6C752E25 
+ 466      6C752E25 
+ 466      6C7500
+ 467 002b 00       		.align	2
+ 468              	.LC4:
+ 469 002c 45543A25 		.ascii	"ET:%ld ER:%ld\000"
+ 469      6C642045 
+ 469      523A256C 
+ 469      6400
+ 470 003a 0000     		.align	2
+ 471              	.LC5:
+ 472 003c 56543A25 		.ascii	"VT:%ld VR:%ld\000"
+ 472      6C642056 
+ 472      523A256C 
+ 472      6400
+ 473 004a 0000     		.align	2
+ 474              	.LC6:
+ 475 004c 4241543A 		.ascii	"BAT:%ld T:%c%ld.%ld\000"
+ 475      256C6420 
+ 475      543A2563 
+ 475      256C642E 
+ 475      256C6400 
+ 476              		.align	2
+ 477              	.LC7:
+ 478 0060 5341543A 		.ascii	"SAT:%ld FAN:%ld\000"
+ 478      256C6420 
+ 478      46414E3A 
+ 478      256C6400 
+ 479              		.align	2
+ 480              	.LC8:
+ 481 0070 4E423A25 		.ascii	"NB:%ld RSSI:%ld\000"
+ 481      6C642052 
+ 481      5353493A 
+ 481      256C6400 
+ 482              		.section	.text.APP_Menu_DefaultRender,"ax",%progbits
+ 483              		.align	1
+ 484              		.global	APP_Menu_DefaultRender
+ 485              		.syntax unified
+ 486              		.thumb
+ 487              		.thumb_func
+ 488              		.fpu softvfp
+ 490              	APP_Menu_DefaultRender:
+ARM GAS  /tmp/ccc3Ih49.s 			page 19
+
+
+ 491              	.LVL31:
+ 492              	.LFB9:
+ 247:Core/Src/app_menu.c ****   if (node == 0)
+ 493              		.loc 1 247 1 is_stmt 1 view -0
+ 494              		.cfi_startproc
+ 495              		@ args = 0, pretend = 0, frame = 80
+ 496              		@ frame_needed = 0, uses_anonymous_args = 0
+ 248:Core/Src/app_menu.c ****   {
+ 497              		.loc 1 248 3 view .LVU128
+ 248:Core/Src/app_menu.c ****   {
+ 498              		.loc 1 248 6 is_stmt 0 view .LVU129
+ 499 0000 0028     		cmp	r0, #0
+ 500 0002 00F0E780 		beq	.L60
+ 247:Core/Src/app_menu.c ****   if (node == 0)
+ 501              		.loc 1 247 1 view .LVU130
+ 502 0006 10B5     		push	{r4, lr}
+ 503              	.LCFI10:
+ 504              		.cfi_def_cfa_offset 8
+ 505              		.cfi_offset 4, -8
+ 506              		.cfi_offset 14, -4
+ 507 0008 98B0     		sub	sp, sp, #96
+ 508              	.LCFI11:
+ 509              		.cfi_def_cfa_offset 104
+ 510 000a 0446     		mov	r4, r0
+ 254:Core/Src/app_menu.c **** 
+ 511              		.loc 1 254 3 is_stmt 1 view .LVU131
+ 512 000c 4168     		ldr	r1, [r0, #4]
+ 513 000e 0020     		movs	r0, #0
+ 514              	.LVL32:
+ 254:Core/Src/app_menu.c **** 
+ 515              		.loc 1 254 3 is_stmt 0 view .LVU132
+ 516 0010 FFF7FEFF 		bl	BSP_Lcd_PrintLine
+ 517              	.LVL33:
+ 257:Core/Src/app_menu.c **** 
+ 518              		.loc 1 257 3 is_stmt 1 view .LVU133
+ 519 0014 0721     		movs	r1, #7
+ 520 0016 0120     		movs	r0, #1
+ 521 0018 FFF7FEFF 		bl	Menu_RenderBlankRows
+ 522              	.LVL34:
+ 260:Core/Src/app_menu.c ****   {
+ 523              		.loc 1 260 3 view .LVU134
+ 260:Core/Src/app_menu.c ****   {
+ 524              		.loc 1 260 11 is_stmt 0 view .LVU135
+ 525 001c 2388     		ldrh	r3, [r4]
+ 260:Core/Src/app_menu.c ****   {
+ 526              		.loc 1 260 6 view .LVU136
+ 527 001e 082B     		cmp	r3, #8
+ 528 0020 05D0     		beq	.L63
+ 272:Core/Src/app_menu.c ****   {
+ 529              		.loc 1 272 3 is_stmt 1 view .LVU137
+ 272:Core/Src/app_menu.c ****   {
+ 530              		.loc 1 272 6 is_stmt 0 view .LVU138
+ 531 0022 042B     		cmp	r3, #4
+ 532 0024 16D0     		beq	.L64
+ 284:Core/Src/app_menu.c ****   {
+ 533              		.loc 1 284 3 is_stmt 1 view .LVU139
+ 284:Core/Src/app_menu.c ****   {
+ARM GAS  /tmp/ccc3Ih49.s 			page 20
+
+
+ 534              		.loc 1 284 6 is_stmt 0 view .LVU140
+ 535 0026 022B     		cmp	r3, #2
+ 536 0028 27D0     		beq	.L65
+ 537              	.L50:
+ 359:Core/Src/app_menu.c **** 
+ 538              		.loc 1 359 1 view .LVU141
+ 539 002a 18B0     		add	sp, sp, #96
+ 540              	.LCFI12:
+ 541              		.cfi_remember_state
+ 542              		.cfi_def_cfa_offset 8
+ 543              		@ sp needed
+ 544 002c 10BD     		pop	{r4, pc}
+ 545              	.LVL35:
+ 546              	.L63:
+ 547              	.LCFI13:
+ 548              		.cfi_restore_state
+ 549              	.LBB5:
+ 262:Core/Src/app_menu.c ****     if (APP_ParamDict_GetValue(PARAM_ID_UART_BAUDRATE, &baud))
+ 550              		.loc 1 262 5 is_stmt 1 view .LVU142
+ 262:Core/Src/app_menu.c ****     if (APP_ParamDict_GetValue(PARAM_ID_UART_BAUDRATE, &baud))
+ 551              		.loc 1 262 13 is_stmt 0 view .LVU143
+ 552 002e 0023     		movs	r3, #0
+ 553 0030 0F93     		str	r3, [sp, #60]
+ 263:Core/Src/app_menu.c ****     {
+ 554              		.loc 1 263 5 is_stmt 1 view .LVU144
+ 263:Core/Src/app_menu.c ****     {
+ 555              		.loc 1 263 9 is_stmt 0 view .LVU145
+ 556 0032 0FA9     		add	r1, sp, #60
+ 557 0034 0320     		movs	r0, #3
+ 558 0036 FFF7FEFF 		bl	APP_ParamDict_GetValue
+ 559              	.LVL36:
+ 263:Core/Src/app_menu.c ****     {
+ 560              		.loc 1 263 8 view .LVU146
+ 561 003a 0028     		cmp	r0, #0
+ 562 003c F5D0     		beq	.L50
+ 563              	.LBB6:
+ 265:Core/Src/app_menu.c ****       (void)snprintf(buf, sizeof(buf), "BAUD:%ld", (long)baud);
+ 564              		.loc 1 265 7 is_stmt 1 view .LVU147
+ 266:Core/Src/app_menu.c ****       BSP_Lcd_PrintLine(1, buf);
+ 565              		.loc 1 266 7 view .LVU148
+ 266:Core/Src/app_menu.c ****       BSP_Lcd_PrintLine(1, buf);
+ 566              		.loc 1 266 13 is_stmt 0 view .LVU149
+ 567 003e 0F9B     		ldr	r3, [sp, #60]
+ 568 0040 654A     		ldr	r2, .L68
+ 569 0042 2021     		movs	r1, #32
+ 570 0044 10A8     		add	r0, sp, #64
+ 571 0046 FFF7FEFF 		bl	snprintf
+ 572              	.LVL37:
+ 267:Core/Src/app_menu.c ****     }
+ 573              		.loc 1 267 7 is_stmt 1 view .LVU150
+ 574 004a 10A9     		add	r1, sp, #64
+ 575 004c 0120     		movs	r0, #1
+ 576 004e FFF7FEFF 		bl	BSP_Lcd_PrintLine
+ 577              	.LVL38:
+ 578              	.LBE6:
+ 269:Core/Src/app_menu.c ****   }
+ 579              		.loc 1 269 5 view .LVU151
+ARM GAS  /tmp/ccc3Ih49.s 			page 21
+
+
+ 580 0052 EAE7     		b	.L50
+ 581              	.L64:
+ 582              	.LBE5:
+ 583              	.LBB7:
+ 274:Core/Src/app_menu.c ****     if (APP_ParamDict_GetValue(PARAM_ID_WORK_MODE, &mode))
+ 584              		.loc 1 274 5 view .LVU152
+ 274:Core/Src/app_menu.c ****     if (APP_ParamDict_GetValue(PARAM_ID_WORK_MODE, &mode))
+ 585              		.loc 1 274 13 is_stmt 0 view .LVU153
+ 586 0054 0023     		movs	r3, #0
+ 587 0056 0F93     		str	r3, [sp, #60]
+ 275:Core/Src/app_menu.c ****     {
+ 588              		.loc 1 275 5 is_stmt 1 view .LVU154
+ 275:Core/Src/app_menu.c ****     {
+ 589              		.loc 1 275 9 is_stmt 0 view .LVU155
+ 590 0058 0FA9     		add	r1, sp, #60
+ 591 005a 0120     		movs	r0, #1
+ 592 005c FFF7FEFF 		bl	APP_ParamDict_GetValue
+ 593              	.LVL39:
+ 275:Core/Src/app_menu.c ****     {
+ 594              		.loc 1 275 8 view .LVU156
+ 595 0060 0028     		cmp	r0, #0
+ 596 0062 E2D0     		beq	.L50
+ 597              	.LBB8:
+ 277:Core/Src/app_menu.c ****       (void)snprintf(buf, sizeof(buf), "MODE:%ld", (long)mode);
+ 598              		.loc 1 277 7 is_stmt 1 view .LVU157
+ 278:Core/Src/app_menu.c ****       BSP_Lcd_PrintLine(1, buf);
+ 599              		.loc 1 278 7 view .LVU158
+ 278:Core/Src/app_menu.c ****       BSP_Lcd_PrintLine(1, buf);
+ 600              		.loc 1 278 13 is_stmt 0 view .LVU159
+ 601 0064 0F9B     		ldr	r3, [sp, #60]
+ 602 0066 5D4A     		ldr	r2, .L68+4
+ 603 0068 2021     		movs	r1, #32
+ 604 006a 10A8     		add	r0, sp, #64
+ 605 006c FFF7FEFF 		bl	snprintf
+ 606              	.LVL40:
+ 279:Core/Src/app_menu.c ****     }
+ 607              		.loc 1 279 7 is_stmt 1 view .LVU160
+ 608 0070 10A9     		add	r1, sp, #64
+ 609 0072 0120     		movs	r0, #1
+ 610 0074 FFF7FEFF 		bl	BSP_Lcd_PrintLine
+ 611              	.LVL41:
+ 612              	.LBE8:
+ 281:Core/Src/app_menu.c ****   }
+ 613              		.loc 1 281 5 view .LVU161
+ 614 0078 D7E7     		b	.L50
+ 615              	.L65:
+ 616              	.LBE7:
+ 617              	.LBB9:
+ 286:Core/Src/app_menu.c ****     int32_t et = 0, er = 0, vt = 0, vr = 0;
+ 618              		.loc 1 286 5 view .LVU162
+ 286:Core/Src/app_menu.c ****     int32_t et = 0, er = 0, vt = 0, vr = 0;
+ 619              		.loc 1 286 13 is_stmt 0 view .LVU163
+ 620 007a 0023     		movs	r3, #0
+ 621 007c 0493     		str	r3, [sp, #16]
+ 287:Core/Src/app_menu.c ****     int32_t bat = 0, tmp = 0, sat = 0, fan = 0;
+ 622              		.loc 1 287 5 is_stmt 1 view .LVU164
+ 287:Core/Src/app_menu.c ****     int32_t bat = 0, tmp = 0, sat = 0, fan = 0;
+ARM GAS  /tmp/ccc3Ih49.s 			page 22
+
+
+ 623              		.loc 1 287 13 is_stmt 0 view .LVU165
+ 624 007e 0593     		str	r3, [sp, #20]
+ 287:Core/Src/app_menu.c ****     int32_t bat = 0, tmp = 0, sat = 0, fan = 0;
+ 625              		.loc 1 287 21 view .LVU166
+ 626 0080 0693     		str	r3, [sp, #24]
+ 287:Core/Src/app_menu.c ****     int32_t bat = 0, tmp = 0, sat = 0, fan = 0;
+ 627              		.loc 1 287 29 view .LVU167
+ 628 0082 0793     		str	r3, [sp, #28]
+ 287:Core/Src/app_menu.c ****     int32_t bat = 0, tmp = 0, sat = 0, fan = 0;
+ 629              		.loc 1 287 37 view .LVU168
+ 630 0084 0893     		str	r3, [sp, #32]
+ 288:Core/Src/app_menu.c ****     int32_t nb = 0, rssi = 0;
+ 631              		.loc 1 288 5 is_stmt 1 view .LVU169
+ 288:Core/Src/app_menu.c ****     int32_t nb = 0, rssi = 0;
+ 632              		.loc 1 288 13 is_stmt 0 view .LVU170
+ 633 0086 0993     		str	r3, [sp, #36]
+ 288:Core/Src/app_menu.c ****     int32_t nb = 0, rssi = 0;
+ 634              		.loc 1 288 22 view .LVU171
+ 635 0088 0A93     		str	r3, [sp, #40]
+ 288:Core/Src/app_menu.c ****     int32_t nb = 0, rssi = 0;
+ 636              		.loc 1 288 31 view .LVU172
+ 637 008a 0B93     		str	r3, [sp, #44]
+ 288:Core/Src/app_menu.c ****     int32_t nb = 0, rssi = 0;
+ 638              		.loc 1 288 40 view .LVU173
+ 639 008c 0C93     		str	r3, [sp, #48]
+ 289:Core/Src/app_menu.c **** 
+ 640              		.loc 1 289 5 is_stmt 1 view .LVU174
+ 289:Core/Src/app_menu.c **** 
+ 641              		.loc 1 289 13 is_stmt 0 view .LVU175
+ 642 008e 0D93     		str	r3, [sp, #52]
+ 289:Core/Src/app_menu.c **** 
+ 643              		.loc 1 289 21 view .LVU176
+ 644 0090 0E93     		str	r3, [sp, #56]
+ 291:Core/Src/app_menu.c ****     (void)APP_ParamDict_GetValue(PARAM_ID_ETH_TX_CNT, &et);
+ 645              		.loc 1 291 5 is_stmt 1 view .LVU177
+ 291:Core/Src/app_menu.c ****     (void)APP_ParamDict_GetValue(PARAM_ID_ETH_TX_CNT, &et);
+ 646              		.loc 1 291 11 is_stmt 0 view .LVU178
+ 647 0092 04A9     		add	r1, sp, #16
+ 648 0094 0220     		movs	r0, #2
+ 649 0096 FFF7FEFF 		bl	APP_ParamDict_GetValue
+ 650              	.LVL42:
+ 292:Core/Src/app_menu.c ****     (void)APP_ParamDict_GetValue(PARAM_ID_ETH_RX_CNT, &er);
+ 651              		.loc 1 292 5 is_stmt 1 view .LVU179
+ 292:Core/Src/app_menu.c ****     (void)APP_ParamDict_GetValue(PARAM_ID_ETH_RX_CNT, &er);
+ 652              		.loc 1 292 11 is_stmt 0 view .LVU180
+ 653 009a 05A9     		add	r1, sp, #20
+ 654 009c 1E20     		movs	r0, #30
+ 655 009e FFF7FEFF 		bl	APP_ParamDict_GetValue
+ 656              	.LVL43:
+ 293:Core/Src/app_menu.c ****     (void)APP_ParamDict_GetValue(PARAM_ID_VOICE_TX_CNT, &vt);
+ 657              		.loc 1 293 5 is_stmt 1 view .LVU181
+ 293:Core/Src/app_menu.c ****     (void)APP_ParamDict_GetValue(PARAM_ID_VOICE_TX_CNT, &vt);
+ 658              		.loc 1 293 11 is_stmt 0 view .LVU182
+ 659 00a2 06A9     		add	r1, sp, #24
+ 660 00a4 1F20     		movs	r0, #31
+ 661 00a6 FFF7FEFF 		bl	APP_ParamDict_GetValue
+ 662              	.LVL44:
+ARM GAS  /tmp/ccc3Ih49.s 			page 23
+
+
+ 294:Core/Src/app_menu.c ****     (void)APP_ParamDict_GetValue(PARAM_ID_VOICE_RX_CNT, &vr);
+ 663              		.loc 1 294 5 is_stmt 1 view .LVU183
+ 294:Core/Src/app_menu.c ****     (void)APP_ParamDict_GetValue(PARAM_ID_VOICE_RX_CNT, &vr);
+ 664              		.loc 1 294 11 is_stmt 0 view .LVU184
+ 665 00aa 07A9     		add	r1, sp, #28
+ 666 00ac 2020     		movs	r0, #32
+ 667 00ae FFF7FEFF 		bl	APP_ParamDict_GetValue
+ 668              	.LVL45:
+ 295:Core/Src/app_menu.c ****     (void)APP_ParamDict_GetValue(PARAM_ID_BATTERY_CAP, &bat);
+ 669              		.loc 1 295 5 is_stmt 1 view .LVU185
+ 295:Core/Src/app_menu.c ****     (void)APP_ParamDict_GetValue(PARAM_ID_BATTERY_CAP, &bat);
+ 670              		.loc 1 295 11 is_stmt 0 view .LVU186
+ 671 00b2 08A9     		add	r1, sp, #32
+ 672 00b4 2120     		movs	r0, #33
+ 673 00b6 FFF7FEFF 		bl	APP_ParamDict_GetValue
+ 674              	.LVL46:
+ 296:Core/Src/app_menu.c ****     (void)APP_ParamDict_GetValue(PARAM_ID_ENV_TEMPERATURE, &tmp);
+ 675              		.loc 1 296 5 is_stmt 1 view .LVU187
+ 296:Core/Src/app_menu.c ****     (void)APP_ParamDict_GetValue(PARAM_ID_ENV_TEMPERATURE, &tmp);
+ 676              		.loc 1 296 11 is_stmt 0 view .LVU188
+ 677 00ba 09A9     		add	r1, sp, #36
+ 678 00bc 2820     		movs	r0, #40
+ 679 00be FFF7FEFF 		bl	APP_ParamDict_GetValue
+ 680              	.LVL47:
+ 297:Core/Src/app_menu.c ****     (void)APP_ParamDict_GetValue(PARAM_ID_SAT_LOCK, &sat);
+ 681              		.loc 1 297 5 is_stmt 1 view .LVU189
+ 297:Core/Src/app_menu.c ****     (void)APP_ParamDict_GetValue(PARAM_ID_SAT_LOCK, &sat);
+ 682              		.loc 1 297 11 is_stmt 0 view .LVU190
+ 683 00c2 0AA9     		add	r1, sp, #40
+ 684 00c4 0420     		movs	r0, #4
+ 685 00c6 FFF7FEFF 		bl	APP_ParamDict_GetValue
+ 686              	.LVL48:
+ 298:Core/Src/app_menu.c ****     (void)APP_ParamDict_GetValue(PARAM_ID_FAN_STATE, &fan);
+ 687              		.loc 1 298 5 is_stmt 1 view .LVU191
+ 298:Core/Src/app_menu.c ****     (void)APP_ParamDict_GetValue(PARAM_ID_FAN_STATE, &fan);
+ 688              		.loc 1 298 11 is_stmt 0 view .LVU192
+ 689 00ca 0BA9     		add	r1, sp, #44
+ 690 00cc 1720     		movs	r0, #23
+ 691 00ce FFF7FEFF 		bl	APP_ParamDict_GetValue
+ 692              	.LVL49:
+ 299:Core/Src/app_menu.c ****     (void)APP_ParamDict_GetValue(PARAM_ID_NEIGHBOR_COUNT, &nb);
+ 693              		.loc 1 299 5 is_stmt 1 view .LVU193
+ 299:Core/Src/app_menu.c ****     (void)APP_ParamDict_GetValue(PARAM_ID_NEIGHBOR_COUNT, &nb);
+ 694              		.loc 1 299 11 is_stmt 0 view .LVU194
+ 695 00d2 0CA9     		add	r1, sp, #48
+ 696 00d4 2920     		movs	r0, #41
+ 697 00d6 FFF7FEFF 		bl	APP_ParamDict_GetValue
+ 698              	.LVL50:
+ 300:Core/Src/app_menu.c ****     (void)APP_ParamDict_GetValue(PARAM_ID_NEIGHBOR_RSSI, &rssi);
+ 699              		.loc 1 300 5 is_stmt 1 view .LVU195
+ 300:Core/Src/app_menu.c ****     (void)APP_ParamDict_GetValue(PARAM_ID_NEIGHBOR_RSSI, &rssi);
+ 700              		.loc 1 300 11 is_stmt 0 view .LVU196
+ 701 00da 0DA9     		add	r1, sp, #52
+ 702 00dc 3220     		movs	r0, #50
+ 703 00de FFF7FEFF 		bl	APP_ParamDict_GetValue
+ 704              	.LVL51:
+ 301:Core/Src/app_menu.c **** 
+ARM GAS  /tmp/ccc3Ih49.s 			page 24
+
+
+ 705              		.loc 1 301 5 is_stmt 1 view .LVU197
+ 301:Core/Src/app_menu.c **** 
+ 706              		.loc 1 301 11 is_stmt 0 view .LVU198
+ 707 00e2 0EA9     		add	r1, sp, #56
+ 708 00e4 3320     		movs	r0, #51
+ 709 00e6 FFF7FEFF 		bl	APP_ParamDict_GetValue
+ 710              	.LVL52:
+ 711              	.LBB10:
+ 304:Core/Src/app_menu.c ****       char buf[32];
+ 712              		.loc 1 304 7 is_stmt 1 view .LVU199
+ 304:Core/Src/app_menu.c ****       char buf[32];
+ 713              		.loc 1 304 22 is_stmt 0 view .LVU200
+ 714 00ea 049B     		ldr	r3, [sp, #16]
+ 715              	.LVL53:
+ 305:Core/Src/app_menu.c ****       (void)snprintf(buf, sizeof(buf), "IP:%lu.%lu.%lu.%lu",
+ 716              		.loc 1 305 7 is_stmt 1 view .LVU201
+ 306:Core/Src/app_menu.c ****                      (unsigned long)((ipu >> 24) & 0xFFu),
+ 717              		.loc 1 306 7 view .LVU202
+ 306:Core/Src/app_menu.c ****                      (unsigned long)((ipu >> 24) & 0xFFu),
+ 718              		.loc 1 306 13 is_stmt 0 view .LVU203
+ 719 00ec DAB2     		uxtb	r2, r3
+ 720 00ee 0292     		str	r2, [sp, #8]
+ 721 00f0 C3F30722 		ubfx	r2, r3, #8, #8
+ 722 00f4 0192     		str	r2, [sp, #4]
+ 723 00f6 C3F30742 		ubfx	r2, r3, #16, #8
+ 724 00fa 0092     		str	r2, [sp]
+ 725 00fc 1B0E     		lsrs	r3, r3, #24
+ 726              	.LVL54:
+ 306:Core/Src/app_menu.c ****                      (unsigned long)((ipu >> 24) & 0xFFu),
+ 727              		.loc 1 306 13 view .LVU204
+ 728 00fe 384A     		ldr	r2, .L68+8
+ 729 0100 2021     		movs	r1, #32
+ 730 0102 10A8     		add	r0, sp, #64
+ 731 0104 FFF7FEFF 		bl	snprintf
+ 732              	.LVL55:
+ 311:Core/Src/app_menu.c ****     }
+ 733              		.loc 1 311 7 is_stmt 1 view .LVU205
+ 734 0108 10A9     		add	r1, sp, #64
+ 735 010a 0120     		movs	r0, #1
+ 736 010c FFF7FEFF 		bl	BSP_Lcd_PrintLine
+ 737              	.LVL56:
+ 738              	.LBE10:
+ 739              	.LBB11:
+ 315:Core/Src/app_menu.c ****       (void)snprintf(buf, sizeof(buf), "ET:%ld ER:%ld", (long)et, (long)er);
+ 740              		.loc 1 315 7 view .LVU206
+ 316:Core/Src/app_menu.c ****       BSP_Lcd_PrintLine(2, buf);
+ 741              		.loc 1 316 7 view .LVU207
+ 316:Core/Src/app_menu.c ****       BSP_Lcd_PrintLine(2, buf);
+ 742              		.loc 1 316 13 is_stmt 0 view .LVU208
+ 743 0110 069B     		ldr	r3, [sp, #24]
+ 744 0112 0093     		str	r3, [sp]
+ 745 0114 059B     		ldr	r3, [sp, #20]
+ 746 0116 334A     		ldr	r2, .L68+12
+ 747 0118 2021     		movs	r1, #32
+ 748 011a 10A8     		add	r0, sp, #64
+ 749 011c FFF7FEFF 		bl	snprintf
+ 750              	.LVL57:
+ARM GAS  /tmp/ccc3Ih49.s 			page 25
+
+
+ 317:Core/Src/app_menu.c ****     }
+ 751              		.loc 1 317 7 is_stmt 1 view .LVU209
+ 752 0120 10A9     		add	r1, sp, #64
+ 753 0122 0220     		movs	r0, #2
+ 754 0124 FFF7FEFF 		bl	BSP_Lcd_PrintLine
+ 755              	.LVL58:
+ 756              	.LBE11:
+ 757              	.LBB12:
+ 321:Core/Src/app_menu.c ****       (void)snprintf(buf, sizeof(buf), "VT:%ld VR:%ld", (long)vt, (long)vr);
+ 758              		.loc 1 321 7 view .LVU210
+ 322:Core/Src/app_menu.c ****       BSP_Lcd_PrintLine(3, buf);
+ 759              		.loc 1 322 7 view .LVU211
+ 322:Core/Src/app_menu.c ****       BSP_Lcd_PrintLine(3, buf);
+ 760              		.loc 1 322 13 is_stmt 0 view .LVU212
+ 761 0128 089B     		ldr	r3, [sp, #32]
+ 762 012a 0093     		str	r3, [sp]
+ 763 012c 079B     		ldr	r3, [sp, #28]
+ 764 012e 2E4A     		ldr	r2, .L68+16
+ 765 0130 2021     		movs	r1, #32
+ 766 0132 10A8     		add	r0, sp, #64
+ 767 0134 FFF7FEFF 		bl	snprintf
+ 768              	.LVL59:
+ 323:Core/Src/app_menu.c ****     }
+ 769              		.loc 1 323 7 is_stmt 1 view .LVU213
+ 770 0138 10A9     		add	r1, sp, #64
+ 771 013a 0320     		movs	r0, #3
+ 772 013c FFF7FEFF 		bl	BSP_Lcd_PrintLine
+ 773              	.LVL60:
+ 774              	.LBE12:
+ 775              	.LBB13:
+ 327:Core/Src/app_menu.c ****       long t10 = (long)tmp;
+ 776              		.loc 1 327 7 view .LVU214
+ 328:Core/Src/app_menu.c ****       char sign = (t10 < 0) ? '-' : '+';
+ 777              		.loc 1 328 7 view .LVU215
+ 328:Core/Src/app_menu.c ****       char sign = (t10 < 0) ? '-' : '+';
+ 778              		.loc 1 328 12 is_stmt 0 view .LVU216
+ 779 0140 0A9B     		ldr	r3, [sp, #40]
+ 780              	.LVL61:
+ 329:Core/Src/app_menu.c ****       if (t10 < 0)
+ 781              		.loc 1 329 7 is_stmt 1 view .LVU217
+ 329:Core/Src/app_menu.c ****       if (t10 < 0)
+ 782              		.loc 1 329 12 is_stmt 0 view .LVU218
+ 783 0142 002B     		cmp	r3, #0
+ 784 0144 42DB     		blt	.L66
+ 785 0146 2B20     		movs	r0, #43
+ 786              	.L56:
+ 787              	.LVL62:
+ 330:Core/Src/app_menu.c ****       {
+ 788              		.loc 1 330 7 is_stmt 1 discriminator 4 view .LVU219
+ 330:Core/Src/app_menu.c ****       {
+ 789              		.loc 1 330 10 is_stmt 0 discriminator 4 view .LVU220
+ 790 0148 002B     		cmp	r3, #0
+ 791 014a 41DB     		blt	.L67
+ 792              	.L57:
+ 334:Core/Src/app_menu.c ****       BSP_Lcd_PrintLine(4, buf);
+ 793              		.loc 1 334 7 is_stmt 1 view .LVU221
+ 334:Core/Src/app_menu.c ****       BSP_Lcd_PrintLine(4, buf);
+ARM GAS  /tmp/ccc3Ih49.s 			page 26
+
+
+ 794              		.loc 1 334 13 is_stmt 0 view .LVU222
+ 795 014c 2749     		ldr	r1, .L68+20
+ 796 014e 81FB0321 		smull	r2, r1, r1, r3
+ 797 0152 DA17     		asrs	r2, r3, #31
+ 798 0154 C2EBA102 		rsb	r2, r2, r1, asr #2
+ 799 0158 02EB8201 		add	r1, r2, r2, lsl #2
+ 800 015c A3EB4103 		sub	r3, r3, r1, lsl #1
+ 801              	.LVL63:
+ 334:Core/Src/app_menu.c ****       BSP_Lcd_PrintLine(4, buf);
+ 802              		.loc 1 334 13 view .LVU223
+ 803 0160 0293     		str	r3, [sp, #8]
+ 804 0162 0192     		str	r2, [sp, #4]
+ 805 0164 0090     		str	r0, [sp]
+ 806 0166 099B     		ldr	r3, [sp, #36]
+ 807 0168 214A     		ldr	r2, .L68+24
+ 808 016a 2021     		movs	r1, #32
+ 809 016c 10A8     		add	r0, sp, #64
+ 810              	.LVL64:
+ 334:Core/Src/app_menu.c ****       BSP_Lcd_PrintLine(4, buf);
+ 811              		.loc 1 334 13 view .LVU224
+ 812 016e FFF7FEFF 		bl	snprintf
+ 813              	.LVL65:
+ 335:Core/Src/app_menu.c ****     }
+ 814              		.loc 1 335 7 is_stmt 1 view .LVU225
+ 815 0172 10A9     		add	r1, sp, #64
+ 816 0174 0420     		movs	r0, #4
+ 817 0176 FFF7FEFF 		bl	BSP_Lcd_PrintLine
+ 818              	.LVL66:
+ 819              	.LBE13:
+ 820              	.LBB14:
+ 339:Core/Src/app_menu.c ****       (void)snprintf(buf, sizeof(buf), "SAT:%ld FAN:%ld", (long)sat, (long)fan);
+ 821              		.loc 1 339 7 view .LVU226
+ 340:Core/Src/app_menu.c ****       BSP_Lcd_PrintLine(5, buf);
+ 822              		.loc 1 340 7 view .LVU227
+ 340:Core/Src/app_menu.c ****       BSP_Lcd_PrintLine(5, buf);
+ 823              		.loc 1 340 13 is_stmt 0 view .LVU228
+ 824 017a 0C9B     		ldr	r3, [sp, #48]
+ 825 017c 0093     		str	r3, [sp]
+ 826 017e 0B9B     		ldr	r3, [sp, #44]
+ 827 0180 1C4A     		ldr	r2, .L68+28
+ 828 0182 2021     		movs	r1, #32
+ 829 0184 10A8     		add	r0, sp, #64
+ 830 0186 FFF7FEFF 		bl	snprintf
+ 831              	.LVL67:
+ 341:Core/Src/app_menu.c ****     }
+ 832              		.loc 1 341 7 is_stmt 1 view .LVU229
+ 833 018a 10A9     		add	r1, sp, #64
+ 834 018c 0520     		movs	r0, #5
+ 835 018e FFF7FEFF 		bl	BSP_Lcd_PrintLine
+ 836              	.LVL68:
+ 837              	.LBE14:
+ 838              	.LBB15:
+ 345:Core/Src/app_menu.c ****       (void)snprintf(buf, sizeof(buf), "NB:%ld RSSI:%ld", (long)nb, (long)rssi);
+ 839              		.loc 1 345 7 view .LVU230
+ 346:Core/Src/app_menu.c ****       BSP_Lcd_PrintLine(6, buf);
+ 840              		.loc 1 346 7 view .LVU231
+ 346:Core/Src/app_menu.c ****       BSP_Lcd_PrintLine(6, buf);
+ARM GAS  /tmp/ccc3Ih49.s 			page 27
+
+
+ 841              		.loc 1 346 13 is_stmt 0 view .LVU232
+ 842 0192 0E9B     		ldr	r3, [sp, #56]
+ 843 0194 0093     		str	r3, [sp]
+ 844 0196 0D9B     		ldr	r3, [sp, #52]
+ 845 0198 174A     		ldr	r2, .L68+32
+ 846 019a 2021     		movs	r1, #32
+ 847 019c 10A8     		add	r0, sp, #64
+ 848 019e FFF7FEFF 		bl	snprintf
+ 849              	.LVL69:
+ 347:Core/Src/app_menu.c ****     }
+ 850              		.loc 1 347 7 is_stmt 1 view .LVU233
+ 851 01a2 10A9     		add	r1, sp, #64
+ 852 01a4 0620     		movs	r0, #6
+ 853 01a6 FFF7FEFF 		bl	BSP_Lcd_PrintLine
+ 854              	.LVL70:
+ 855              	.LBE15:
+ 856              	.LBB16:
+ 351:Core/Src/app_menu.c ****       (void)APP_ParamDict_GetValue(PARAM_ID_WORK_MODE, &mode);
+ 857              		.loc 1 351 7 view .LVU234
+ 351:Core/Src/app_menu.c ****       (void)APP_ParamDict_GetValue(PARAM_ID_WORK_MODE, &mode);
+ 858              		.loc 1 351 15 is_stmt 0 view .LVU235
+ 859 01aa 0023     		movs	r3, #0
+ 860 01ac 0F93     		str	r3, [sp, #60]
+ 352:Core/Src/app_menu.c ****       char buf[24];
+ 861              		.loc 1 352 7 is_stmt 1 view .LVU236
+ 352:Core/Src/app_menu.c ****       char buf[24];
+ 862              		.loc 1 352 13 is_stmt 0 view .LVU237
+ 863 01ae 0FA9     		add	r1, sp, #60
+ 864 01b0 0120     		movs	r0, #1
+ 865 01b2 FFF7FEFF 		bl	APP_ParamDict_GetValue
+ 866              	.LVL71:
+ 353:Core/Src/app_menu.c ****       (void)snprintf(buf, sizeof(buf), "MODE:%ld", (long)mode);
+ 867              		.loc 1 353 7 is_stmt 1 view .LVU238
+ 354:Core/Src/app_menu.c ****       BSP_Lcd_PrintLine(7, buf);
+ 868              		.loc 1 354 7 view .LVU239
+ 354:Core/Src/app_menu.c ****       BSP_Lcd_PrintLine(7, buf);
+ 869              		.loc 1 354 13 is_stmt 0 view .LVU240
+ 870 01b6 0F9B     		ldr	r3, [sp, #60]
+ 871 01b8 084A     		ldr	r2, .L68+4
+ 872 01ba 1821     		movs	r1, #24
+ 873 01bc 10A8     		add	r0, sp, #64
+ 874 01be FFF7FEFF 		bl	snprintf
+ 875              	.LVL72:
+ 355:Core/Src/app_menu.c ****     }
+ 876              		.loc 1 355 7 is_stmt 1 view .LVU241
+ 877 01c2 10A9     		add	r1, sp, #64
+ 878 01c4 0720     		movs	r0, #7
+ 879 01c6 FFF7FEFF 		bl	BSP_Lcd_PrintLine
+ 880              	.LVL73:
+ 881              	.LBE16:
+ 357:Core/Src/app_menu.c ****   }
+ 882              		.loc 1 357 5 view .LVU242
+ 883 01ca 2EE7     		b	.L50
+ 884              	.LVL74:
+ 885              	.L66:
+ 886              	.LBB17:
+ 329:Core/Src/app_menu.c ****       if (t10 < 0)
+ARM GAS  /tmp/ccc3Ih49.s 			page 28
+
+
+ 887              		.loc 1 329 12 is_stmt 0 view .LVU243
+ 888 01cc 2D20     		movs	r0, #45
+ 889 01ce BBE7     		b	.L56
+ 890              	.LVL75:
+ 891              	.L67:
+ 332:Core/Src/app_menu.c ****       }
+ 892              		.loc 1 332 9 is_stmt 1 view .LVU244
+ 332:Core/Src/app_menu.c ****       }
+ 893              		.loc 1 332 13 is_stmt 0 view .LVU245
+ 894 01d0 5B42     		rsbs	r3, r3, #0
+ 895              	.LVL76:
+ 332:Core/Src/app_menu.c ****       }
+ 896              		.loc 1 332 13 view .LVU246
+ 897 01d2 BBE7     		b	.L57
+ 898              	.LVL77:
+ 899              	.L60:
+ 900              	.LCFI14:
+ 901              		.cfi_def_cfa_offset 0
+ 902              		.cfi_restore 4
+ 903              		.cfi_restore 14
+ 332:Core/Src/app_menu.c ****       }
+ 904              		.loc 1 332 13 view .LVU247
+ 905 01d4 7047     		bx	lr
+ 906              	.L69:
+ 907 01d6 00BF     		.align	2
+ 908              	.L68:
+ 909 01d8 00000000 		.word	.LC1
+ 910 01dc 0C000000 		.word	.LC2
+ 911 01e0 18000000 		.word	.LC3
+ 912 01e4 2C000000 		.word	.LC4
+ 913 01e8 3C000000 		.word	.LC5
+ 914 01ec 67666666 		.word	1717986919
+ 915 01f0 4C000000 		.word	.LC6
+ 916 01f4 60000000 		.word	.LC7
+ 917 01f8 70000000 		.word	.LC8
+ 918              	.LBE17:
+ 919              	.LBE9:
+ 920              		.cfi_endproc
+ 921              	.LFE9:
+ 923              		.section	.text.APP_Menu_Init,"ax",%progbits
+ 924              		.align	1
+ 925              		.global	APP_Menu_Init
+ 926              		.syntax unified
+ 927              		.thumb
+ 928              		.thumb_func
+ 929              		.fpu softvfp
+ 931              	APP_Menu_Init:
+ 932              	.LFB4:
+ 139:Core/Src/app_menu.c ****   s_current = &s_root;
+ 933              		.loc 1 139 1 is_stmt 1 view -0
+ 934              		.cfi_startproc
+ 935              		@ args = 0, pretend = 0, frame = 0
+ 936              		@ frame_needed = 0, uses_anonymous_args = 0
+ 937 0000 10B5     		push	{r4, lr}
+ 938              	.LCFI15:
+ 939              		.cfi_def_cfa_offset 8
+ 940              		.cfi_offset 4, -8
+ARM GAS  /tmp/ccc3Ih49.s 			page 29
+
+
+ 941              		.cfi_offset 14, -4
+ 140:Core/Src/app_menu.c ****   if (s_current->render_cb != 0)
+ 942              		.loc 1 140 3 view .LVU249
+ 140:Core/Src/app_menu.c ****   if (s_current->render_cb != 0)
+ 943              		.loc 1 140 13 is_stmt 0 view .LVU250
+ 944 0002 034C     		ldr	r4, .L72
+ 945 0004 0348     		ldr	r0, .L72+4
+ 946 0006 2060     		str	r0, [r4]
+ 141:Core/Src/app_menu.c ****   {
+ 947              		.loc 1 141 3 is_stmt 1 view .LVU251
+ 143:Core/Src/app_menu.c ****   }
+ 948              		.loc 1 143 5 view .LVU252
+ 949 0008 FFF7FEFF 		bl	APP_Menu_DefaultRender
+ 950              	.LVL78:
+ 145:Core/Src/app_menu.c **** }
+ 951              		.loc 1 145 3 view .LVU253
+ 146:Core/Src/app_menu.c **** 
+ 952              		.loc 1 146 1 is_stmt 0 view .LVU254
+ 953 000c 2068     		ldr	r0, [r4]
+ 954 000e 10BD     		pop	{r4, pc}
+ 955              	.L73:
+ 956              		.align	2
+ 957              	.L72:
+ 958 0010 00000000 		.word	.LANCHOR0
+ 959 0014 00000000 		.word	.LANCHOR2
+ 960              		.cfi_endproc
+ 961              	.LFE4:
+ 963              		.section	.text.APP_Menu_GetCurrent,"ax",%progbits
+ 964              		.align	1
+ 965              		.global	APP_Menu_GetCurrent
+ 966              		.syntax unified
+ 967              		.thumb
+ 968              		.thumb_func
+ 969              		.fpu softvfp
+ 971              	APP_Menu_GetCurrent:
+ 972              	.LFB5:
+ 149:Core/Src/app_menu.c ****   return s_current;
+ 973              		.loc 1 149 1 is_stmt 1 view -0
+ 974              		.cfi_startproc
+ 975              		@ args = 0, pretend = 0, frame = 0
+ 976              		@ frame_needed = 0, uses_anonymous_args = 0
+ 977              		@ link register save eliminated.
+ 150:Core/Src/app_menu.c **** }
+ 978              		.loc 1 150 3 view .LVU256
+ 151:Core/Src/app_menu.c **** 
+ 979              		.loc 1 151 1 is_stmt 0 view .LVU257
+ 980 0000 014B     		ldr	r3, .L75
+ 981 0002 1868     		ldr	r0, [r3]
+ 982 0004 7047     		bx	lr
+ 983              	.L76:
+ 984 0006 00BF     		.align	2
+ 985              	.L75:
+ 986 0008 00000000 		.word	.LANCHOR0
+ 987              		.cfi_endproc
+ 988              	.LFE5:
+ 990              		.section	.text.APP_Menu_RefreshCurrent,"ax",%progbits
+ 991              		.align	1
+ARM GAS  /tmp/ccc3Ih49.s 			page 30
+
+
+ 992              		.global	APP_Menu_RefreshCurrent
+ 993              		.syntax unified
+ 994              		.thumb
+ 995              		.thumb_func
+ 996              		.fpu softvfp
+ 998              	APP_Menu_RefreshCurrent:
+ 999              	.LFB6:
+ 154:Core/Src/app_menu.c ****   if ((s_current != 0) && (s_current->render_cb != 0))
+ 1000              		.loc 1 154 1 is_stmt 1 view -0
+ 1001              		.cfi_startproc
+ 1002              		@ args = 0, pretend = 0, frame = 0
+ 1003              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1004 0000 08B5     		push	{r3, lr}
+ 1005              	.LCFI16:
+ 1006              		.cfi_def_cfa_offset 8
+ 1007              		.cfi_offset 3, -8
+ 1008              		.cfi_offset 14, -4
+ 155:Core/Src/app_menu.c ****   {
+ 1009              		.loc 1 155 3 view .LVU259
+ 155:Core/Src/app_menu.c ****   {
+ 1010              		.loc 1 155 18 is_stmt 0 view .LVU260
+ 1011 0002 034B     		ldr	r3, .L80
+ 1012 0004 1868     		ldr	r0, [r3]
+ 155:Core/Src/app_menu.c ****   {
+ 1013              		.loc 1 155 6 view .LVU261
+ 1014 0006 10B1     		cbz	r0, .L77
+ 155:Core/Src/app_menu.c ****   {
+ 1015              		.loc 1 155 37 discriminator 1 view .LVU262
+ 1016 0008 4369     		ldr	r3, [r0, #20]
+ 155:Core/Src/app_menu.c ****   {
+ 1017              		.loc 1 155 24 discriminator 1 view .LVU263
+ 1018 000a 03B1     		cbz	r3, .L77
+ 157:Core/Src/app_menu.c ****   }
+ 1019              		.loc 1 157 5 is_stmt 1 view .LVU264
+ 1020 000c 9847     		blx	r3
+ 1021              	.LVL79:
+ 1022              	.L77:
+ 159:Core/Src/app_menu.c **** 
+ 1023              		.loc 1 159 1 is_stmt 0 view .LVU265
+ 1024 000e 08BD     		pop	{r3, pc}
+ 1025              	.L81:
+ 1026              		.align	2
+ 1027              	.L80:
+ 1028 0010 00000000 		.word	.LANCHOR0
+ 1029              		.cfi_endproc
+ 1030              	.LFE6:
+ 1032              		.section	.text.APP_Menu_HandleKey,"ax",%progbits
+ 1033              		.align	1
+ 1034              		.global	APP_Menu_HandleKey
+ 1035              		.syntax unified
+ 1036              		.thumb
+ 1037              		.thumb_func
+ 1038              		.fpu softvfp
+ 1040              	APP_Menu_HandleKey:
+ 1041              	.LVL80:
+ 1042              	.LFB8:
+ 221:Core/Src/app_menu.c ****   if (key == MENU_KEY_NONE)
+ARM GAS  /tmp/ccc3Ih49.s 			page 31
+
+
+ 1043              		.loc 1 221 1 is_stmt 1 view -0
+ 1044              		.cfi_startproc
+ 1045              		@ args = 0, pretend = 0, frame = 0
+ 1046              		@ frame_needed = 0, uses_anonymous_args = 0
+ 222:Core/Src/app_menu.c ****   {
+ 1047              		.loc 1 222 3 view .LVU267
+ 222:Core/Src/app_menu.c ****   {
+ 1048              		.loc 1 222 6 is_stmt 0 view .LVU268
+ 1049 0000 70B1     		cbz	r0, .L90
+ 221:Core/Src/app_menu.c ****   if (key == MENU_KEY_NONE)
+ 1050              		.loc 1 221 1 view .LVU269
+ 1051 0002 10B5     		push	{r4, lr}
+ 1052              	.LCFI17:
+ 1053              		.cfi_def_cfa_offset 8
+ 1054              		.cfi_offset 4, -8
+ 1055              		.cfi_offset 14, -4
+ 1056 0004 0446     		mov	r4, r0
+ 228:Core/Src/app_menu.c ****   {
+ 1057              		.loc 1 228 3 is_stmt 1 view .LVU270
+ 228:Core/Src/app_menu.c ****   {
+ 1058              		.loc 1 228 18 is_stmt 0 view .LVU271
+ 1059 0006 0C4B     		ldr	r3, .L92
+ 1060 0008 1B68     		ldr	r3, [r3]
+ 228:Core/Src/app_menu.c ****   {
+ 1061              		.loc 1 228 6 view .LVU272
+ 1062 000a 1BB1     		cbz	r3, .L85
+ 228:Core/Src/app_menu.c ****   {
+ 1063              		.loc 1 228 37 discriminator 1 view .LVU273
+ 1064 000c 9B69     		ldr	r3, [r3, #24]
+ 228:Core/Src/app_menu.c ****   {
+ 1065              		.loc 1 228 24 discriminator 1 view .LVU274
+ 1066 000e 0BB1     		cbz	r3, .L85
+ 1067              	.LBB18:
+ 230:Core/Src/app_menu.c ****     if (handled != 0)
+ 1068              		.loc 1 230 5 is_stmt 1 view .LVU275
+ 230:Core/Src/app_menu.c ****     if (handled != 0)
+ 1069              		.loc 1 230 19 is_stmt 0 view .LVU276
+ 1070 0010 9847     		blx	r3
+ 1071              	.LVL81:
+ 231:Core/Src/app_menu.c ****     {
+ 1072              		.loc 1 231 5 is_stmt 1 view .LVU277
+ 231:Core/Src/app_menu.c ****     {
+ 1073              		.loc 1 231 8 is_stmt 0 view .LVU278
+ 1074 0012 40B9     		cbnz	r0, .L91
+ 1075              	.LVL82:
+ 1076              	.L85:
+ 231:Core/Src/app_menu.c ****     {
+ 1077              		.loc 1 231 8 view .LVU279
+ 1078              	.LBE18:
+ 242:Core/Src/app_menu.c ****   return s_current;
+ 1079              		.loc 1 242 3 is_stmt 1 view .LVU280
+ 1080 0014 2046     		mov	r0, r4
+ 1081 0016 FFF7FEFF 		bl	menu_default_navigate
+ 1082              	.LVL83:
+ 243:Core/Src/app_menu.c **** }
+ 1083              		.loc 1 243 3 view .LVU281
+ 243:Core/Src/app_menu.c **** }
+ARM GAS  /tmp/ccc3Ih49.s 			page 32
+
+
+ 1084              		.loc 1 243 10 is_stmt 0 view .LVU282
+ 1085 001a 074B     		ldr	r3, .L92
+ 1086 001c 1868     		ldr	r0, [r3]
+ 1087              	.L82:
+ 244:Core/Src/app_menu.c **** 
+ 1088              		.loc 1 244 1 view .LVU283
+ 1089 001e 10BD     		pop	{r4, pc}
+ 1090              	.LVL84:
+ 1091              	.L90:
+ 1092              	.LCFI18:
+ 1093              		.cfi_def_cfa_offset 0
+ 1094              		.cfi_restore 4
+ 1095              		.cfi_restore 14
+ 224:Core/Src/app_menu.c ****   }
+ 1096              		.loc 1 224 5 is_stmt 1 view .LVU284
+ 224:Core/Src/app_menu.c ****   }
+ 1097              		.loc 1 224 12 is_stmt 0 view .LVU285
+ 1098 0020 054B     		ldr	r3, .L92
+ 1099 0022 1868     		ldr	r0, [r3]
+ 1100              	.LVL85:
+ 244:Core/Src/app_menu.c **** 
+ 1101              		.loc 1 244 1 view .LVU286
+ 1102 0024 7047     		bx	lr
+ 1103              	.LVL86:
+ 1104              	.L91:
+ 1105              	.LCFI19:
+ 1106              		.cfi_def_cfa_offset 8
+ 1107              		.cfi_offset 4, -8
+ 1108              		.cfi_offset 14, -4
+ 1109              	.LBB19:
+ 233:Core/Src/app_menu.c ****       {
+ 1110              		.loc 1 233 7 is_stmt 1 view .LVU287
+ 233:Core/Src/app_menu.c ****       {
+ 1111              		.loc 1 233 20 is_stmt 0 view .LVU288
+ 1112 0026 044B     		ldr	r3, .L92
+ 1113 0028 1868     		ldr	r0, [r3]
+ 1114              	.LVL87:
+ 233:Core/Src/app_menu.c ****       {
+ 1115              		.loc 1 233 20 view .LVU289
+ 1116 002a 4369     		ldr	r3, [r0, #20]
+ 233:Core/Src/app_menu.c ****       {
+ 1117              		.loc 1 233 10 view .LVU290
+ 1118 002c 03B1     		cbz	r3, .L86
+ 235:Core/Src/app_menu.c ****       }
+ 1119              		.loc 1 235 9 is_stmt 1 view .LVU291
+ 1120 002e 9847     		blx	r3
+ 1121              	.LVL88:
+ 1122              	.L86:
+ 237:Core/Src/app_menu.c ****     }
+ 1123              		.loc 1 237 7 view .LVU292
+ 237:Core/Src/app_menu.c ****     }
+ 1124              		.loc 1 237 14 is_stmt 0 view .LVU293
+ 1125 0030 014B     		ldr	r3, .L92
+ 1126 0032 1868     		ldr	r0, [r3]
+ 1127 0034 F3E7     		b	.L82
+ 1128              	.L93:
+ 1129 0036 00BF     		.align	2
+ARM GAS  /tmp/ccc3Ih49.s 			page 33
+
+
+ 1130              	.L92:
+ 1131 0038 00000000 		.word	.LANCHOR0
+ 1132              	.LBE19:
+ 1133              		.cfi_endproc
+ 1134              	.LFE8:
+ 1136              		.section	.rodata.str1.4,"aMS",%progbits,1
+ 1137              		.align	2
+ 1138              	.LC9:
+ 1139 0000 42415544 		.ascii	"BAUD\000"
+ 1139      00
+ 1140 0005 000000   		.align	2
+ 1141              	.LC10:
+ 1142 0008 55415254 		.ascii	"UART\000"
+ 1142      00
+ 1143 000d 000000   		.align	2
+ 1144              	.LC11:
+ 1145 0010 4E455400 		.ascii	"NET\000"
+ 1146              		.align	2
+ 1147              	.LC12:
+ 1148 0014 50415241 		.ascii	"PARAM\000"
+ 1148      4D00
+ 1149 001a 0000     		.align	2
+ 1150              	.LC13:
+ 1151 001c 4F50204D 		.ascii	"OP MODE\000"
+ 1151      4F444500 
+ 1152              		.align	2
+ 1153              	.LC14:
+ 1154 0024 53455454 		.ascii	"SETTING\000"
+ 1154      494E4700 
+ 1155              		.align	2
+ 1156              	.LC15:
+ 1157 002c 46554E43 		.ascii	"FUNCTION\000"
+ 1157      54494F4E 
+ 1157      00
+ 1158 0035 000000   		.align	2
+ 1159              	.LC16:
+ 1160 0038 4F504552 		.ascii	"OPERATION\000"
+ 1160      4154494F 
+ 1160      4E00
+ 1161 0042 0000     		.align	2
+ 1162              	.LC17:
+ 1163 0044 4D41494E 		.ascii	"MAIN\000"
+ 1163      00
+ 1164              		.section	.data.s_current,"aw"
+ 1165              		.align	2
+ 1166              		.set	.LANCHOR0,. + 0
+ 1169              	s_current:
+ 1170 0000 00000000 		.word	s_root
+ 1171              		.section	.rodata.baudList.0,"a"
+ 1172              		.align	2
+ 1173              		.set	.LANCHOR1,. + 0
+ 1176              	baudList.0:
+ 1177 0000 80250000 		.word	9600
+ 1178 0004 004B0000 		.word	19200
+ 1179 0008 00960000 		.word	38400
+ 1180 000c 00E10000 		.word	57600
+ 1181 0010 00C20100 		.word	115200
+ARM GAS  /tmp/ccc3Ih49.s 			page 34
+
+
+ 1182 0014 00840300 		.word	230400
+ 1183              		.section	.rodata.s_function,"a"
+ 1184              		.align	2
+ 1187              	s_function:
+ 1188 0000 0200     		.short	2
+ 1189 0002 0000     		.space	2
+ 1190 0004 2C000000 		.word	.LC15
+ 1191 0008 00000000 		.word	s_root
+ 1192 000c 00000000 		.word	0
+ 1193 0010 00000000 		.word	s_setting
+ 1194 0014 00000000 		.word	APP_Menu_DefaultRender
+ 1195 0018 00000000 		.word	0
+ 1196              		.section	.rodata.s_operation,"a"
+ 1197              		.align	2
+ 1200              	s_operation:
+ 1201 0000 0100     		.short	1
+ 1202 0002 0000     		.space	2
+ 1203 0004 38000000 		.word	.LC16
+ 1204 0008 00000000 		.word	s_root
+ 1205 000c 00000000 		.word	s_operation_mode
+ 1206 0010 00000000 		.word	s_function
+ 1207 0014 00000000 		.word	APP_Menu_DefaultRender
+ 1208 0018 00000000 		.word	0
+ 1209              		.section	.rodata.s_operation_mode,"a"
+ 1210              		.align	2
+ 1213              	s_operation_mode:
+ 1214 0000 0400     		.short	4
+ 1215 0002 0000     		.space	2
+ 1216 0004 1C000000 		.word	.LC13
+ 1217 0008 00000000 		.word	s_operation
+ 1218 000c 00000000 		.word	0
+ 1219 0010 00000000 		.word	s_operation_param
+ 1220 0014 00000000 		.word	APP_Menu_DefaultRender
+ 1221 0018 00000000 		.word	MenuKeyHandler_WorkMode
+ 1222              		.section	.rodata.s_operation_param,"a"
+ 1223              		.align	2
+ 1226              	s_operation_param:
+ 1227 0000 0500     		.short	5
+ 1228 0002 0000     		.space	2
+ 1229 0004 14000000 		.word	.LC12
+ 1230 0008 00000000 		.word	s_operation
+ 1231 000c 00000000 		.word	0
+ 1232 0010 00000000 		.word	0
+ 1233 0014 00000000 		.word	APP_Menu_DefaultRender
+ 1234 0018 00000000 		.word	0
+ 1235              		.section	.rodata.s_root,"a"
+ 1236              		.align	2
+ 1237              		.set	.LANCHOR2,. + 0
+ 1240              	s_root:
+ 1241 0000 0000     		.short	0
+ 1242 0002 0000     		.space	2
+ 1243 0004 44000000 		.word	.LC17
+ 1244 0008 00000000 		.word	0
+ 1245 000c 00000000 		.word	s_operation
+ 1246 0010 00000000 		.word	0
+ 1247 0014 00000000 		.word	APP_Menu_DefaultRender
+ 1248 0018 00000000 		.word	0
+ARM GAS  /tmp/ccc3Ih49.s 			page 35
+
+
+ 1249              		.section	.rodata.s_setting,"a"
+ 1250              		.align	2
+ 1253              	s_setting:
+ 1254 0000 0300     		.short	3
+ 1255 0002 0000     		.space	2
+ 1256 0004 24000000 		.word	.LC14
+ 1257 0008 00000000 		.word	s_root
+ 1258 000c 00000000 		.word	s_setting_net
+ 1259 0010 00000000 		.word	0
+ 1260 0014 00000000 		.word	APP_Menu_DefaultRender
+ 1261 0018 00000000 		.word	0
+ 1262              		.section	.rodata.s_setting_net,"a"
+ 1263              		.align	2
+ 1266              	s_setting_net:
+ 1267 0000 0600     		.short	6
+ 1268 0002 0000     		.space	2
+ 1269 0004 10000000 		.word	.LC11
+ 1270 0008 00000000 		.word	s_setting
+ 1271 000c 00000000 		.word	0
+ 1272 0010 00000000 		.word	s_setting_uart
+ 1273 0014 00000000 		.word	APP_Menu_DefaultRender
+ 1274 0018 00000000 		.word	0
+ 1275              		.section	.rodata.s_setting_uart,"a"
+ 1276              		.align	2
+ 1279              	s_setting_uart:
+ 1280 0000 0700     		.short	7
+ 1281 0002 0000     		.space	2
+ 1282 0004 08000000 		.word	.LC10
+ 1283 0008 00000000 		.word	s_setting
+ 1284 000c 00000000 		.word	s_setting_uart_baud
+ 1285 0010 00000000 		.word	0
+ 1286 0014 00000000 		.word	APP_Menu_DefaultRender
+ 1287 0018 00000000 		.word	0
+ 1288              		.section	.rodata.s_setting_uart_baud,"a"
+ 1289              		.align	2
+ 1292              	s_setting_uart_baud:
+ 1293 0000 0800     		.short	8
+ 1294 0002 0000     		.space	2
+ 1295 0004 00000000 		.word	.LC9
+ 1296 0008 00000000 		.word	s_setting_uart
+ 1297 000c 00000000 		.word	0
+ 1298 0010 00000000 		.word	0
+ 1299 0014 00000000 		.word	APP_Menu_DefaultRender
+ 1300 0018 00000000 		.word	MenuKeyHandler_UartBaud
+ 1301              		.text
+ 1302              	.Letext0:
+ 1303              		.file 2 "/usr/lib/gcc/arm-none-eabi/10.3.1/include/stdint.h"
+ 1304              		.file 3 "Core/Inc/app_menu.h"
+ 1305              		.file 4 "Core/Inc/app_param_dict.h"
+ 1306              		.file 5 "/usr/include/newlib/stdio.h"
+ 1307              		.file 6 "Core/Inc/bsp.h"
+ARM GAS  /tmp/ccc3Ih49.s 			page 36
+
+
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 app_menu.c
+     /tmp/ccc3Ih49.s:16     .text.menu_default_navigate:0000000000000000 $t
+     /tmp/ccc3Ih49.s:23     .text.menu_default_navigate:0000000000000000 menu_default_navigate
+     /tmp/ccc3Ih49.s:51     .text.menu_default_navigate:0000000000000012 $d
+     /tmp/ccc3Ih49.s:55     .text.menu_default_navigate:0000000000000016 $t
+     /tmp/ccc3Ih49.s:153    .text.menu_default_navigate:0000000000000064 $d
+     /tmp/ccc3Ih49.s:158    .text.MenuKeyHandler_UartBaud:0000000000000000 $t
+     /tmp/ccc3Ih49.s:164    .text.MenuKeyHandler_UartBaud:0000000000000000 MenuKeyHandler_UartBaud
+     /tmp/ccc3Ih49.s:283    .text.MenuKeyHandler_UartBaud:0000000000000058 $d
+     /tmp/ccc3Ih49.s:288    .text.MenuKeyHandler_WorkMode:0000000000000000 $t
+     /tmp/ccc3Ih49.s:294    .text.MenuKeyHandler_WorkMode:0000000000000000 MenuKeyHandler_WorkMode
+     /tmp/ccc3Ih49.s:393    .rodata.Menu_RenderBlankRows.str1.4:0000000000000000 $d
+     /tmp/ccc3Ih49.s:397    .text.Menu_RenderBlankRows:0000000000000000 $t
+     /tmp/ccc3Ih49.s:403    .text.Menu_RenderBlankRows:0000000000000000 Menu_RenderBlankRows
+     /tmp/ccc3Ih49.s:453    .text.Menu_RenderBlankRows:000000000000001c $d
+     /tmp/ccc3Ih49.s:458    .rodata.APP_Menu_DefaultRender.str1.4:0000000000000000 $d
+     /tmp/ccc3Ih49.s:483    .text.APP_Menu_DefaultRender:0000000000000000 $t
+     /tmp/ccc3Ih49.s:490    .text.APP_Menu_DefaultRender:0000000000000000 APP_Menu_DefaultRender
+     /tmp/ccc3Ih49.s:909    .text.APP_Menu_DefaultRender:00000000000001d8 $d
+     /tmp/ccc3Ih49.s:924    .text.APP_Menu_Init:0000000000000000 $t
+     /tmp/ccc3Ih49.s:931    .text.APP_Menu_Init:0000000000000000 APP_Menu_Init
+     /tmp/ccc3Ih49.s:958    .text.APP_Menu_Init:0000000000000010 $d
+     /tmp/ccc3Ih49.s:964    .text.APP_Menu_GetCurrent:0000000000000000 $t
+     /tmp/ccc3Ih49.s:971    .text.APP_Menu_GetCurrent:0000000000000000 APP_Menu_GetCurrent
+     /tmp/ccc3Ih49.s:986    .text.APP_Menu_GetCurrent:0000000000000008 $d
+     /tmp/ccc3Ih49.s:991    .text.APP_Menu_RefreshCurrent:0000000000000000 $t
+     /tmp/ccc3Ih49.s:998    .text.APP_Menu_RefreshCurrent:0000000000000000 APP_Menu_RefreshCurrent
+     /tmp/ccc3Ih49.s:1028   .text.APP_Menu_RefreshCurrent:0000000000000010 $d
+     /tmp/ccc3Ih49.s:1033   .text.APP_Menu_HandleKey:0000000000000000 $t
+     /tmp/ccc3Ih49.s:1040   .text.APP_Menu_HandleKey:0000000000000000 APP_Menu_HandleKey
+     /tmp/ccc3Ih49.s:1131   .text.APP_Menu_HandleKey:0000000000000038 $d
+     /tmp/ccc3Ih49.s:1137   .rodata.str1.4:0000000000000000 $d
+     /tmp/ccc3Ih49.s:1165   .data.s_current:0000000000000000 $d
+     /tmp/ccc3Ih49.s:1169   .data.s_current:0000000000000000 s_current
+     /tmp/ccc3Ih49.s:1240   .rodata.s_root:0000000000000000 s_root
+     /tmp/ccc3Ih49.s:1172   .rodata.baudList.0:0000000000000000 $d
+     /tmp/ccc3Ih49.s:1176   .rodata.baudList.0:0000000000000000 baudList.0
+     /tmp/ccc3Ih49.s:1184   .rodata.s_function:0000000000000000 $d
+     /tmp/ccc3Ih49.s:1187   .rodata.s_function:0000000000000000 s_function
+     /tmp/ccc3Ih49.s:1253   .rodata.s_setting:0000000000000000 s_setting
+     /tmp/ccc3Ih49.s:1197   .rodata.s_operation:0000000000000000 $d
+     /tmp/ccc3Ih49.s:1200   .rodata.s_operation:0000000000000000 s_operation
+     /tmp/ccc3Ih49.s:1213   .rodata.s_operation_mode:0000000000000000 s_operation_mode
+     /tmp/ccc3Ih49.s:1210   .rodata.s_operation_mode:0000000000000000 $d
+     /tmp/ccc3Ih49.s:1226   .rodata.s_operation_param:0000000000000000 s_operation_param
+     /tmp/ccc3Ih49.s:1223   .rodata.s_operation_param:0000000000000000 $d
+     /tmp/ccc3Ih49.s:1236   .rodata.s_root:0000000000000000 $d
+     /tmp/ccc3Ih49.s:1250   .rodata.s_setting:0000000000000000 $d
+     /tmp/ccc3Ih49.s:1266   .rodata.s_setting_net:0000000000000000 s_setting_net
+     /tmp/ccc3Ih49.s:1263   .rodata.s_setting_net:0000000000000000 $d
+     /tmp/ccc3Ih49.s:1279   .rodata.s_setting_uart:0000000000000000 s_setting_uart
+     /tmp/ccc3Ih49.s:1276   .rodata.s_setting_uart:0000000000000000 $d
+     /tmp/ccc3Ih49.s:1292   .rodata.s_setting_uart_baud:0000000000000000 s_setting_uart_baud
+     /tmp/ccc3Ih49.s:1289   .rodata.s_setting_uart_baud:0000000000000000 $d
+
+UNDEFINED SYMBOLS
+ARM GAS  /tmp/ccc3Ih49.s 			page 37
+
+
+APP_ParamDict_GetValue
+APP_ParamDict_TrySetValue
+BSP_Lcd_PrintLine
+snprintf

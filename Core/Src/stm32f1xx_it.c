@@ -20,6 +20,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "stm32f1xx_it.h"
+#include "usart.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 /* USER CODE END Includes */
@@ -171,6 +172,7 @@ void DMA1_Channel5_IRQHandler(void)
   /* USER CODE END DMA1_Channel5_IRQn 0 */
   HAL_DMA_IRQHandler(&hdma_usart1_rx);
   /* USER CODE BEGIN DMA1_Channel5_IRQn 1 */
+  APP_USART1_RxCheckIdle();
 
   /* USER CODE END DMA1_Channel5_IRQn 1 */
 }
@@ -195,6 +197,12 @@ void TIM4_IRQHandler(void)
 void USART1_IRQHandler(void)
 {
   /* USER CODE BEGIN USART1_IRQn 0 */
+  if ((__HAL_UART_GET_FLAG(&huart1, UART_FLAG_IDLE) != RESET) &&
+      (__HAL_UART_GET_IT_SOURCE(&huart1, UART_IT_IDLE) != RESET))
+  {
+    __HAL_UART_CLEAR_IDLEFLAG(&huart1);
+    APP_USART1_RxCheckIdle();
+  }
 
   /* USER CODE END USART1_IRQn 0 */
   HAL_UART_IRQHandler(&huart1);

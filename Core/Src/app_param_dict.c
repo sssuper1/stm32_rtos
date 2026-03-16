@@ -1,4 +1,5 @@
 #include "app_param_dict.h"
+#include <stddef.h>
 
 /**
  * @brief Internal global parameter dictionary.
@@ -61,6 +62,135 @@ static ParamDef_t s_paramDict[] =
     .max_value =  850,  /*  85.0 ℃ */
     .scale     = 1,
     .value     = 250    /* 25.0 ℃ 示例 */
+  },
+
+  /* 路由协议：
+   * 0 = OLSR, 1 = AODV, 2 = BATMAN 等，范围 0~3 预留。
+   */
+  {
+    .id        = PARAM_ID_ROUTING_PROTOCOL,
+    .type      = PARAM_TYPE_UINT8,
+    .access    = PARAM_ACCESS_RW,
+    .min_value = 0,
+    .max_value = 3,
+    .scale     = 0,
+    .value     = 0
+  },
+
+  /* 0x05 基础信息（状态量，来自主控回包） */
+  {
+    .id        = PARAM_ID_GPS_LONGITUDE,
+    .type      = PARAM_TYPE_INT32,
+    .access    = PARAM_ACCESS_RO,
+    .min_value = (-2147483647 - 1),
+    .max_value = 2147483647,
+    .scale     = 0,
+    .value     = 0
+  },
+  {
+    .id        = PARAM_ID_GPS_LATITUDE,
+    .type      = PARAM_TYPE_INT32,
+    .access    = PARAM_ACCESS_RO,
+    .min_value = (-2147483647 - 1),
+    .max_value = 2147483647,
+    .scale     = 0,
+    .value     = 0
+  },
+  {
+    .id        = PARAM_ID_GPS_ALTITUDE,
+    .type      = PARAM_TYPE_INT16,
+    .access    = PARAM_ACCESS_RO,
+    .min_value = -32768,
+    .max_value = 32767,
+    .scale     = 0,
+    .value     = 0
+  },
+  {
+    .id        = PARAM_ID_SAT_LOCK,
+    .type      = PARAM_TYPE_UINT8,
+    .access    = PARAM_ACCESS_RO,
+    .min_value = 0,
+    .max_value = 1,
+    .scale     = 0,
+    .value     = 0
+  },
+
+  /* 0x06 统计信息 */
+  {
+    .id        = PARAM_ID_ETH_TX_CNT,
+    .type      = PARAM_TYPE_UINT32,
+    .access    = PARAM_ACCESS_RO,
+    .min_value = 0,
+    .max_value = 2147483647,
+    .scale     = 0,
+    .value     = 0
+  },
+  {
+    .id        = PARAM_ID_ETH_RX_CNT,
+    .type      = PARAM_TYPE_UINT32,
+    .access    = PARAM_ACCESS_RO,
+    .min_value = 0,
+    .max_value = 2147483647,
+    .scale     = 0,
+    .value     = 0
+  },
+  {
+    .id        = PARAM_ID_VOICE_TX_CNT,
+    .type      = PARAM_TYPE_UINT32,
+    .access    = PARAM_ACCESS_RO,
+    .min_value = 0,
+    .max_value = 2147483647,
+    .scale     = 0,
+    .value     = 0
+  },
+  {
+    .id        = PARAM_ID_VOICE_RX_CNT,
+    .type      = PARAM_TYPE_UINT32,
+    .access    = PARAM_ACCESS_RO,
+    .min_value = 0,
+    .max_value = 2147483647,
+    .scale     = 0,
+    .value     = 0
+  },
+
+  /* 0x07 自检状态 */
+  {
+    .id        = PARAM_ID_BATTERY_CAP,
+    .type      = PARAM_TYPE_UINT8,
+    .access    = PARAM_ACCESS_RO,
+    .min_value = 0,
+    .max_value = 100,
+    .scale     = 0,
+    .value     = 0
+  },
+  {
+    .id        = PARAM_ID_FAN_STATE,
+    .type      = PARAM_TYPE_UINT8,
+    .access    = PARAM_ACCESS_RO,
+    .min_value = 0,
+    .max_value = 255,
+    .scale     = 0,
+    .value     = 0
+  },
+
+  /* 0x09 邻居信息 */
+  {
+    .id        = PARAM_ID_NEIGHBOR_COUNT,
+    .type      = PARAM_TYPE_UINT8,
+    .access    = PARAM_ACCESS_RO,
+    .min_value = 0,
+    .max_value = 255,
+    .scale     = 0,
+    .value     = 0
+  },
+  {
+    .id        = PARAM_ID_NEIGHBOR_RSSI,
+    .type      = PARAM_TYPE_INT16,
+    .access    = PARAM_ACCESS_RO,
+    .min_value = -127,
+    .max_value = 127,
+    .scale     = 0,
+    .value     = 0
   }
 };
 
@@ -114,6 +244,23 @@ bool APP_ParamDict_TrySetValue(ParamId_t id, int32_t newVal)
   }
 
   /* 边界检查 */
+  if ((newVal < param->min_value) || (newVal > param->max_value))
+  {
+    return false;
+  }
+
+  param->value = newVal;
+  return true;
+}
+
+bool APP_ParamDict_SetValueUnsafe(ParamId_t id, int32_t newVal)
+{
+  ParamDef_t *param = APP_ParamDict_FindById(id);
+  if (param == NULL)
+  {
+    return false;
+  }
+
   if ((newVal < param->min_value) || (newVal > param->max_value))
   {
     return false;

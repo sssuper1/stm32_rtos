@@ -1,0 +1,826 @@
+ARM GAS  /tmp/ccTBywx0.s 			page 1
+
+
+   1              		.cpu cortex-m3
+   2              		.eabi_attribute 20, 1
+   3              		.eabi_attribute 21, 1
+   4              		.eabi_attribute 23, 3
+   5              		.eabi_attribute 24, 1
+   6              		.eabi_attribute 25, 1
+   7              		.eabi_attribute 26, 1
+   8              		.eabi_attribute 30, 1
+   9              		.eabi_attribute 34, 1
+  10              		.eabi_attribute 18, 4
+  11              		.file	"app_param_dict.c"
+  12              		.text
+  13              	.Ltext0:
+  14              		.cfi_sections	.debug_frame
+  15              		.section	.text.APP_ParamDict_GetTable,"ax",%progbits
+  16              		.align	1
+  17              		.global	APP_ParamDict_GetTable
+  18              		.arch armv7-m
+  19              		.syntax unified
+  20              		.thumb
+  21              		.thumb_func
+  22              		.fpu softvfp
+  24              	APP_ParamDict_GetTable:
+  25              	.LVL0:
+  26              	.LFB0:
+  27              		.file 1 "Core/Src/app_param_dict.c"
+   1:Core/Src/app_param_dict.c **** #include "app_param_dict.h"
+   2:Core/Src/app_param_dict.c **** #include <stddef.h>
+   3:Core/Src/app_param_dict.c **** 
+   4:Core/Src/app_param_dict.c **** /**
+   5:Core/Src/app_param_dict.c ****  * @brief Internal global parameter dictionary.
+   6:Core/Src/app_param_dict.c ****  *
+   7:Core/Src/app_param_dict.c ****  * 目前仅填入少量示例参数，证明结构与接口工作正常。
+   8:Core/Src/app_param_dict.c ****  * 后续可在此表中逐步追加项目文档中的所有参数。
+   9:Core/Src/app_param_dict.c ****  */
+  10:Core/Src/app_param_dict.c **** static ParamDef_t s_paramDict[] =
+  11:Core/Src/app_param_dict.c **** {
+  12:Core/Src/app_param_dict.c ****   /* 当前工作模式:
+  13:Core/Src/app_param_dict.c ****    * - 示例取值范围 0~3 (例如：待机/单点/组网/测试)
+  14:Core/Src/app_param_dict.c ****    * - 1 位整数，无小数
+  15:Core/Src/app_param_dict.c ****    */
+  16:Core/Src/app_param_dict.c ****   {
+  17:Core/Src/app_param_dict.c ****     .id        = PARAM_ID_WORK_MODE,
+  18:Core/Src/app_param_dict.c ****     .type      = PARAM_TYPE_UINT8,
+  19:Core/Src/app_param_dict.c ****     .access    = PARAM_ACCESS_RW,
+  20:Core/Src/app_param_dict.c ****     .min_value = 0,
+  21:Core/Src/app_param_dict.c ****     .max_value = 3,
+  22:Core/Src/app_param_dict.c ****     .scale     = 0,
+  23:Core/Src/app_param_dict.c ****     .value     = 0
+  24:Core/Src/app_param_dict.c ****   },
+  25:Core/Src/app_param_dict.c **** 
+  26:Core/Src/app_param_dict.c ****   /* 网口 IP 地址（示例）：
+  27:Core/Src/app_param_dict.c ****    * 这里先用一个 32 位整型存储 IPv4 地址的整体数值，
+  28:Core/Src/app_param_dict.c ****    * 以后也可以改成四个独立参数：IP1, IP2, IP3, IP4。
+  29:Core/Src/app_param_dict.c ****    */
+  30:Core/Src/app_param_dict.c ****   {
+  31:Core/Src/app_param_dict.c ****     .id        = PARAM_ID_NET_IP_ADDR,
+ARM GAS  /tmp/ccTBywx0.s 			page 2
+
+
+  32:Core/Src/app_param_dict.c ****     .type      = PARAM_TYPE_UINT32,
+  33:Core/Src/app_param_dict.c ****     .access    = PARAM_ACCESS_RW,
+  34:Core/Src/app_param_dict.c ****     .min_value = 0x00000000,
+  35:Core/Src/app_param_dict.c ****     .max_value = 0xFFFFFFFF,
+  36:Core/Src/app_param_dict.c ****     .scale     = 0,
+  37:Core/Src/app_param_dict.c ****     .value     = 0xC0A80001  /* 默认 192.168.0.1 */
+  38:Core/Src/app_param_dict.c ****   },
+  39:Core/Src/app_param_dict.c **** 
+  40:Core/Src/app_param_dict.c ****   /* 串口波特率：
+  41:Core/Src/app_param_dict.c ****    * 支持的范围 1200 ~ 921600，仅作示例。
+  42:Core/Src/app_param_dict.c ****    */
+  43:Core/Src/app_param_dict.c ****   {
+  44:Core/Src/app_param_dict.c ****     .id        = PARAM_ID_UART_BAUDRATE,
+  45:Core/Src/app_param_dict.c ****     .type      = PARAM_TYPE_UINT32,
+  46:Core/Src/app_param_dict.c ****     .access    = PARAM_ACCESS_RW,
+  47:Core/Src/app_param_dict.c ****     .min_value = 1200,
+  48:Core/Src/app_param_dict.c ****     .max_value = 921600,
+  49:Core/Src/app_param_dict.c ****     .scale     = 0,
+  50:Core/Src/app_param_dict.c ****     .value     = 115200
+  51:Core/Src/app_param_dict.c ****   },
+  52:Core/Src/app_param_dict.c **** 
+  53:Core/Src/app_param_dict.c ****   /* 环境温度（只读状态量示例）：
+  54:Core/Src/app_param_dict.c ****    * 使用 int16 存储，单位 0.1℃，即 251 表示 25.1℃。
+  55:Core/Src/app_param_dict.c ****    * type 使用 SCALED_1000_I32 也可以，这里示例 int16 语义。
+  56:Core/Src/app_param_dict.c ****    */
+  57:Core/Src/app_param_dict.c ****   {
+  58:Core/Src/app_param_dict.c ****     .id        = PARAM_ID_ENV_TEMPERATURE,
+  59:Core/Src/app_param_dict.c ****     .type      = PARAM_TYPE_INT16,
+  60:Core/Src/app_param_dict.c ****     .access    = PARAM_ACCESS_RO,
+  61:Core/Src/app_param_dict.c ****     .min_value = -400,  /* -40.0 ℃ */
+  62:Core/Src/app_param_dict.c ****     .max_value =  850,  /*  85.0 ℃ */
+  63:Core/Src/app_param_dict.c ****     .scale     = 1,
+  64:Core/Src/app_param_dict.c ****     .value     = 250    /* 25.0 ℃ 示例 */
+  65:Core/Src/app_param_dict.c ****   },
+  66:Core/Src/app_param_dict.c **** 
+  67:Core/Src/app_param_dict.c ****   /* 路由协议：
+  68:Core/Src/app_param_dict.c ****    * 0 = OLSR, 1 = AODV, 2 = BATMAN 等，范围 0~3 预留。
+  69:Core/Src/app_param_dict.c ****    */
+  70:Core/Src/app_param_dict.c ****   {
+  71:Core/Src/app_param_dict.c ****     .id        = PARAM_ID_ROUTING_PROTOCOL,
+  72:Core/Src/app_param_dict.c ****     .type      = PARAM_TYPE_UINT8,
+  73:Core/Src/app_param_dict.c ****     .access    = PARAM_ACCESS_RW,
+  74:Core/Src/app_param_dict.c ****     .min_value = 0,
+  75:Core/Src/app_param_dict.c ****     .max_value = 3,
+  76:Core/Src/app_param_dict.c ****     .scale     = 0,
+  77:Core/Src/app_param_dict.c ****     .value     = 0
+  78:Core/Src/app_param_dict.c ****   },
+  79:Core/Src/app_param_dict.c **** 
+  80:Core/Src/app_param_dict.c ****   /* 0x05 基础信息（状态量，来自主控回包） */
+  81:Core/Src/app_param_dict.c ****   {
+  82:Core/Src/app_param_dict.c ****     .id        = PARAM_ID_GPS_LONGITUDE,
+  83:Core/Src/app_param_dict.c ****     .type      = PARAM_TYPE_INT32,
+  84:Core/Src/app_param_dict.c ****     .access    = PARAM_ACCESS_RO,
+  85:Core/Src/app_param_dict.c ****     .min_value = (-2147483647 - 1),
+  86:Core/Src/app_param_dict.c ****     .max_value = 2147483647,
+  87:Core/Src/app_param_dict.c ****     .scale     = 0,
+  88:Core/Src/app_param_dict.c ****     .value     = 0
+ARM GAS  /tmp/ccTBywx0.s 			page 3
+
+
+  89:Core/Src/app_param_dict.c ****   },
+  90:Core/Src/app_param_dict.c ****   {
+  91:Core/Src/app_param_dict.c ****     .id        = PARAM_ID_GPS_LATITUDE,
+  92:Core/Src/app_param_dict.c ****     .type      = PARAM_TYPE_INT32,
+  93:Core/Src/app_param_dict.c ****     .access    = PARAM_ACCESS_RO,
+  94:Core/Src/app_param_dict.c ****     .min_value = (-2147483647 - 1),
+  95:Core/Src/app_param_dict.c ****     .max_value = 2147483647,
+  96:Core/Src/app_param_dict.c ****     .scale     = 0,
+  97:Core/Src/app_param_dict.c ****     .value     = 0
+  98:Core/Src/app_param_dict.c ****   },
+  99:Core/Src/app_param_dict.c ****   {
+ 100:Core/Src/app_param_dict.c ****     .id        = PARAM_ID_GPS_ALTITUDE,
+ 101:Core/Src/app_param_dict.c ****     .type      = PARAM_TYPE_INT16,
+ 102:Core/Src/app_param_dict.c ****     .access    = PARAM_ACCESS_RO,
+ 103:Core/Src/app_param_dict.c ****     .min_value = -32768,
+ 104:Core/Src/app_param_dict.c ****     .max_value = 32767,
+ 105:Core/Src/app_param_dict.c ****     .scale     = 0,
+ 106:Core/Src/app_param_dict.c ****     .value     = 0
+ 107:Core/Src/app_param_dict.c ****   },
+ 108:Core/Src/app_param_dict.c ****   {
+ 109:Core/Src/app_param_dict.c ****     .id        = PARAM_ID_SAT_LOCK,
+ 110:Core/Src/app_param_dict.c ****     .type      = PARAM_TYPE_UINT8,
+ 111:Core/Src/app_param_dict.c ****     .access    = PARAM_ACCESS_RO,
+ 112:Core/Src/app_param_dict.c ****     .min_value = 0,
+ 113:Core/Src/app_param_dict.c ****     .max_value = 1,
+ 114:Core/Src/app_param_dict.c ****     .scale     = 0,
+ 115:Core/Src/app_param_dict.c ****     .value     = 0
+ 116:Core/Src/app_param_dict.c ****   },
+ 117:Core/Src/app_param_dict.c **** 
+ 118:Core/Src/app_param_dict.c ****   /* 0x06 统计信息 */
+ 119:Core/Src/app_param_dict.c ****   {
+ 120:Core/Src/app_param_dict.c ****     .id        = PARAM_ID_ETH_TX_CNT,
+ 121:Core/Src/app_param_dict.c ****     .type      = PARAM_TYPE_UINT32,
+ 122:Core/Src/app_param_dict.c ****     .access    = PARAM_ACCESS_RO,
+ 123:Core/Src/app_param_dict.c ****     .min_value = 0,
+ 124:Core/Src/app_param_dict.c ****     .max_value = 2147483647,
+ 125:Core/Src/app_param_dict.c ****     .scale     = 0,
+ 126:Core/Src/app_param_dict.c ****     .value     = 0
+ 127:Core/Src/app_param_dict.c ****   },
+ 128:Core/Src/app_param_dict.c ****   {
+ 129:Core/Src/app_param_dict.c ****     .id        = PARAM_ID_ETH_RX_CNT,
+ 130:Core/Src/app_param_dict.c ****     .type      = PARAM_TYPE_UINT32,
+ 131:Core/Src/app_param_dict.c ****     .access    = PARAM_ACCESS_RO,
+ 132:Core/Src/app_param_dict.c ****     .min_value = 0,
+ 133:Core/Src/app_param_dict.c ****     .max_value = 2147483647,
+ 134:Core/Src/app_param_dict.c ****     .scale     = 0,
+ 135:Core/Src/app_param_dict.c ****     .value     = 0
+ 136:Core/Src/app_param_dict.c ****   },
+ 137:Core/Src/app_param_dict.c ****   {
+ 138:Core/Src/app_param_dict.c ****     .id        = PARAM_ID_VOICE_TX_CNT,
+ 139:Core/Src/app_param_dict.c ****     .type      = PARAM_TYPE_UINT32,
+ 140:Core/Src/app_param_dict.c ****     .access    = PARAM_ACCESS_RO,
+ 141:Core/Src/app_param_dict.c ****     .min_value = 0,
+ 142:Core/Src/app_param_dict.c ****     .max_value = 2147483647,
+ 143:Core/Src/app_param_dict.c ****     .scale     = 0,
+ 144:Core/Src/app_param_dict.c ****     .value     = 0
+ 145:Core/Src/app_param_dict.c ****   },
+ARM GAS  /tmp/ccTBywx0.s 			page 4
+
+
+ 146:Core/Src/app_param_dict.c ****   {
+ 147:Core/Src/app_param_dict.c ****     .id        = PARAM_ID_VOICE_RX_CNT,
+ 148:Core/Src/app_param_dict.c ****     .type      = PARAM_TYPE_UINT32,
+ 149:Core/Src/app_param_dict.c ****     .access    = PARAM_ACCESS_RO,
+ 150:Core/Src/app_param_dict.c ****     .min_value = 0,
+ 151:Core/Src/app_param_dict.c ****     .max_value = 2147483647,
+ 152:Core/Src/app_param_dict.c ****     .scale     = 0,
+ 153:Core/Src/app_param_dict.c ****     .value     = 0
+ 154:Core/Src/app_param_dict.c ****   },
+ 155:Core/Src/app_param_dict.c **** 
+ 156:Core/Src/app_param_dict.c ****   /* 0x07 自检状态 */
+ 157:Core/Src/app_param_dict.c ****   {
+ 158:Core/Src/app_param_dict.c ****     .id        = PARAM_ID_BATTERY_CAP,
+ 159:Core/Src/app_param_dict.c ****     .type      = PARAM_TYPE_UINT8,
+ 160:Core/Src/app_param_dict.c ****     .access    = PARAM_ACCESS_RO,
+ 161:Core/Src/app_param_dict.c ****     .min_value = 0,
+ 162:Core/Src/app_param_dict.c ****     .max_value = 100,
+ 163:Core/Src/app_param_dict.c ****     .scale     = 0,
+ 164:Core/Src/app_param_dict.c ****     .value     = 0
+ 165:Core/Src/app_param_dict.c ****   },
+ 166:Core/Src/app_param_dict.c ****   {
+ 167:Core/Src/app_param_dict.c ****     .id        = PARAM_ID_FAN_STATE,
+ 168:Core/Src/app_param_dict.c ****     .type      = PARAM_TYPE_UINT8,
+ 169:Core/Src/app_param_dict.c ****     .access    = PARAM_ACCESS_RO,
+ 170:Core/Src/app_param_dict.c ****     .min_value = 0,
+ 171:Core/Src/app_param_dict.c ****     .max_value = 255,
+ 172:Core/Src/app_param_dict.c ****     .scale     = 0,
+ 173:Core/Src/app_param_dict.c ****     .value     = 0
+ 174:Core/Src/app_param_dict.c ****   },
+ 175:Core/Src/app_param_dict.c **** 
+ 176:Core/Src/app_param_dict.c ****   /* 0x09 邻居信息 */
+ 177:Core/Src/app_param_dict.c ****   {
+ 178:Core/Src/app_param_dict.c ****     .id        = PARAM_ID_NEIGHBOR_COUNT,
+ 179:Core/Src/app_param_dict.c ****     .type      = PARAM_TYPE_UINT8,
+ 180:Core/Src/app_param_dict.c ****     .access    = PARAM_ACCESS_RO,
+ 181:Core/Src/app_param_dict.c ****     .min_value = 0,
+ 182:Core/Src/app_param_dict.c ****     .max_value = 255,
+ 183:Core/Src/app_param_dict.c ****     .scale     = 0,
+ 184:Core/Src/app_param_dict.c ****     .value     = 0
+ 185:Core/Src/app_param_dict.c ****   },
+ 186:Core/Src/app_param_dict.c ****   {
+ 187:Core/Src/app_param_dict.c ****     .id        = PARAM_ID_NEIGHBOR_RSSI,
+ 188:Core/Src/app_param_dict.c ****     .type      = PARAM_TYPE_INT16,
+ 189:Core/Src/app_param_dict.c ****     .access    = PARAM_ACCESS_RO,
+ 190:Core/Src/app_param_dict.c ****     .min_value = -127,
+ 191:Core/Src/app_param_dict.c ****     .max_value = 127,
+ 192:Core/Src/app_param_dict.c ****     .scale     = 0,
+ 193:Core/Src/app_param_dict.c ****     .value     = 0
+ 194:Core/Src/app_param_dict.c ****   }
+ 195:Core/Src/app_param_dict.c **** };
+ 196:Core/Src/app_param_dict.c **** 
+ 197:Core/Src/app_param_dict.c **** static const uint16_t s_paramCount = (uint16_t)(sizeof(s_paramDict) / sizeof(s_paramDict[0]));
+ 198:Core/Src/app_param_dict.c **** 
+ 199:Core/Src/app_param_dict.c **** const ParamDef_t *APP_ParamDict_GetTable(uint16_t *outCount)
+ 200:Core/Src/app_param_dict.c **** {
+  28              		.loc 1 200 1 view -0
+  29              		.cfi_startproc
+ARM GAS  /tmp/ccTBywx0.s 			page 5
+
+
+  30              		@ args = 0, pretend = 0, frame = 0
+  31              		@ frame_needed = 0, uses_anonymous_args = 0
+  32              		@ link register save eliminated.
+ 201:Core/Src/app_param_dict.c ****   if (outCount != NULL)
+  33              		.loc 1 201 3 view .LVU1
+  34              		.loc 1 201 6 is_stmt 0 view .LVU2
+  35 0000 08B1     		cbz	r0, .L2
+ 202:Core/Src/app_param_dict.c ****   {
+ 203:Core/Src/app_param_dict.c ****     *outCount = s_paramCount;
+  36              		.loc 1 203 5 is_stmt 1 view .LVU3
+  37              		.loc 1 203 15 is_stmt 0 view .LVU4
+  38 0002 1122     		movs	r2, #17
+  39 0004 0280     		strh	r2, [r0]	@ movhi
+  40              	.L2:
+ 204:Core/Src/app_param_dict.c ****   }
+ 205:Core/Src/app_param_dict.c ****   return s_paramDict;
+  41              		.loc 1 205 3 is_stmt 1 view .LVU5
+ 206:Core/Src/app_param_dict.c **** }
+  42              		.loc 1 206 1 is_stmt 0 view .LVU6
+  43 0006 0148     		ldr	r0, .L3
+  44              	.LVL1:
+  45              		.loc 1 206 1 view .LVU7
+  46 0008 7047     		bx	lr
+  47              	.L4:
+  48 000a 00BF     		.align	2
+  49              	.L3:
+  50 000c 00000000 		.word	.LANCHOR0
+  51              		.cfi_endproc
+  52              	.LFE0:
+  54              		.section	.text.APP_ParamDict_FindById,"ax",%progbits
+  55              		.align	1
+  56              		.global	APP_ParamDict_FindById
+  57              		.syntax unified
+  58              		.thumb
+  59              		.thumb_func
+  60              		.fpu softvfp
+  62              	APP_ParamDict_FindById:
+  63              	.LVL2:
+  64              	.LFB1:
+ 207:Core/Src/app_param_dict.c **** 
+ 208:Core/Src/app_param_dict.c **** ParamDef_t *APP_ParamDict_FindById(ParamId_t id)
+ 209:Core/Src/app_param_dict.c **** {
+  65              		.loc 1 209 1 is_stmt 1 view -0
+  66              		.cfi_startproc
+  67              		@ args = 0, pretend = 0, frame = 0
+  68              		@ frame_needed = 0, uses_anonymous_args = 0
+  69              		@ link register save eliminated.
+ 210:Core/Src/app_param_dict.c ****   for (uint16_t i = 0; i < s_paramCount; ++i)
+  70              		.loc 1 210 3 view .LVU9
+  71              	.LBB2:
+  72              		.loc 1 210 8 view .LVU10
+  73              		.loc 1 210 17 is_stmt 0 view .LVU11
+  74 0000 0023     		movs	r3, #0
+  75              		.loc 1 210 3 view .LVU12
+  76 0002 01E0     		b	.L6
+  77              	.LVL3:
+  78              	.L7:
+ARM GAS  /tmp/ccTBywx0.s 			page 6
+
+
+  79              		.loc 1 210 42 is_stmt 1 discriminator 2 view .LVU13
+  80 0004 0133     		adds	r3, r3, #1
+  81              	.LVL4:
+  82              		.loc 1 210 42 is_stmt 0 discriminator 2 view .LVU14
+  83 0006 9BB2     		uxth	r3, r3
+  84              	.LVL5:
+  85              	.L6:
+  86              		.loc 1 210 24 is_stmt 1 discriminator 1 view .LVU15
+  87              		.loc 1 210 3 is_stmt 0 discriminator 1 view .LVU16
+  88 0008 102B     		cmp	r3, #16
+  89 000a 0BD8     		bhi	.L10
+ 211:Core/Src/app_param_dict.c ****   {
+ 212:Core/Src/app_param_dict.c ****     if (s_paramDict[i].id == id)
+  90              		.loc 1 212 5 is_stmt 1 view .LVU17
+  91              		.loc 1 212 23 is_stmt 0 view .LVU18
+  92 000c 03EB8302 		add	r2, r3, r3, lsl #2
+  93 0010 0549     		ldr	r1, .L11
+  94 0012 31F82220 		ldrh	r2, [r1, r2, lsl #2]
+  95              		.loc 1 212 8 view .LVU19
+  96 0016 8242     		cmp	r2, r0
+  97 0018 F4D1     		bne	.L7
+ 213:Core/Src/app_param_dict.c ****     {
+ 214:Core/Src/app_param_dict.c ****       return &s_paramDict[i];
+  98              		.loc 1 214 7 is_stmt 1 view .LVU20
+  99              		.loc 1 214 14 is_stmt 0 view .LVU21
+ 100 001a 03EB830C 		add	ip, r3, r3, lsl #2
+ 101 001e 01EB8C00 		add	r0, r1, ip, lsl #2
+ 102              	.LVL6:
+ 103              		.loc 1 214 14 view .LVU22
+ 104 0022 7047     		bx	lr
+ 105              	.LVL7:
+ 106              	.L10:
+ 107              		.loc 1 214 14 view .LVU23
+ 108              	.LBE2:
+ 215:Core/Src/app_param_dict.c ****     }
+ 216:Core/Src/app_param_dict.c ****   }
+ 217:Core/Src/app_param_dict.c ****   return NULL;
+ 109              		.loc 1 217 10 view .LVU24
+ 110 0024 0020     		movs	r0, #0
+ 111              	.LVL8:
+ 218:Core/Src/app_param_dict.c **** }
+ 112              		.loc 1 218 1 view .LVU25
+ 113 0026 7047     		bx	lr
+ 114              	.L12:
+ 115              		.align	2
+ 116              	.L11:
+ 117 0028 00000000 		.word	.LANCHOR0
+ 118              		.cfi_endproc
+ 119              	.LFE1:
+ 121              		.section	.text.APP_ParamDict_GetValue,"ax",%progbits
+ 122              		.align	1
+ 123              		.global	APP_ParamDict_GetValue
+ 124              		.syntax unified
+ 125              		.thumb
+ 126              		.thumb_func
+ 127              		.fpu softvfp
+ 129              	APP_ParamDict_GetValue:
+ARM GAS  /tmp/ccTBywx0.s 			page 7
+
+
+ 130              	.LVL9:
+ 131              	.LFB2:
+ 219:Core/Src/app_param_dict.c **** 
+ 220:Core/Src/app_param_dict.c **** bool APP_ParamDict_GetValue(ParamId_t id, int32_t *outVal)
+ 221:Core/Src/app_param_dict.c **** {
+ 132              		.loc 1 221 1 is_stmt 1 view -0
+ 133              		.cfi_startproc
+ 134              		@ args = 0, pretend = 0, frame = 0
+ 135              		@ frame_needed = 0, uses_anonymous_args = 0
+ 136              		.loc 1 221 1 is_stmt 0 view .LVU27
+ 137 0000 10B5     		push	{r4, lr}
+ 138              	.LCFI0:
+ 139              		.cfi_def_cfa_offset 8
+ 140              		.cfi_offset 4, -8
+ 141              		.cfi_offset 14, -4
+ 142 0002 0C46     		mov	r4, r1
+ 222:Core/Src/app_param_dict.c ****   ParamDef_t *param = APP_ParamDict_FindById(id);
+ 143              		.loc 1 222 3 is_stmt 1 view .LVU28
+ 144              		.loc 1 222 23 is_stmt 0 view .LVU29
+ 145 0004 FFF7FEFF 		bl	APP_ParamDict_FindById
+ 146              	.LVL10:
+ 223:Core/Src/app_param_dict.c ****   if ((param == NULL) || (outVal == NULL))
+ 147              		.loc 1 223 3 is_stmt 1 view .LVU30
+ 148              		.loc 1 223 6 is_stmt 0 view .LVU31
+ 149 0008 20B1     		cbz	r0, .L15
+ 150              		.loc 1 223 23 discriminator 1 view .LVU32
+ 151 000a 2CB1     		cbz	r4, .L16
+ 224:Core/Src/app_param_dict.c ****   {
+ 225:Core/Src/app_param_dict.c ****     return false;
+ 226:Core/Src/app_param_dict.c ****   }
+ 227:Core/Src/app_param_dict.c **** 
+ 228:Core/Src/app_param_dict.c ****   *outVal = param->value;
+ 152              		.loc 1 228 3 is_stmt 1 view .LVU33
+ 153              		.loc 1 228 18 is_stmt 0 view .LVU34
+ 154 000c 0369     		ldr	r3, [r0, #16]
+ 155              		.loc 1 228 11 view .LVU35
+ 156 000e 2360     		str	r3, [r4]
+ 229:Core/Src/app_param_dict.c ****   return true;
+ 157              		.loc 1 229 3 is_stmt 1 view .LVU36
+ 158              		.loc 1 229 10 is_stmt 0 view .LVU37
+ 159 0010 0120     		movs	r0, #1
+ 160              	.LVL11:
+ 161              	.L14:
+ 230:Core/Src/app_param_dict.c **** }
+ 162              		.loc 1 230 1 view .LVU38
+ 163 0012 10BD     		pop	{r4, pc}
+ 164              	.LVL12:
+ 165              	.L15:
+ 225:Core/Src/app_param_dict.c ****   }
+ 166              		.loc 1 225 12 view .LVU39
+ 167 0014 0020     		movs	r0, #0
+ 168              	.LVL13:
+ 225:Core/Src/app_param_dict.c ****   }
+ 169              		.loc 1 225 12 view .LVU40
+ 170 0016 FCE7     		b	.L14
+ 171              	.LVL14:
+ 172              	.L16:
+ARM GAS  /tmp/ccTBywx0.s 			page 8
+
+
+ 225:Core/Src/app_param_dict.c ****   }
+ 173              		.loc 1 225 12 view .LVU41
+ 174 0018 0020     		movs	r0, #0
+ 175              	.LVL15:
+ 225:Core/Src/app_param_dict.c ****   }
+ 176              		.loc 1 225 12 view .LVU42
+ 177 001a FAE7     		b	.L14
+ 178              		.cfi_endproc
+ 179              	.LFE2:
+ 181              		.section	.text.APP_ParamDict_TrySetValue,"ax",%progbits
+ 182              		.align	1
+ 183              		.global	APP_ParamDict_TrySetValue
+ 184              		.syntax unified
+ 185              		.thumb
+ 186              		.thumb_func
+ 187              		.fpu softvfp
+ 189              	APP_ParamDict_TrySetValue:
+ 190              	.LVL16:
+ 191              	.LFB3:
+ 231:Core/Src/app_param_dict.c **** 
+ 232:Core/Src/app_param_dict.c **** bool APP_ParamDict_TrySetValue(ParamId_t id, int32_t newVal)
+ 233:Core/Src/app_param_dict.c **** {
+ 192              		.loc 1 233 1 is_stmt 1 view -0
+ 193              		.cfi_startproc
+ 194              		@ args = 0, pretend = 0, frame = 0
+ 195              		@ frame_needed = 0, uses_anonymous_args = 0
+ 196              		.loc 1 233 1 is_stmt 0 view .LVU44
+ 197 0000 10B5     		push	{r4, lr}
+ 198              	.LCFI1:
+ 199              		.cfi_def_cfa_offset 8
+ 200              		.cfi_offset 4, -8
+ 201              		.cfi_offset 14, -4
+ 202 0002 0C46     		mov	r4, r1
+ 234:Core/Src/app_param_dict.c ****   ParamDef_t *param = APP_ParamDict_FindById(id);
+ 203              		.loc 1 234 3 is_stmt 1 view .LVU45
+ 204              		.loc 1 234 23 is_stmt 0 view .LVU46
+ 205 0004 FFF7FEFF 		bl	APP_ParamDict_FindById
+ 206              	.LVL17:
+ 235:Core/Src/app_param_dict.c ****   if (param == NULL)
+ 207              		.loc 1 235 3 is_stmt 1 view .LVU47
+ 208              		.loc 1 235 6 is_stmt 0 view .LVU48
+ 209 0008 58B1     		cbz	r0, .L20
+ 236:Core/Src/app_param_dict.c ****   {
+ 237:Core/Src/app_param_dict.c ****     return false;
+ 238:Core/Src/app_param_dict.c ****   }
+ 239:Core/Src/app_param_dict.c **** 
+ 240:Core/Src/app_param_dict.c ****   /* 只读参数不允许修改 */
+ 241:Core/Src/app_param_dict.c ****   if (param->access != PARAM_ACCESS_RW)
+ 210              		.loc 1 241 3 is_stmt 1 view .LVU49
+ 211              		.loc 1 241 12 is_stmt 0 view .LVU50
+ 212 000a C278     		ldrb	r2, [r0, #3]	@ zero_extendqisi2
+ 213              		.loc 1 241 6 view .LVU51
+ 214 000c 012A     		cmp	r2, #1
+ 215 000e 0AD1     		bne	.L21
+ 242:Core/Src/app_param_dict.c ****   {
+ 243:Core/Src/app_param_dict.c ****     return false;
+ 244:Core/Src/app_param_dict.c ****   }
+ARM GAS  /tmp/ccTBywx0.s 			page 9
+
+
+ 245:Core/Src/app_param_dict.c **** 
+ 246:Core/Src/app_param_dict.c ****   /* 边界检查 */
+ 247:Core/Src/app_param_dict.c ****   if ((newVal < param->min_value) || (newVal > param->max_value))
+ 216              		.loc 1 247 3 is_stmt 1 view .LVU52
+ 217              		.loc 1 247 22 is_stmt 0 view .LVU53
+ 218 0010 4268     		ldr	r2, [r0, #4]
+ 219              		.loc 1 247 6 view .LVU54
+ 220 0012 A242     		cmp	r2, r4
+ 221 0014 09DC     		bgt	.L22
+ 222              		.loc 1 247 53 discriminator 1 view .LVU55
+ 223 0016 8268     		ldr	r2, [r0, #8]
+ 224              		.loc 1 247 35 discriminator 1 view .LVU56
+ 225 0018 A242     		cmp	r2, r4
+ 226 001a 08DB     		blt	.L23
+ 248:Core/Src/app_param_dict.c ****   {
+ 249:Core/Src/app_param_dict.c ****     return false;
+ 250:Core/Src/app_param_dict.c ****   }
+ 251:Core/Src/app_param_dict.c **** 
+ 252:Core/Src/app_param_dict.c ****   param->value = newVal;
+ 227              		.loc 1 252 3 is_stmt 1 view .LVU57
+ 228              		.loc 1 252 16 is_stmt 0 view .LVU58
+ 229 001c 0461     		str	r4, [r0, #16]
+ 253:Core/Src/app_param_dict.c ****   return true;
+ 230              		.loc 1 253 3 is_stmt 1 view .LVU59
+ 231              		.loc 1 253 10 is_stmt 0 view .LVU60
+ 232 001e 0120     		movs	r0, #1
+ 233              	.LVL18:
+ 234              		.loc 1 253 10 view .LVU61
+ 235 0020 02E0     		b	.L19
+ 236              	.LVL19:
+ 237              	.L20:
+ 237:Core/Src/app_param_dict.c ****   }
+ 238              		.loc 1 237 12 view .LVU62
+ 239 0022 0020     		movs	r0, #0
+ 240              	.LVL20:
+ 237:Core/Src/app_param_dict.c ****   }
+ 241              		.loc 1 237 12 view .LVU63
+ 242 0024 00E0     		b	.L19
+ 243              	.LVL21:
+ 244              	.L21:
+ 243:Core/Src/app_param_dict.c ****   }
+ 245              		.loc 1 243 12 view .LVU64
+ 246 0026 0020     		movs	r0, #0
+ 247              	.LVL22:
+ 248              	.L19:
+ 254:Core/Src/app_param_dict.c **** }
+ 249              		.loc 1 254 1 view .LVU65
+ 250 0028 10BD     		pop	{r4, pc}
+ 251              	.LVL23:
+ 252              	.L22:
+ 249:Core/Src/app_param_dict.c ****   }
+ 253              		.loc 1 249 12 view .LVU66
+ 254 002a 0020     		movs	r0, #0
+ 255              	.LVL24:
+ 249:Core/Src/app_param_dict.c ****   }
+ 256              		.loc 1 249 12 view .LVU67
+ 257 002c FCE7     		b	.L19
+ARM GAS  /tmp/ccTBywx0.s 			page 10
+
+
+ 258              	.LVL25:
+ 259              	.L23:
+ 249:Core/Src/app_param_dict.c ****   }
+ 260              		.loc 1 249 12 view .LVU68
+ 261 002e 0020     		movs	r0, #0
+ 262              	.LVL26:
+ 249:Core/Src/app_param_dict.c ****   }
+ 263              		.loc 1 249 12 view .LVU69
+ 264 0030 FAE7     		b	.L19
+ 265              		.cfi_endproc
+ 266              	.LFE3:
+ 268              		.section	.text.APP_ParamDict_SetValueUnsafe,"ax",%progbits
+ 269              		.align	1
+ 270              		.global	APP_ParamDict_SetValueUnsafe
+ 271              		.syntax unified
+ 272              		.thumb
+ 273              		.thumb_func
+ 274              		.fpu softvfp
+ 276              	APP_ParamDict_SetValueUnsafe:
+ 277              	.LVL27:
+ 278              	.LFB4:
+ 255:Core/Src/app_param_dict.c **** 
+ 256:Core/Src/app_param_dict.c **** bool APP_ParamDict_SetValueUnsafe(ParamId_t id, int32_t newVal)
+ 257:Core/Src/app_param_dict.c **** {
+ 279              		.loc 1 257 1 is_stmt 1 view -0
+ 280              		.cfi_startproc
+ 281              		@ args = 0, pretend = 0, frame = 0
+ 282              		@ frame_needed = 0, uses_anonymous_args = 0
+ 283              		.loc 1 257 1 is_stmt 0 view .LVU71
+ 284 0000 10B5     		push	{r4, lr}
+ 285              	.LCFI2:
+ 286              		.cfi_def_cfa_offset 8
+ 287              		.cfi_offset 4, -8
+ 288              		.cfi_offset 14, -4
+ 289 0002 0C46     		mov	r4, r1
+ 258:Core/Src/app_param_dict.c ****   ParamDef_t *param = APP_ParamDict_FindById(id);
+ 290              		.loc 1 258 3 is_stmt 1 view .LVU72
+ 291              		.loc 1 258 23 is_stmt 0 view .LVU73
+ 292 0004 FFF7FEFF 		bl	APP_ParamDict_FindById
+ 293              	.LVL28:
+ 259:Core/Src/app_param_dict.c ****   if (param == NULL)
+ 294              		.loc 1 259 3 is_stmt 1 view .LVU74
+ 295              		.loc 1 259 6 is_stmt 0 view .LVU75
+ 296 0008 40B1     		cbz	r0, .L27
+ 260:Core/Src/app_param_dict.c ****   {
+ 261:Core/Src/app_param_dict.c ****     return false;
+ 262:Core/Src/app_param_dict.c ****   }
+ 263:Core/Src/app_param_dict.c **** 
+ 264:Core/Src/app_param_dict.c ****   if ((newVal < param->min_value) || (newVal > param->max_value))
+ 297              		.loc 1 264 3 is_stmt 1 view .LVU76
+ 298              		.loc 1 264 22 is_stmt 0 view .LVU77
+ 299 000a 4268     		ldr	r2, [r0, #4]
+ 300              		.loc 1 264 6 view .LVU78
+ 301 000c A242     		cmp	r2, r4
+ 302 000e 07DC     		bgt	.L28
+ 303              		.loc 1 264 53 discriminator 1 view .LVU79
+ 304 0010 8268     		ldr	r2, [r0, #8]
+ARM GAS  /tmp/ccTBywx0.s 			page 11
+
+
+ 305              		.loc 1 264 35 discriminator 1 view .LVU80
+ 306 0012 A242     		cmp	r2, r4
+ 307 0014 06DB     		blt	.L29
+ 265:Core/Src/app_param_dict.c ****   {
+ 266:Core/Src/app_param_dict.c ****     return false;
+ 267:Core/Src/app_param_dict.c ****   }
+ 268:Core/Src/app_param_dict.c **** 
+ 269:Core/Src/app_param_dict.c ****   param->value = newVal;
+ 308              		.loc 1 269 3 is_stmt 1 view .LVU81
+ 309              		.loc 1 269 16 is_stmt 0 view .LVU82
+ 310 0016 0461     		str	r4, [r0, #16]
+ 270:Core/Src/app_param_dict.c ****   return true;
+ 311              		.loc 1 270 3 is_stmt 1 view .LVU83
+ 312              		.loc 1 270 10 is_stmt 0 view .LVU84
+ 313 0018 0120     		movs	r0, #1
+ 314              	.LVL29:
+ 315              	.L26:
+ 271:Core/Src/app_param_dict.c **** }
+ 316              		.loc 1 271 1 view .LVU85
+ 317 001a 10BD     		pop	{r4, pc}
+ 318              	.LVL30:
+ 319              	.L27:
+ 261:Core/Src/app_param_dict.c ****   }
+ 320              		.loc 1 261 12 view .LVU86
+ 321 001c 0020     		movs	r0, #0
+ 322              	.LVL31:
+ 261:Core/Src/app_param_dict.c ****   }
+ 323              		.loc 1 261 12 view .LVU87
+ 324 001e FCE7     		b	.L26
+ 325              	.LVL32:
+ 326              	.L28:
+ 266:Core/Src/app_param_dict.c ****   }
+ 327              		.loc 1 266 12 view .LVU88
+ 328 0020 0020     		movs	r0, #0
+ 329              	.LVL33:
+ 266:Core/Src/app_param_dict.c ****   }
+ 330              		.loc 1 266 12 view .LVU89
+ 331 0022 FAE7     		b	.L26
+ 332              	.LVL34:
+ 333              	.L29:
+ 266:Core/Src/app_param_dict.c ****   }
+ 334              		.loc 1 266 12 view .LVU90
+ 335 0024 0020     		movs	r0, #0
+ 336              	.LVL35:
+ 266:Core/Src/app_param_dict.c ****   }
+ 337              		.loc 1 266 12 view .LVU91
+ 338 0026 F8E7     		b	.L26
+ 339              		.cfi_endproc
+ 340              	.LFE4:
+ 342              		.section	.data.s_paramDict,"aw"
+ 343              		.align	2
+ 344              		.set	.LANCHOR0,. + 0
+ 347              	s_paramDict:
+ 348 0000 0100     		.short	1
+ 349 0002 00       		.byte	0
+ 350 0003 01       		.byte	1
+ 351 0004 00000000 		.word	0
+ARM GAS  /tmp/ccTBywx0.s 			page 12
+
+
+ 352 0008 03000000 		.word	3
+ 353 000c 00       		.byte	0
+ 354 000d 000000   		.space	3
+ 355 0010 00000000 		.word	0
+ 356 0014 0200     		.short	2
+ 357 0016 05       		.byte	5
+ 358 0017 01       		.byte	1
+ 359 0018 00000000 		.word	0
+ 360 001c FFFFFFFF 		.word	-1
+ 361 0020 00       		.byte	0
+ 362 0021 000000   		.space	3
+ 363 0024 0100A8C0 		.word	-1062731775
+ 364 0028 0300     		.short	3
+ 365 002a 05       		.byte	5
+ 366 002b 01       		.byte	1
+ 367 002c B0040000 		.word	1200
+ 368 0030 00100E00 		.word	921600
+ 369 0034 00       		.byte	0
+ 370 0035 000000   		.space	3
+ 371 0038 00C20100 		.word	115200
+ 372 003c 0400     		.short	4
+ 373 003e 03       		.byte	3
+ 374 003f 00       		.byte	0
+ 375 0040 70FEFFFF 		.word	-400
+ 376 0044 52030000 		.word	850
+ 377 0048 01       		.byte	1
+ 378 0049 000000   		.space	3
+ 379 004c FA000000 		.word	250
+ 380 0050 0A00     		.short	10
+ 381 0052 00       		.byte	0
+ 382 0053 01       		.byte	1
+ 383 0054 00000000 		.word	0
+ 384 0058 03000000 		.word	3
+ 385 005c 00       		.byte	0
+ 386 005d 000000   		.space	3
+ 387 0060 00000000 		.word	0
+ 388 0064 1400     		.short	20
+ 389 0066 04       		.byte	4
+ 390 0067 00       		.byte	0
+ 391 0068 00000080 		.word	-2147483648
+ 392 006c FFFFFF7F 		.word	2147483647
+ 393 0070 00       		.byte	0
+ 394 0071 000000   		.space	3
+ 395 0074 00000000 		.word	0
+ 396 0078 1500     		.short	21
+ 397 007a 04       		.byte	4
+ 398 007b 00       		.byte	0
+ 399 007c 00000080 		.word	-2147483648
+ 400 0080 FFFFFF7F 		.word	2147483647
+ 401 0084 00       		.byte	0
+ 402 0085 000000   		.space	3
+ 403 0088 00000000 		.word	0
+ 404 008c 1600     		.short	22
+ 405 008e 03       		.byte	3
+ 406 008f 00       		.byte	0
+ 407 0090 0080FFFF 		.word	-32768
+ 408 0094 FF7F0000 		.word	32767
+ARM GAS  /tmp/ccTBywx0.s 			page 13
+
+
+ 409 0098 00       		.byte	0
+ 410 0099 000000   		.space	3
+ 411 009c 00000000 		.word	0
+ 412 00a0 1700     		.short	23
+ 413 00a2 00       		.byte	0
+ 414 00a3 00       		.byte	0
+ 415 00a4 00000000 		.word	0
+ 416 00a8 01000000 		.word	1
+ 417 00ac 00       		.byte	0
+ 418 00ad 000000   		.space	3
+ 419 00b0 00000000 		.word	0
+ 420 00b4 1E00     		.short	30
+ 421 00b6 05       		.byte	5
+ 422 00b7 00       		.byte	0
+ 423 00b8 00000000 		.word	0
+ 424 00bc FFFFFF7F 		.word	2147483647
+ 425 00c0 00       		.byte	0
+ 426 00c1 000000   		.space	3
+ 427 00c4 00000000 		.word	0
+ 428 00c8 1F00     		.short	31
+ 429 00ca 05       		.byte	5
+ 430 00cb 00       		.byte	0
+ 431 00cc 00000000 		.word	0
+ 432 00d0 FFFFFF7F 		.word	2147483647
+ 433 00d4 00       		.byte	0
+ 434 00d5 000000   		.space	3
+ 435 00d8 00000000 		.word	0
+ 436 00dc 2000     		.short	32
+ 437 00de 05       		.byte	5
+ 438 00df 00       		.byte	0
+ 439 00e0 00000000 		.word	0
+ 440 00e4 FFFFFF7F 		.word	2147483647
+ 441 00e8 00       		.byte	0
+ 442 00e9 000000   		.space	3
+ 443 00ec 00000000 		.word	0
+ 444 00f0 2100     		.short	33
+ 445 00f2 05       		.byte	5
+ 446 00f3 00       		.byte	0
+ 447 00f4 00000000 		.word	0
+ 448 00f8 FFFFFF7F 		.word	2147483647
+ 449 00fc 00       		.byte	0
+ 450 00fd 000000   		.space	3
+ 451 0100 00000000 		.word	0
+ 452 0104 2800     		.short	40
+ 453 0106 00       		.byte	0
+ 454 0107 00       		.byte	0
+ 455 0108 00000000 		.word	0
+ 456 010c 64000000 		.word	100
+ 457 0110 00       		.byte	0
+ 458 0111 000000   		.space	3
+ 459 0114 00000000 		.word	0
+ 460 0118 2900     		.short	41
+ 461 011a 00       		.byte	0
+ 462 011b 00       		.byte	0
+ 463 011c 00000000 		.word	0
+ 464 0120 FF000000 		.word	255
+ 465 0124 00       		.byte	0
+ARM GAS  /tmp/ccTBywx0.s 			page 14
+
+
+ 466 0125 000000   		.space	3
+ 467 0128 00000000 		.word	0
+ 468 012c 3200     		.short	50
+ 469 012e 00       		.byte	0
+ 470 012f 00       		.byte	0
+ 471 0130 00000000 		.word	0
+ 472 0134 FF000000 		.word	255
+ 473 0138 00       		.byte	0
+ 474 0139 000000   		.space	3
+ 475 013c 00000000 		.word	0
+ 476 0140 3300     		.short	51
+ 477 0142 03       		.byte	3
+ 478 0143 00       		.byte	0
+ 479 0144 81FFFFFF 		.word	-127
+ 480 0148 7F000000 		.word	127
+ 481 014c 00       		.byte	0
+ 482 014d 000000   		.space	3
+ 483 0150 00000000 		.word	0
+ 484              		.text
+ 485              	.Letext0:
+ 486              		.file 2 "/usr/lib/gcc/arm-none-eabi/10.3.1/include/stdint.h"
+ 487              		.file 3 "Core/Inc/app_param_dict.h"
+ARM GAS  /tmp/ccTBywx0.s 			page 15
+
+
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 app_param_dict.c
+     /tmp/ccTBywx0.s:16     .text.APP_ParamDict_GetTable:0000000000000000 $t
+     /tmp/ccTBywx0.s:24     .text.APP_ParamDict_GetTable:0000000000000000 APP_ParamDict_GetTable
+     /tmp/ccTBywx0.s:50     .text.APP_ParamDict_GetTable:000000000000000c $d
+     /tmp/ccTBywx0.s:55     .text.APP_ParamDict_FindById:0000000000000000 $t
+     /tmp/ccTBywx0.s:62     .text.APP_ParamDict_FindById:0000000000000000 APP_ParamDict_FindById
+     /tmp/ccTBywx0.s:117    .text.APP_ParamDict_FindById:0000000000000028 $d
+     /tmp/ccTBywx0.s:122    .text.APP_ParamDict_GetValue:0000000000000000 $t
+     /tmp/ccTBywx0.s:129    .text.APP_ParamDict_GetValue:0000000000000000 APP_ParamDict_GetValue
+     /tmp/ccTBywx0.s:182    .text.APP_ParamDict_TrySetValue:0000000000000000 $t
+     /tmp/ccTBywx0.s:189    .text.APP_ParamDict_TrySetValue:0000000000000000 APP_ParamDict_TrySetValue
+     /tmp/ccTBywx0.s:269    .text.APP_ParamDict_SetValueUnsafe:0000000000000000 $t
+     /tmp/ccTBywx0.s:276    .text.APP_ParamDict_SetValueUnsafe:0000000000000000 APP_ParamDict_SetValueUnsafe
+     /tmp/ccTBywx0.s:343    .data.s_paramDict:0000000000000000 $d
+     /tmp/ccTBywx0.s:347    .data.s_paramDict:0000000000000000 s_paramDict
+
+NO UNDEFINED SYMBOLS

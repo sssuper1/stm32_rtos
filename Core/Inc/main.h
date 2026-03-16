@@ -59,14 +59,6 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define LED_HEARTBEAT_Pin GPIO_PIN_13
 #define LED_HEARTBEAT_GPIO_Port GPIOC
-#define LCD_CS_Pin GPIO_PIN_4
-#define LCD_CS_GPIO_Port GPIOA
-#define LCD_DC_Pin GPIO_PIN_0
-#define LCD_DC_GPIO_Port GPIOB
-#define LCD_RES_Pin GPIO_PIN_1
-#define LCD_RES_GPIO_Port GPIOB
-#define LCD_BLK_Pin GPIO_PIN_10
-#define LCD_BLK_GPIO_Port GPIOB
 #define KEY_C2_Pin GPIO_PIN_12
 #define KEY_C2_GPIO_Port GPIOB
 #define KEY_C3_Pin GPIO_PIN_13

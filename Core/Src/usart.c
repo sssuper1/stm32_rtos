@@ -21,6 +21,37 @@
 #include "usart.h"
 
 /* USER CODE BEGIN 0 */
+#include "app_uart_rx.h"
+
+#define UART1_DMA_RX_BUF_SIZE 256u
+
+static uint8_t s_uart1DmaRxBuf[UART1_DMA_RX_BUF_SIZE];
+static uint16_t s_uart1LastPos = 0u;
+
+void APP_USART1_RxCheckIdle(void)
+{
+  uint16_t pos = (uint16_t)(UART1_DMA_RX_BUF_SIZE - __HAL_DMA_GET_COUNTER(&hdma_usart1_rx));
+
+  if (pos == s_uart1LastPos)
+  {
+    return;
+  }
+
+  if (pos > s_uart1LastPos)
+  {
+    APP_UartRx_PushFromISR(&s_uart1DmaRxBuf[s_uart1LastPos], (size_t)(pos - s_uart1LastPos));
+  }
+  else
+  {
+    APP_UartRx_PushFromISR(&s_uart1DmaRxBuf[s_uart1LastPos], (size_t)(UART1_DMA_RX_BUF_SIZE - s_uart1LastPos));
+    if (pos > 0u)
+    {
+      APP_UartRx_PushFromISR(&s_uart1DmaRxBuf[0], pos);
+    }
+  }
+
+  s_uart1LastPos = pos;
+}
 
 /* USER CODE END 0 */
 
@@ -52,6 +83,16 @@ void MX_USART1_UART_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN USART1_Init 2 */
+
+  APP_UartRx_Init();
+  s_uart1LastPos = 0u;
+
+  if (HAL_UART_Receive_DMA(&huart1, s_uart1DmaRxBuf, UART1_DMA_RX_BUF_SIZE) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  __HAL_UART_ENABLE_IT(&huart1, UART_IT_IDLE);
 
   /* USER CODE END USART1_Init 2 */
 

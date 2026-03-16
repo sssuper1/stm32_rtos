@@ -76,6 +76,13 @@ const MenuNode_t *APP_Menu_Init(void);
 const MenuNode_t *APP_Menu_GetCurrent(void);
 
 /**
+ * @brief 立即重绘当前节点。
+ *
+ * 典型用于后台数据更新后（如 UART 回包）触发屏幕同步。
+ */
+void APP_Menu_RefreshCurrent(void);
+
+/**
  * @brief 处理一次按键事件，内部完成节点跳转。
  *
  * - 优先调用当前节点的 key_cb（若存在），可用于参数编辑模式。

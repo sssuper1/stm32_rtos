@@ -41,6 +41,7 @@
    PARAM_TYPE_INT8,           /**< -128 ~ 127           (sint1)      */
    PARAM_TYPE_UINT16,         /**< 0 ~ 65535                        */
    PARAM_TYPE_INT16,          /**< -32768 ~ 32767                   */
+   PARAM_TYPE_INT32,          /**< 通用 32 位有符号               */
    PARAM_TYPE_UINT32,         /**< 通用 32 位无符号               */
    PARAM_TYPE_SCALED_1000_I32 /**< 以 1000 为缩放因子的定点数，如 1000uint4 */
  } ParamType_t;
@@ -104,6 +105,13 @@
   * @return         true 更新成功，false 失败
   */
  bool APP_ParamDict_TrySetValue(ParamId_t id, int32_t newVal);
+
+/**
+ * @brief 内部强制写值（跳过读写权限检查），仍保留边界检查。
+ *
+ * 用于 UART 回包等设备状态同步场景，允许更新只读参数。
+ */
+bool APP_ParamDict_SetValueUnsafe(ParamId_t id, int32_t newVal);
  
  /** 一些示例参数 ID，后续可替换为协议中的正式定义 **/
  enum
@@ -111,7 +119,29 @@
    PARAM_ID_WORK_MODE      = 1,  /**< 当前工作模式 */
    PARAM_ID_NET_IP_ADDR    = 2,  /**< 网口 IP 地址（可按分段或索引化存储） */
    PARAM_ID_UART_BAUDRATE  = 3,  /**< 串口波特率   */
-   PARAM_ID_ENV_TEMPERATURE = 4  /**< 环境温度 (状态量，只读示例) */
+  PARAM_ID_ENV_TEMPERATURE = 4, /**< 环境温度 (状态量，只读示例) */
+
+  PARAM_ID_ROUTING_PROTOCOL = 10, /**< 路由协议：0=OLSR,1=AODV,2=BATMAN 等 */
+
+  /* 0x05 设备基础信息 */
+  PARAM_ID_GPS_LONGITUDE   = 20, /**< 经度（协议原始缩放值） */
+  PARAM_ID_GPS_LATITUDE    = 21, /**< 纬度（协议原始缩放值） */
+  PARAM_ID_GPS_ALTITUDE    = 22, /**< 高度 */
+  PARAM_ID_SAT_LOCK        = 23, /**< 卫星锁定状态 */
+
+  /* 0x06 流量统计 */
+  PARAM_ID_ETH_TX_CNT      = 30,
+  PARAM_ID_ETH_RX_CNT      = 31,
+  PARAM_ID_VOICE_TX_CNT    = 32,
+  PARAM_ID_VOICE_RX_CNT    = 33,
+
+  /* 0x07 自检状态 */
+  PARAM_ID_BATTERY_CAP     = 40, /**< 电池余量(%) */
+  PARAM_ID_FAN_STATE       = 41, /**< 风机状态 */
+
+  /* 0x09 邻居信息 */
+  PARAM_ID_NEIGHBOR_COUNT  = 50,
+  PARAM_ID_NEIGHBOR_RSSI   = 51  /**< 最近邻/首邻 RSSI */
  };
  
  #ifdef __cplusplus
