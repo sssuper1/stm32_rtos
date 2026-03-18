@@ -20,7 +20,19 @@ typedef enum
   KEY_UP,
   KEY_DOWN,
   KEY_OK,
-  KEY_BACK
+  KEY_BACK,
+  KEY_NUM_1,
+  KEY_NUM_2,
+  KEY_NUM_3,
+  KEY_NUM_4,
+  KEY_NUM_5,
+  KEY_NUM_6,
+  KEY_NUM_7,
+  KEY_NUM_8,
+  KEY_NUM_9,
+  KEY_STAR,
+  KEY_NUM_0,
+  KEY_HASH
 } KeyCode;
 
 typedef struct

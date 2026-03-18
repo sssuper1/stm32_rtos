@@ -1,6 +1,8 @@
 #include "app_menu.h"
 #include "app_param_dict.h"
+#include "app_param_update.h"
 #include "bsp.h"
+#include <stdbool.h>
 #include <stdio.h>
 
 /* -------------------- 静态菜单节点定义（示例） -------------------- */
@@ -19,12 +21,99 @@ static const MenuNode_t s_setting_uart_baud;
 /* 前置声明：串口波特率编辑按键处理回调 */
 static int MenuKeyHandler_WorkMode(MenuKey_t key);
 static int MenuKeyHandler_UartBaud(MenuKey_t key);
+static int MenuKeyHandler_OperationParam(MenuKey_t key);
+static void Menu_RenderParamValue(ParamId_t id, int32_t value, char *out, size_t outSize);
+static const char *Menu_AckStateText(int32_t state);
+
+typedef struct
+{
+  ParamId_t id;
+  const char *name;
+} EditableParamItem_t;
+
+static int32_t s_paramInputValue = 0;
+static uint8_t s_paramInputDigits = 0;
+static uint8_t s_paramEditIndex = 0;
+
+static const EditableParamItem_t s_editableParams[] =
+{
+  { PARAM_ID_FREQ_HOP_MODE,    "HOP_MODE" },
+  { PARAM_ID_SIGNAL_BANDWIDTH, "BANDWIDTH" },
+  { PARAM_ID_FIXED_FREQ,       "FIX_FREQ" },
+  { PARAM_ID_ADAPT_FREQ1,      "ADAPT_F1" },
+  { PARAM_ID_ADAPT_FREQ2,      "ADAPT_F2" },
+  { PARAM_ID_ADAPT_FREQ3,      "ADAPT_F3" },
+  { PARAM_ID_ADAPT_FREQ4,      "ADAPT_F4" },
+  { PARAM_ID_WAVEFORM_GEAR,    "WAVEFORM" }
+};
+
+static int Menu_KeyToDigit(MenuKey_t key)
+{
+  switch (key)
+  {
+    case MENU_KEY_NUM_0: return 0;
+    case MENU_KEY_NUM_1: return 1;
+    case MENU_KEY_NUM_2: return 2;
+    case MENU_KEY_NUM_3: return 3;
+    case MENU_KEY_NUM_4: return 4;
+    case MENU_KEY_NUM_5: return 5;
+    case MENU_KEY_NUM_6: return 6;
+    case MENU_KEY_NUM_7: return 7;
+    case MENU_KEY_NUM_8: return 8;
+    case MENU_KEY_NUM_9: return 9;
+    default:             return -1;
+  }
+}
+
+static void Menu_FormatMilli(char *out, size_t outSize, int32_t value)
+{
+  long integerPart = (long)(value / 1000);
+  long fracPart = (long)(value % 1000);
+
+  if (fracPart < 0)
+  {
+    fracPart = -fracPart;
+  }
+
+  (void)snprintf(out, outSize, "%ld.%03ld", integerPart, fracPart);
+}
 
 static void Menu_RenderBlankRows(uint8_t startRow, uint8_t endRow)
 {
   for (uint8_t row = startRow; row <= endRow; ++row)
   {
     BSP_Lcd_PrintLine(row, "");
+  }
+}
+
+static void Menu_RenderParamValue(ParamId_t id, int32_t value, char *out, size_t outSize)
+{
+  if ((out == NULL) || (outSize == 0u))
+  {
+    return;
+  }
+
+  if ((id == PARAM_ID_FIXED_FREQ) ||
+      (id == PARAM_ID_ADAPT_FREQ1) ||
+      (id == PARAM_ID_ADAPT_FREQ2) ||
+      (id == PARAM_ID_ADAPT_FREQ3) ||
+      (id == PARAM_ID_ADAPT_FREQ4))
+  {
+    Menu_FormatMilli(out, outSize, value);
+    return;
+  }
+
+  (void)snprintf(out, outSize, "%ld", (long)value);
+}
+
+static const char *Menu_AckStateText(int32_t state)
+{
+  switch (state)
+  {
+    case 1: return "OK";
+    case 2: return "FAIL";
+    case 3: return "PEND";
+    default: return "IDLE";
   }
 }
 
@@ -49,7 +138,7 @@ static const MenuNode_t s_operation_param =
   .child    = 0,
   .sibling  = 0,
   .render_cb = APP_Menu_DefaultRender,
-  .key_cb    = 0
+  .key_cb    = MenuKeyHandler_OperationParam
 };
 
 static const MenuNode_t s_operation =
@@ -137,7 +226,8 @@ static const MenuNode_t *s_current = &s_root;
 
 const MenuNode_t *APP_Menu_Init(void)
 {
-  s_current = &s_root;
+  /* 上电即显示 0x08 开机显示参数页。 */
+  s_current = &s_function;
   if (s_current->render_cb != 0)
   {
     s_current->render_cb(s_current);
@@ -281,79 +371,138 @@ void APP_Menu_DefaultRender(const MenuNode_t *node)
     return;
   }
 
-  if (node->id == MENU_ID_FUNCTION)
+  if ((node->id == MENU_ID_ROOT) || (node->id == MENU_ID_FUNCTION))
   {
-    int32_t ip = 0;
-    int32_t et = 0, er = 0, vt = 0, vr = 0;
-    int32_t bat = 0, tmp = 0, sat = 0, fan = 0;
-    int32_t nb = 0, rssi = 0;
+    int32_t hour = 0, minute = 0, second = 0;
+    int32_t netJoin = 0;
+    int32_t waveform = 0, bandwidth = 0, hopMode = 0;
+    int32_t fixedFreq = 0, f1 = 0, f2 = 0, f3 = 0, f4 = 0;
+    int32_t spatialFilter = 0, syncMode = 0;
+    int32_t txPower = 0, txAtten = 0;
+    int32_t ackState = 0, ackCmd = 0;
 
-    (void)APP_ParamDict_GetValue(PARAM_ID_NET_IP_ADDR, &ip);
-    (void)APP_ParamDict_GetValue(PARAM_ID_ETH_TX_CNT, &et);
-    (void)APP_ParamDict_GetValue(PARAM_ID_ETH_RX_CNT, &er);
-    (void)APP_ParamDict_GetValue(PARAM_ID_VOICE_TX_CNT, &vt);
-    (void)APP_ParamDict_GetValue(PARAM_ID_VOICE_RX_CNT, &vr);
-    (void)APP_ParamDict_GetValue(PARAM_ID_BATTERY_CAP, &bat);
-    (void)APP_ParamDict_GetValue(PARAM_ID_ENV_TEMPERATURE, &tmp);
-    (void)APP_ParamDict_GetValue(PARAM_ID_SAT_LOCK, &sat);
-    (void)APP_ParamDict_GetValue(PARAM_ID_FAN_STATE, &fan);
-    (void)APP_ParamDict_GetValue(PARAM_ID_NEIGHBOR_COUNT, &nb);
-    (void)APP_ParamDict_GetValue(PARAM_ID_NEIGHBOR_RSSI, &rssi);
+    (void)APP_ParamDict_GetValue(PARAM_ID_TIME_HOUR, &hour);
+    (void)APP_ParamDict_GetValue(PARAM_ID_TIME_MINUTE, &minute);
+    (void)APP_ParamDict_GetValue(PARAM_ID_TIME_SECOND, &second);
+    (void)APP_ParamDict_GetValue(PARAM_ID_NET_JOIN_STATE, &netJoin);
+    (void)APP_ParamDict_GetValue(PARAM_ID_WAVEFORM_GEAR, &waveform);
+    (void)APP_ParamDict_GetValue(PARAM_ID_SIGNAL_BANDWIDTH, &bandwidth);
+    (void)APP_ParamDict_GetValue(PARAM_ID_FREQ_HOP_MODE, &hopMode);
+    (void)APP_ParamDict_GetValue(PARAM_ID_FIXED_FREQ, &fixedFreq);
+    (void)APP_ParamDict_GetValue(PARAM_ID_ADAPT_FREQ1, &f1);
+    (void)APP_ParamDict_GetValue(PARAM_ID_ADAPT_FREQ2, &f2);
+    (void)APP_ParamDict_GetValue(PARAM_ID_ADAPT_FREQ3, &f3);
+    (void)APP_ParamDict_GetValue(PARAM_ID_ADAPT_FREQ4, &f4);
+    (void)APP_ParamDict_GetValue(PARAM_ID_SPATIAL_FILTER, &spatialFilter);
+    (void)APP_ParamDict_GetValue(PARAM_ID_SYNC_MODE, &syncMode);
+    (void)APP_ParamDict_GetValue(PARAM_ID_TX_POWER, &txPower);
+    (void)APP_ParamDict_GetValue(PARAM_ID_TX_POWER_ATTEN, &txAtten);
+    (void)APP_ParamDict_GetValue(PARAM_ID_UART_ACK_STATE, &ackState);
+    (void)APP_ParamDict_GetValue(PARAM_ID_UART_ACK_CMD, &ackCmd);
 
     {
-      uint32_t ipu = (uint32_t)ip;
       char buf[32];
-      (void)snprintf(buf, sizeof(buf), "IP:%lu.%lu.%lu.%lu",
-                     (unsigned long)((ipu >> 24) & 0xFFu),
-                     (unsigned long)((ipu >> 16) & 0xFFu),
-                     (unsigned long)((ipu >> 8) & 0xFFu),
-                     (unsigned long)(ipu & 0xFFu));
+      (void)snprintf(buf, sizeof(buf), "T:%02ld:%02ld:%02ld N:%ld",
+                     (long)hour, (long)minute, (long)second, (long)netJoin);
       BSP_Lcd_PrintLine(1, buf);
     }
 
     {
       char buf[32];
-      (void)snprintf(buf, sizeof(buf), "ET:%ld ER:%ld", (long)et, (long)er);
+      (void)snprintf(buf, sizeof(buf), "W:%ld B:%ld H:%ld",
+                     (long)waveform, (long)bandwidth, (long)hopMode);
       BSP_Lcd_PrintLine(2, buf);
     }
 
     {
+      char fbuf[16];
       char buf[32];
-      (void)snprintf(buf, sizeof(buf), "VT:%ld VR:%ld", (long)vt, (long)vr);
+      Menu_FormatMilli(fbuf, sizeof(fbuf), fixedFreq);
+      (void)snprintf(buf, sizeof(buf), "FIX:%s", fbuf);
       BSP_Lcd_PrintLine(3, buf);
     }
 
     {
+      char fbuf1[16];
+      char fbuf2[16];
       char buf[32];
-      long t10 = (long)tmp;
-      char sign = (t10 < 0) ? '-' : '+';
-      if (t10 < 0)
-      {
-        t10 = -t10;
-      }
-      (void)snprintf(buf, sizeof(buf), "BAT:%ld T:%c%ld.%ld", (long)bat, sign, t10 / 10, t10 % 10);
+      Menu_FormatMilli(fbuf1, sizeof(fbuf1), f1);
+      Menu_FormatMilli(fbuf2, sizeof(fbuf2), f2);
+      (void)snprintf(buf, sizeof(buf), "A1:%.7s A2:%.7s", fbuf1, fbuf2);
       BSP_Lcd_PrintLine(4, buf);
     }
 
     {
+      char fbuf3[16];
+      char fbuf4[16];
       char buf[32];
-      (void)snprintf(buf, sizeof(buf), "SAT:%ld FAN:%ld", (long)sat, (long)fan);
+      Menu_FormatMilli(fbuf3, sizeof(fbuf3), f3);
+      Menu_FormatMilli(fbuf4, sizeof(fbuf4), f4);
+      (void)snprintf(buf, sizeof(buf), "A3:%.7s A4:%.7s", fbuf3, fbuf4);
       BSP_Lcd_PrintLine(5, buf);
     }
 
     {
       char buf[32];
-      (void)snprintf(buf, sizeof(buf), "NB:%ld RSSI:%ld", (long)nb, (long)rssi);
+      (void)snprintf(buf, sizeof(buf), "P:%ld ATT:%ld SF:%ld",
+                     (long)txPower, (long)txAtten, (long)spatialFilter);
       BSP_Lcd_PrintLine(6, buf);
     }
 
     {
-      int32_t mode = 0;
-      (void)APP_ParamDict_GetValue(PARAM_ID_WORK_MODE, &mode);
-      char buf[24];
-      (void)snprintf(buf, sizeof(buf), "MODE:%ld", (long)mode);
+      char buf[32];
+      (void)snprintf(buf, sizeof(buf), "SY:%ld ACK:%s C:%02lX",
+                     (long)syncMode,
+                     Menu_AckStateText(ackState),
+                     (unsigned long)((uint32_t)ackCmd & 0xFFu));
       BSP_Lcd_PrintLine(7, buf);
     }
+    return;
+  }
+
+  if (node->id == MENU_ID_OPERATION_PARAM)
+  {
+    const uint8_t itemCount = (uint8_t)(sizeof(s_editableParams) / sizeof(s_editableParams[0]));
+    const EditableParamItem_t *item;
+    int32_t current = 0;
+
+    if (s_paramEditIndex >= itemCount)
+    {
+      s_paramEditIndex = 0u;
+    }
+
+    item = &s_editableParams[s_paramEditIndex];
+    (void)APP_ParamDict_GetValue(item->id, &current);
+
+    if (s_paramInputDigits == 0u)
+    {
+      s_paramInputValue = current;
+    }
+
+    {
+      char valueBuf[16];
+      char buf[32];
+      Menu_RenderParamValue(item->id, current, valueBuf, sizeof(valueBuf));
+      (void)snprintf(buf, sizeof(buf), "%u/%u %s",
+                     (unsigned int)(s_paramEditIndex + 1u),
+                     (unsigned int)itemCount,
+                     item->name);
+      BSP_Lcd_PrintLine(1, buf);
+      (void)snprintf(buf, sizeof(buf), "CUR:%s", valueBuf);
+      BSP_Lcd_PrintLine(2, buf);
+    }
+
+    {
+      char inputBuf[16];
+      char buf[32];
+      Menu_RenderParamValue(item->id, s_paramInputValue, inputBuf, sizeof(inputBuf));
+      (void)snprintf(buf, sizeof(buf), "IN :%s", inputBuf);
+      BSP_Lcd_PrintLine(3, buf);
+    }
+
+    BSP_Lcd_PrintLine(4, "UP/DN:sel NUM:in");
+    BSP_Lcd_PrintLine(5, "OK:apply *:clr");
+    BSP_Lcd_PrintLine(6, "#:backspace");
     return;
   }
 }
@@ -374,7 +523,11 @@ static int MenuKeyHandler_WorkMode(MenuKey_t key)
   {
     if (current > 0)
     {
-      (void)APP_ParamDict_TrySetValue(PARAM_ID_WORK_MODE, current - 1);
+      int32_t next = current - 1;
+      if (APP_ParamDict_TrySetValue(PARAM_ID_WORK_MODE, next))
+      {
+        (void)APP_ParamUpdate_Request(PARAM_ID_WORK_MODE);
+      }
     }
     return 1;
   }
@@ -383,7 +536,11 @@ static int MenuKeyHandler_WorkMode(MenuKey_t key)
   {
     if (current < 3)
     {
-      (void)APP_ParamDict_TrySetValue(PARAM_ID_WORK_MODE, current + 1);
+      int32_t next = current + 1;
+      if (APP_ParamDict_TrySetValue(PARAM_ID_WORK_MODE, next))
+      {
+        (void)APP_ParamUpdate_Request(PARAM_ID_WORK_MODE);
+      }
     }
     return 1;
   }
@@ -450,5 +607,93 @@ static int MenuKeyHandler_UartBaud(MenuKey_t key)
   }
 
   return handled;
+}
+
+static int MenuKeyHandler_OperationParam(MenuKey_t key)
+{
+  const uint8_t itemCount = (uint8_t)(sizeof(s_editableParams) / sizeof(s_editableParams[0]));
+
+  if ((itemCount == 0u) || (s_paramEditIndex >= itemCount))
+  {
+    s_paramEditIndex = 0u;
+  }
+
+  if (key == MENU_KEY_UP)
+  {
+    if (s_paramEditIndex > 0u)
+    {
+      s_paramEditIndex--;
+    }
+    s_paramInputDigits = 0u;
+    return 1;
+  }
+
+  if (key == MENU_KEY_DOWN)
+  {
+    if ((s_paramEditIndex + 1u) < itemCount)
+    {
+      s_paramEditIndex++;
+    }
+    s_paramInputDigits = 0u;
+    return 1;
+  }
+
+  int digit = Menu_KeyToDigit(key);
+  if (digit >= 0)
+  {
+    if (s_paramInputDigits < 10u)
+    {
+      s_paramInputValue = s_paramInputValue * 10 + digit;
+      s_paramInputDigits++;
+    }
+    return 1;
+  }
+
+  if (key == MENU_KEY_STAR)
+  {
+    s_paramInputValue = 0;
+    s_paramInputDigits = 0u;
+    return 1;
+  }
+
+  if (key == MENU_KEY_HASH)
+  {
+    s_paramInputValue /= 10;
+    if (s_paramInputDigits > 0u)
+    {
+      s_paramInputDigits--;
+    }
+    return 1;
+  }
+
+  if (key == MENU_KEY_OK)
+  {
+    const EditableParamItem_t *item = &s_editableParams[s_paramEditIndex];
+    ParamDef_t *def = APP_ParamDict_FindById(item->id);
+    int32_t applyValue = s_paramInputValue;
+
+    if (def != NULL)
+    {
+      if (applyValue < def->min_value)
+      {
+        applyValue = def->min_value;
+      }
+      else if (applyValue > def->max_value)
+      {
+        applyValue = def->max_value;
+      }
+    }
+
+    if (APP_ParamDict_TrySetValue(item->id, applyValue))
+    {
+      (void)APP_ParamUpdate_Request(item->id);
+    }
+
+    s_paramInputValue = applyValue;
+    s_paramInputDigits = 0u;
+    return 1;
+  }
+
+  return 0;
 }
 

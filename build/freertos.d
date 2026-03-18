@@ -35,7 +35,9 @@ build/freertos.o: Core/Src/freertos.c \
  Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h \
  Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os.h \
  Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.h \
- Core/Inc/app_menu.h Core/Inc/app_param_dict.h Core/Inc/app_uart_proto.h \
+ Core/Inc/app_menu.h Core/Inc/app_param_dict.h \
+ Core/Inc/app_param_update.h Core/Inc/app_param_dict.h \
+ Core/Inc/app_param_uart_map.h Core/Inc/app_uart_proto.h \
  Core/Inc/app_uart_rx.h Core/Inc/bsp.h
 Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h:
 Core/Inc/FreeRTOSConfig.h:
@@ -78,6 +80,9 @@ Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os.h:
 Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.h:
 Core/Inc/app_menu.h:
 Core/Inc/app_param_dict.h:
+Core/Inc/app_param_update.h:
+Core/Inc/app_param_dict.h:
+Core/Inc/app_param_uart_map.h:
 Core/Inc/app_uart_proto.h:
 Core/Inc/app_uart_rx.h:
 Core/Inc/bsp.h:

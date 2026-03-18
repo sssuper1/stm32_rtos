@@ -1,0 +1,1014 @@
+ARM GAS  /tmp/cc7K8UJE.s 			page 1
+
+
+   1              		.cpu cortex-m3
+   2              		.eabi_attribute 20, 1
+   3              		.eabi_attribute 21, 1
+   4              		.eabi_attribute 23, 3
+   5              		.eabi_attribute 24, 1
+   6              		.eabi_attribute 25, 1
+   7              		.eabi_attribute 26, 1
+   8              		.eabi_attribute 30, 1
+   9              		.eabi_attribute 34, 1
+  10              		.eabi_attribute 18, 4
+  11              		.file	"bsp_keys.c"
+  12              		.text
+  13              	.Ltext0:
+  14              		.cfi_sections	.debug_frame
+  15              		.section	.text.Keys_ConfigGpio,"ax",%progbits
+  16              		.align	1
+  17              		.arch armv7-m
+  18              		.syntax unified
+  19              		.thumb
+  20              		.thumb_func
+  21              		.fpu softvfp
+  23              	Keys_ConfigGpio:
+  24              	.LFB65:
+  25              		.file 1 "Core/Src/bsp_keys.c"
+   1:Core/Src/bsp_keys.c **** #include "bsp_keys.h"
+   2:Core/Src/bsp_keys.c **** 
+   3:Core/Src/bsp_keys.c **** #include "main.h"
+   4:Core/Src/bsp_keys.c **** #include <stdint.h>
+   5:Core/Src/bsp_keys.c **** 
+   6:Core/Src/bsp_keys.c **** #define KEY_ROWS 4u
+   7:Core/Src/bsp_keys.c **** #define KEY_COLS 4u
+   8:Core/Src/bsp_keys.c **** #define KEY_DEBOUNCE_MS 20u
+   9:Core/Src/bsp_keys.c **** 
+  10:Core/Src/bsp_keys.c **** typedef struct
+  11:Core/Src/bsp_keys.c **** {
+  12:Core/Src/bsp_keys.c **** 	GPIO_TypeDef *port;
+  13:Core/Src/bsp_keys.c **** 	uint16_t pin;
+  14:Core/Src/bsp_keys.c **** } KeyPin;
+  15:Core/Src/bsp_keys.c **** 
+  16:Core/Src/bsp_keys.c **** static const KeyPin s_rowPins[KEY_ROWS] = {
+  17:Core/Src/bsp_keys.c **** 	{KEY_R1_GPIO_Port, KEY_R1_Pin},
+  18:Core/Src/bsp_keys.c **** 	{KEY_R2_GPIO_Port, KEY_R2_Pin},
+  19:Core/Src/bsp_keys.c **** 	{KEY_R3_GPIO_Port, KEY_R3_Pin},
+  20:Core/Src/bsp_keys.c **** 	{KEY_R4_GPIO_Port, KEY_R4_Pin}
+  21:Core/Src/bsp_keys.c **** };
+  22:Core/Src/bsp_keys.c **** 
+  23:Core/Src/bsp_keys.c **** static const KeyPin s_colPins[KEY_COLS] = {
+  24:Core/Src/bsp_keys.c **** 	{KEY_C1_GPIO_Port, KEY_C1_Pin},
+  25:Core/Src/bsp_keys.c **** 	{KEY_C2_GPIO_Port, KEY_C2_Pin},
+  26:Core/Src/bsp_keys.c **** 	{KEY_C3_GPIO_Port, KEY_C3_Pin},
+  27:Core/Src/bsp_keys.c **** 	{KEY_C4_GPIO_Port, KEY_C4_Pin}
+  28:Core/Src/bsp_keys.c **** };
+  29:Core/Src/bsp_keys.c **** 
+  30:Core/Src/bsp_keys.c **** /*
+  31:Core/Src/bsp_keys.c ****  * 4x4 键盘映射：
+  32:Core/Src/bsp_keys.c ****  * - 左 3 列：数字键区（1~9,*,0,#）
+  33:Core/Src/bsp_keys.c ****  * - 第 4 列：导航键（UP,DOWN,OK,BACK）
+ARM GAS  /tmp/cc7K8UJE.s 			page 2
+
+
+  34:Core/Src/bsp_keys.c ****  */
+  35:Core/Src/bsp_keys.c **** static const KeyCode s_keyMap[KEY_ROWS][KEY_COLS] = {
+  36:Core/Src/bsp_keys.c **** 	{KEY_NUM_1, KEY_NUM_2, KEY_NUM_3, KEY_UP},
+  37:Core/Src/bsp_keys.c **** 	{KEY_NUM_4, KEY_NUM_5, KEY_NUM_6, KEY_DOWN},
+  38:Core/Src/bsp_keys.c **** 	{KEY_NUM_7, KEY_NUM_8, KEY_NUM_9, KEY_OK},
+  39:Core/Src/bsp_keys.c **** 	{KEY_STAR,  KEY_NUM_0, KEY_HASH,  KEY_BACK}
+  40:Core/Src/bsp_keys.c **** };
+  41:Core/Src/bsp_keys.c **** 
+  42:Core/Src/bsp_keys.c **** static uint16_t s_lastRawMask = 0u;
+  43:Core/Src/bsp_keys.c **** static uint16_t s_stableMask = 0u;
+  44:Core/Src/bsp_keys.c **** static uint32_t s_lastChangeTick = 0u;
+  45:Core/Src/bsp_keys.c **** 
+  46:Core/Src/bsp_keys.c **** static void Keys_ConfigGpio(void)
+  47:Core/Src/bsp_keys.c **** {
+  26              		.loc 1 47 1 view -0
+  27              		.cfi_startproc
+  28              		@ args = 0, pretend = 0, frame = 16
+  29              		@ frame_needed = 0, uses_anonymous_args = 0
+  30 0000 F0B5     		push	{r4, r5, r6, r7, lr}
+  31              	.LCFI0:
+  32              		.cfi_def_cfa_offset 20
+  33              		.cfi_offset 4, -20
+  34              		.cfi_offset 5, -16
+  35              		.cfi_offset 6, -12
+  36              		.cfi_offset 7, -8
+  37              		.cfi_offset 14, -4
+  38 0002 85B0     		sub	sp, sp, #20
+  39              	.LCFI1:
+  40              		.cfi_def_cfa_offset 40
+  48:Core/Src/bsp_keys.c **** 	GPIO_InitTypeDef init = {0};
+  41              		.loc 1 48 2 view .LVU1
+  42              		.loc 1 48 19 is_stmt 0 view .LVU2
+  43 0004 0024     		movs	r4, #0
+  44 0006 0094     		str	r4, [sp]
+  45 0008 0194     		str	r4, [sp, #4]
+  46 000a 0294     		str	r4, [sp, #8]
+  47 000c 0394     		str	r4, [sp, #12]
+  49:Core/Src/bsp_keys.c **** 
+  50:Core/Src/bsp_keys.c **** 	init.Pin = KEY_R1_Pin | KEY_R2_Pin | KEY_R3_Pin | KEY_R4_Pin;
+  48              		.loc 1 50 2 is_stmt 1 view .LVU3
+  49              		.loc 1 50 11 is_stmt 0 view .LVU4
+  50 000e 4FF4F073 		mov	r3, #480
+  51 0012 0093     		str	r3, [sp]
+  51:Core/Src/bsp_keys.c **** 	init.Mode = GPIO_MODE_INPUT;
+  52              		.loc 1 51 2 is_stmt 1 view .LVU5
+  52:Core/Src/bsp_keys.c **** 	init.Pull = GPIO_PULLDOWN;
+  53              		.loc 1 52 2 view .LVU6
+  54              		.loc 1 52 12 is_stmt 0 view .LVU7
+  55 0014 0227     		movs	r7, #2
+  56 0016 0297     		str	r7, [sp, #8]
+  53:Core/Src/bsp_keys.c **** 	HAL_GPIO_Init(GPIOB, &init);
+  57              		.loc 1 53 2 is_stmt 1 view .LVU8
+  58 0018 0B4D     		ldr	r5, .L3
+  59 001a 6946     		mov	r1, sp
+  60 001c 2846     		mov	r0, r5
+  61 001e FFF7FEFF 		bl	HAL_GPIO_Init
+  62              	.LVL0:
+ARM GAS  /tmp/cc7K8UJE.s 			page 3
+
+
+  54:Core/Src/bsp_keys.c **** 
+  55:Core/Src/bsp_keys.c **** 	init.Pin = KEY_C1_Pin | KEY_C2_Pin | KEY_C3_Pin | KEY_C4_Pin;
+  63              		.loc 1 55 2 view .LVU9
+  64              		.loc 1 55 11 is_stmt 0 view .LVU10
+  65 0022 4FF4E446 		mov	r6, #29184
+  66 0026 0096     		str	r6, [sp]
+  56:Core/Src/bsp_keys.c **** 	init.Mode = GPIO_MODE_OUTPUT_PP;
+  67              		.loc 1 56 2 is_stmt 1 view .LVU11
+  68              		.loc 1 56 12 is_stmt 0 view .LVU12
+  69 0028 0123     		movs	r3, #1
+  70 002a 0193     		str	r3, [sp, #4]
+  57:Core/Src/bsp_keys.c **** 	init.Pull = GPIO_NOPULL;
+  71              		.loc 1 57 2 is_stmt 1 view .LVU13
+  72              		.loc 1 57 12 is_stmt 0 view .LVU14
+  73 002c 0294     		str	r4, [sp, #8]
+  58:Core/Src/bsp_keys.c **** 	init.Speed = GPIO_SPEED_FREQ_LOW;
+  74              		.loc 1 58 2 is_stmt 1 view .LVU15
+  75              		.loc 1 58 13 is_stmt 0 view .LVU16
+  76 002e 0397     		str	r7, [sp, #12]
+  59:Core/Src/bsp_keys.c **** 	HAL_GPIO_Init(GPIOB, &init);
+  77              		.loc 1 59 2 is_stmt 1 view .LVU17
+  78 0030 6946     		mov	r1, sp
+  79 0032 2846     		mov	r0, r5
+  80 0034 FFF7FEFF 		bl	HAL_GPIO_Init
+  81              	.LVL1:
+  60:Core/Src/bsp_keys.c **** 
+  61:Core/Src/bsp_keys.c **** 	HAL_GPIO_WritePin(GPIOB,
+  82              		.loc 1 61 2 view .LVU18
+  83 0038 2246     		mov	r2, r4
+  84 003a 3146     		mov	r1, r6
+  85 003c 2846     		mov	r0, r5
+  86 003e FFF7FEFF 		bl	HAL_GPIO_WritePin
+  87              	.LVL2:
+  62:Core/Src/bsp_keys.c **** 										KEY_C1_Pin | KEY_C2_Pin | KEY_C3_Pin | KEY_C4_Pin,
+  63:Core/Src/bsp_keys.c **** 										GPIO_PIN_RESET);
+  64:Core/Src/bsp_keys.c **** }
+  88              		.loc 1 64 1 is_stmt 0 view .LVU19
+  89 0042 05B0     		add	sp, sp, #20
+  90              	.LCFI2:
+  91              		.cfi_def_cfa_offset 20
+  92              		@ sp needed
+  93 0044 F0BD     		pop	{r4, r5, r6, r7, pc}
+  94              	.L4:
+  95 0046 00BF     		.align	2
+  96              	.L3:
+  97 0048 000C0140 		.word	1073810432
+  98              		.cfi_endproc
+  99              	.LFE65:
+ 101              		.section	.text.Keys_AllColsLow,"ax",%progbits
+ 102              		.align	1
+ 103              		.syntax unified
+ 104              		.thumb
+ 105              		.thumb_func
+ 106              		.fpu softvfp
+ 108              	Keys_AllColsLow:
+ 109              	.LFB67:
+  65:Core/Src/bsp_keys.c **** 
+ARM GAS  /tmp/cc7K8UJE.s 			page 4
+
+
+  66:Core/Src/bsp_keys.c **** static inline uint8_t key_index(uint8_t row, uint8_t col)
+  67:Core/Src/bsp_keys.c **** {
+  68:Core/Src/bsp_keys.c **** 	return (uint8_t)(row * KEY_COLS + col);
+  69:Core/Src/bsp_keys.c **** }
+  70:Core/Src/bsp_keys.c **** 
+  71:Core/Src/bsp_keys.c **** static void Keys_AllColsLow(void)
+  72:Core/Src/bsp_keys.c **** {
+ 110              		.loc 1 72 1 is_stmt 1 view -0
+ 111              		.cfi_startproc
+ 112              		@ args = 0, pretend = 0, frame = 0
+ 113              		@ frame_needed = 0, uses_anonymous_args = 0
+ 114 0000 10B5     		push	{r4, lr}
+ 115              	.LCFI3:
+ 116              		.cfi_def_cfa_offset 8
+ 117              		.cfi_offset 4, -8
+ 118              		.cfi_offset 14, -4
+  73:Core/Src/bsp_keys.c **** 	for (uint8_t col = 0u; col < KEY_COLS; ++col)
+ 119              		.loc 1 73 2 view .LVU21
+ 120              	.LBB13:
+ 121              		.loc 1 73 7 view .LVU22
+ 122              	.LVL3:
+ 123              		.loc 1 73 15 is_stmt 0 view .LVU23
+ 124 0002 0024     		movs	r4, #0
+ 125              		.loc 1 73 2 view .LVU24
+ 126 0004 0AE0     		b	.L6
+ 127              	.LVL4:
+ 128              	.L7:
+  74:Core/Src/bsp_keys.c **** 	{
+  75:Core/Src/bsp_keys.c **** 		HAL_GPIO_WritePin(s_colPins[col].port, s_colPins[col].pin, GPIO_PIN_RESET);
+ 129              		.loc 1 75 3 is_stmt 1 discriminator 3 view .LVU25
+ 130 0006 074B     		ldr	r3, .L9
+ 131 0008 03EBC401 		add	r1, r3, r4, lsl #3
+ 132 000c 0022     		movs	r2, #0
+ 133 000e 8988     		ldrh	r1, [r1, #4]
+ 134 0010 53F83400 		ldr	r0, [r3, r4, lsl #3]
+ 135 0014 FFF7FEFF 		bl	HAL_GPIO_WritePin
+ 136              	.LVL5:
+  73:Core/Src/bsp_keys.c **** 	for (uint8_t col = 0u; col < KEY_COLS; ++col)
+ 137              		.loc 1 73 41 discriminator 3 view .LVU26
+ 138 0018 0134     		adds	r4, r4, #1
+ 139              	.LVL6:
+  73:Core/Src/bsp_keys.c **** 	for (uint8_t col = 0u; col < KEY_COLS; ++col)
+ 140              		.loc 1 73 41 is_stmt 0 discriminator 3 view .LVU27
+ 141 001a E4B2     		uxtb	r4, r4
+ 142              	.LVL7:
+ 143              	.L6:
+  73:Core/Src/bsp_keys.c **** 	for (uint8_t col = 0u; col < KEY_COLS; ++col)
+ 144              		.loc 1 73 25 is_stmt 1 discriminator 1 view .LVU28
+  73:Core/Src/bsp_keys.c **** 	for (uint8_t col = 0u; col < KEY_COLS; ++col)
+ 145              		.loc 1 73 2 is_stmt 0 discriminator 1 view .LVU29
+ 146 001c 032C     		cmp	r4, #3
+ 147 001e F2D9     		bls	.L7
+ 148              	.LBE13:
+  76:Core/Src/bsp_keys.c **** 	}
+  77:Core/Src/bsp_keys.c **** }
+ 149              		.loc 1 77 1 view .LVU30
+ 150 0020 10BD     		pop	{r4, pc}
+ARM GAS  /tmp/cc7K8UJE.s 			page 5
+
+
+ 151              	.LVL8:
+ 152              	.L10:
+ 153              		.loc 1 77 1 view .LVU31
+ 154 0022 00BF     		.align	2
+ 155              	.L9:
+ 156 0024 00000000 		.word	.LANCHOR0
+ 157              		.cfi_endproc
+ 158              	.LFE67:
+ 160              		.section	.text.Keys_ScanRawMask,"ax",%progbits
+ 161              		.align	1
+ 162              		.syntax unified
+ 163              		.thumb
+ 164              		.thumb_func
+ 165              		.fpu softvfp
+ 167              	Keys_ScanRawMask:
+ 168              	.LFB68:
+  78:Core/Src/bsp_keys.c **** 
+  79:Core/Src/bsp_keys.c **** static uint16_t Keys_ScanRawMask(void)
+  80:Core/Src/bsp_keys.c **** {
+ 169              		.loc 1 80 1 is_stmt 1 view -0
+ 170              		.cfi_startproc
+ 171              		@ args = 0, pretend = 0, frame = 8
+ 172              		@ frame_needed = 0, uses_anonymous_args = 0
+ 173 0000 70B5     		push	{r4, r5, r6, lr}
+ 174              	.LCFI4:
+ 175              		.cfi_def_cfa_offset 16
+ 176              		.cfi_offset 4, -16
+ 177              		.cfi_offset 5, -12
+ 178              		.cfi_offset 6, -8
+ 179              		.cfi_offset 14, -4
+ 180 0002 82B0     		sub	sp, sp, #8
+ 181              	.LCFI5:
+ 182              		.cfi_def_cfa_offset 24
+  81:Core/Src/bsp_keys.c **** 	uint16_t mask = 0u;
+ 183              		.loc 1 81 2 view .LVU33
+ 184              	.LVL9:
+  82:Core/Src/bsp_keys.c **** 
+  83:Core/Src/bsp_keys.c **** 	for (uint8_t col = 0u; col < KEY_COLS; ++col)
+ 185              		.loc 1 83 2 view .LVU34
+ 186              	.LBB14:
+ 187              		.loc 1 83 7 view .LVU35
+ 188              		.loc 1 83 15 is_stmt 0 view .LVU36
+ 189 0004 0025     		movs	r5, #0
+ 190              	.LBE14:
+  81:Core/Src/bsp_keys.c **** 	uint16_t mask = 0u;
+ 191              		.loc 1 81 11 view .LVU37
+ 192 0006 2E46     		mov	r6, r5
+ 193              	.LBB20:
+ 194              		.loc 1 83 2 view .LVU38
+ 195 0008 22E0     		b	.L12
+ 196              	.LVL10:
+ 197              	.L14:
+ 198              	.LBB15:
+  84:Core/Src/bsp_keys.c **** 	{
+  85:Core/Src/bsp_keys.c **** 		Keys_AllColsLow();
+  86:Core/Src/bsp_keys.c **** 		HAL_GPIO_WritePin(s_colPins[col].port, s_colPins[col].pin, GPIO_PIN_SET);
+  87:Core/Src/bsp_keys.c **** 
+ARM GAS  /tmp/cc7K8UJE.s 			page 6
+
+
+  88:Core/Src/bsp_keys.c **** 		for (volatile uint32_t i = 0u; i < 200u; ++i)
+  89:Core/Src/bsp_keys.c **** 		{
+  90:Core/Src/bsp_keys.c **** 			__NOP();
+ 199              		.loc 1 90 4 is_stmt 1 discriminator 3 view .LVU39
+ 200              		.syntax unified
+ 201              	@ 90 "Core/Src/bsp_keys.c" 1
+ 202 000a 00BF     		nop
+ 203              	@ 0 "" 2
+  88:Core/Src/bsp_keys.c **** 		{
+ 204              		.loc 1 88 44 discriminator 3 view .LVU40
+ 205              		.thumb
+ 206              		.syntax unified
+ 207 000c 019B     		ldr	r3, [sp, #4]
+ 208 000e 0133     		adds	r3, r3, #1
+ 209 0010 0193     		str	r3, [sp, #4]
+ 210              	.L13:
+  88:Core/Src/bsp_keys.c **** 		{
+ 211              		.loc 1 88 34 discriminator 1 view .LVU41
+  88:Core/Src/bsp_keys.c **** 		{
+ 212              		.loc 1 88 36 is_stmt 0 discriminator 1 view .LVU42
+ 213 0012 019B     		ldr	r3, [sp, #4]
+  88:Core/Src/bsp_keys.c **** 		{
+ 214              		.loc 1 88 3 discriminator 1 view .LVU43
+ 215 0014 C72B     		cmp	r3, #199
+ 216 0016 F8D9     		bls	.L14
+ 217              	.LBE15:
+ 218              	.LBB16:
+  91:Core/Src/bsp_keys.c **** 		}
+  92:Core/Src/bsp_keys.c **** 
+  93:Core/Src/bsp_keys.c **** 		for (uint8_t row = 0u; row < KEY_ROWS; ++row)
+ 219              		.loc 1 93 16 view .LVU44
+ 220 0018 0024     		movs	r4, #0
+ 221 001a 01E0     		b	.L15
+ 222              	.LVL11:
+ 223              	.L16:
+ 224              		.loc 1 93 42 is_stmt 1 discriminator 2 view .LVU45
+ 225 001c 0134     		adds	r4, r4, #1
+ 226              	.LVL12:
+ 227              		.loc 1 93 42 is_stmt 0 discriminator 2 view .LVU46
+ 228 001e E4B2     		uxtb	r4, r4
+ 229              	.LVL13:
+ 230              	.L15:
+ 231              		.loc 1 93 26 is_stmt 1 discriminator 1 view .LVU47
+ 232              		.loc 1 93 3 is_stmt 0 discriminator 1 view .LVU48
+ 233 0020 032C     		cmp	r4, #3
+ 234 0022 13D8     		bhi	.L20
+  94:Core/Src/bsp_keys.c **** 		{
+  95:Core/Src/bsp_keys.c **** 			if (HAL_GPIO_ReadPin(s_rowPins[row].port, s_rowPins[row].pin) == GPIO_PIN_SET)
+ 235              		.loc 1 95 4 is_stmt 1 view .LVU49
+ 236              		.loc 1 95 8 is_stmt 0 view .LVU50
+ 237 0024 154B     		ldr	r3, .L22
+ 238 0026 03EBC402 		add	r2, r3, r4, lsl #3
+ 239 002a 9188     		ldrh	r1, [r2, #4]
+ 240 002c 53F83400 		ldr	r0, [r3, r4, lsl #3]
+ 241 0030 FFF7FEFF 		bl	HAL_GPIO_ReadPin
+ 242              	.LVL14:
+ 243              		.loc 1 95 7 view .LVU51
+ARM GAS  /tmp/cc7K8UJE.s 			page 7
+
+
+ 244 0034 0128     		cmp	r0, #1
+ 245 0036 F1D1     		bne	.L16
+  96:Core/Src/bsp_keys.c **** 			{
+  97:Core/Src/bsp_keys.c **** 				mask |= (uint16_t)(1u << key_index(row, col));
+ 246              		.loc 1 97 5 is_stmt 1 view .LVU52
+ 247              	.LVL15:
+ 248              	.LBB17:
+ 249              	.LBI17:
+  66:Core/Src/bsp_keys.c **** {
+ 250              		.loc 1 66 23 view .LVU53
+ 251              	.LBB18:
+  68:Core/Src/bsp_keys.c **** }
+ 252              		.loc 1 68 2 view .LVU54
+  68:Core/Src/bsp_keys.c **** }
+ 253              		.loc 1 68 23 is_stmt 0 view .LVU55
+ 254 0038 A300     		lsls	r3, r4, #2
+ 255 003a DBB2     		uxtb	r3, r3
+  68:Core/Src/bsp_keys.c **** }
+ 256              		.loc 1 68 9 view .LVU56
+ 257 003c 2B44     		add	r3, r3, r5
+ 258 003e DBB2     		uxtb	r3, r3
+ 259              	.LVL16:
+  68:Core/Src/bsp_keys.c **** }
+ 260              		.loc 1 68 9 view .LVU57
+ 261              	.LBE18:
+ 262              	.LBE17:
+ 263              		.loc 1 97 27 view .LVU58
+ 264 0040 0122     		movs	r2, #1
+ 265 0042 02FA03F3 		lsl	r3, r2, r3
+ 266              		.loc 1 97 13 view .LVU59
+ 267 0046 9BB2     		uxth	r3, r3
+ 268              		.loc 1 97 10 view .LVU60
+ 269 0048 1E43     		orrs	r6, r6, r3
+ 270              	.LVL17:
+ 271              		.loc 1 97 10 view .LVU61
+ 272 004a E7E7     		b	.L16
+ 273              	.L20:
+ 274              		.loc 1 97 10 view .LVU62
+ 275              	.LBE16:
+  83:Core/Src/bsp_keys.c **** 	{
+ 276              		.loc 1 83 41 is_stmt 1 discriminator 2 view .LVU63
+ 277 004c 0135     		adds	r5, r5, #1
+ 278              	.LVL18:
+  83:Core/Src/bsp_keys.c **** 	{
+ 279              		.loc 1 83 41 is_stmt 0 discriminator 2 view .LVU64
+ 280 004e EDB2     		uxtb	r5, r5
+ 281              	.LVL19:
+ 282              	.L12:
+  83:Core/Src/bsp_keys.c **** 	{
+ 283              		.loc 1 83 25 is_stmt 1 discriminator 1 view .LVU65
+  83:Core/Src/bsp_keys.c **** 	{
+ 284              		.loc 1 83 2 is_stmt 0 discriminator 1 view .LVU66
+ 285 0050 032D     		cmp	r5, #3
+ 286 0052 0DD8     		bhi	.L21
+  85:Core/Src/bsp_keys.c **** 		HAL_GPIO_WritePin(s_colPins[col].port, s_colPins[col].pin, GPIO_PIN_SET);
+ 287              		.loc 1 85 3 is_stmt 1 view .LVU67
+ 288 0054 FFF7FEFF 		bl	Keys_AllColsLow
+ARM GAS  /tmp/cc7K8UJE.s 			page 8
+
+
+ 289              	.LVL20:
+  86:Core/Src/bsp_keys.c **** 
+ 290              		.loc 1 86 3 view .LVU68
+ 291 0058 094B     		ldr	r3, .L22+4
+ 292 005a 03EBC501 		add	r1, r3, r5, lsl #3
+ 293 005e 0122     		movs	r2, #1
+ 294 0060 8988     		ldrh	r1, [r1, #4]
+ 295 0062 53F83500 		ldr	r0, [r3, r5, lsl #3]
+ 296 0066 FFF7FEFF 		bl	HAL_GPIO_WritePin
+ 297              	.LVL21:
+  88:Core/Src/bsp_keys.c **** 		{
+ 298              		.loc 1 88 3 view .LVU69
+ 299              	.LBB19:
+  88:Core/Src/bsp_keys.c **** 		{
+ 300              		.loc 1 88 8 view .LVU70
+  88:Core/Src/bsp_keys.c **** 		{
+ 301              		.loc 1 88 26 is_stmt 0 view .LVU71
+ 302 006a 0023     		movs	r3, #0
+ 303 006c 0193     		str	r3, [sp, #4]
+  88:Core/Src/bsp_keys.c **** 		{
+ 304              		.loc 1 88 3 view .LVU72
+ 305 006e D0E7     		b	.L13
+ 306              	.L21:
+ 307              	.LBE19:
+ 308              	.LBE20:
+  98:Core/Src/bsp_keys.c **** 			}
+  99:Core/Src/bsp_keys.c **** 		}
+ 100:Core/Src/bsp_keys.c **** 	}
+ 101:Core/Src/bsp_keys.c **** 
+ 102:Core/Src/bsp_keys.c **** 	Keys_AllColsLow();
+ 309              		.loc 1 102 2 is_stmt 1 view .LVU73
+ 310 0070 FFF7FEFF 		bl	Keys_AllColsLow
+ 311              	.LVL22:
+ 103:Core/Src/bsp_keys.c **** 	return mask;
+ 312              		.loc 1 103 2 view .LVU74
+ 104:Core/Src/bsp_keys.c **** }
+ 313              		.loc 1 104 1 is_stmt 0 view .LVU75
+ 314 0074 3046     		mov	r0, r6
+ 315 0076 02B0     		add	sp, sp, #8
+ 316              	.LCFI6:
+ 317              		.cfi_def_cfa_offset 16
+ 318              		@ sp needed
+ 319 0078 70BD     		pop	{r4, r5, r6, pc}
+ 320              	.LVL23:
+ 321              	.L23:
+ 322              		.loc 1 104 1 view .LVU76
+ 323 007a 00BF     		.align	2
+ 324              	.L22:
+ 325 007c 00000000 		.word	.LANCHOR1
+ 326 0080 00000000 		.word	.LANCHOR0
+ 327              		.cfi_endproc
+ 328              	.LFE68:
+ 330              		.section	.text.BSP_KeysDrv_Init,"ax",%progbits
+ 331              		.align	1
+ 332              		.global	BSP_KeysDrv_Init
+ 333              		.syntax unified
+ 334              		.thumb
+ARM GAS  /tmp/cc7K8UJE.s 			page 9
+
+
+ 335              		.thumb_func
+ 336              		.fpu softvfp
+ 338              	BSP_KeysDrv_Init:
+ 339              	.LFB69:
+ 105:Core/Src/bsp_keys.c **** 
+ 106:Core/Src/bsp_keys.c **** void BSP_KeysDrv_Init(void)
+ 107:Core/Src/bsp_keys.c **** {
+ 340              		.loc 1 107 1 is_stmt 1 view -0
+ 341              		.cfi_startproc
+ 342              		@ args = 0, pretend = 0, frame = 0
+ 343              		@ frame_needed = 0, uses_anonymous_args = 0
+ 344 0000 08B5     		push	{r3, lr}
+ 345              	.LCFI7:
+ 346              		.cfi_def_cfa_offset 8
+ 347              		.cfi_offset 3, -8
+ 348              		.cfi_offset 14, -4
+ 108:Core/Src/bsp_keys.c **** 	Keys_ConfigGpio();
+ 349              		.loc 1 108 2 view .LVU78
+ 350 0002 FFF7FEFF 		bl	Keys_ConfigGpio
+ 351              	.LVL24:
+ 109:Core/Src/bsp_keys.c **** 	s_lastRawMask = 0u;
+ 352              		.loc 1 109 2 view .LVU79
+ 353              		.loc 1 109 16 is_stmt 0 view .LVU80
+ 354 0006 0023     		movs	r3, #0
+ 355 0008 044A     		ldr	r2, .L26
+ 356 000a 1380     		strh	r3, [r2]	@ movhi
+ 110:Core/Src/bsp_keys.c **** 	s_stableMask = 0u;
+ 357              		.loc 1 110 2 is_stmt 1 view .LVU81
+ 358              		.loc 1 110 15 is_stmt 0 view .LVU82
+ 359 000c 044A     		ldr	r2, .L26+4
+ 360 000e 1380     		strh	r3, [r2]	@ movhi
+ 111:Core/Src/bsp_keys.c **** 	s_lastChangeTick = HAL_GetTick();
+ 361              		.loc 1 111 2 is_stmt 1 view .LVU83
+ 362              		.loc 1 111 21 is_stmt 0 view .LVU84
+ 363 0010 FFF7FEFF 		bl	HAL_GetTick
+ 364              	.LVL25:
+ 365              		.loc 1 111 19 view .LVU85
+ 366 0014 034B     		ldr	r3, .L26+8
+ 367 0016 1860     		str	r0, [r3]
+ 112:Core/Src/bsp_keys.c **** }
+ 368              		.loc 1 112 1 view .LVU86
+ 369 0018 08BD     		pop	{r3, pc}
+ 370              	.L27:
+ 371 001a 00BF     		.align	2
+ 372              	.L26:
+ 373 001c 00000000 		.word	.LANCHOR2
+ 374 0020 00000000 		.word	.LANCHOR3
+ 375 0024 00000000 		.word	.LANCHOR4
+ 376              		.cfi_endproc
+ 377              	.LFE69:
+ 379              		.section	.text.BSP_KeysDrv_GetEvent,"ax",%progbits
+ 380              		.align	1
+ 381              		.global	BSP_KeysDrv_GetEvent
+ 382              		.syntax unified
+ 383              		.thumb
+ 384              		.thumb_func
+ 385              		.fpu softvfp
+ARM GAS  /tmp/cc7K8UJE.s 			page 10
+
+
+ 387              	BSP_KeysDrv_GetEvent:
+ 388              	.LVL26:
+ 389              	.LFB70:
+ 113:Core/Src/bsp_keys.c **** 
+ 114:Core/Src/bsp_keys.c **** bool BSP_KeysDrv_GetEvent(KeyEvent *out_event)
+ 115:Core/Src/bsp_keys.c **** {
+ 390              		.loc 1 115 1 is_stmt 1 view -0
+ 391              		.cfi_startproc
+ 392              		@ args = 0, pretend = 0, frame = 0
+ 393              		@ frame_needed = 0, uses_anonymous_args = 0
+ 116:Core/Src/bsp_keys.c **** 	if (out_event == NULL)
+ 394              		.loc 1 116 2 view .LVU88
+ 395              		.loc 1 116 5 is_stmt 0 view .LVU89
+ 396 0000 0028     		cmp	r0, #0
+ 397 0002 47D0     		beq	.L35
+ 115:Core/Src/bsp_keys.c **** 	if (out_event == NULL)
+ 398              		.loc 1 115 1 view .LVU90
+ 399 0004 38B5     		push	{r3, r4, r5, lr}
+ 400              	.LCFI8:
+ 401              		.cfi_def_cfa_offset 16
+ 402              		.cfi_offset 3, -16
+ 403              		.cfi_offset 4, -12
+ 404              		.cfi_offset 5, -8
+ 405              		.cfi_offset 14, -4
+ 406 0006 0546     		mov	r5, r0
+ 117:Core/Src/bsp_keys.c **** 	{
+ 118:Core/Src/bsp_keys.c **** 		return false;
+ 119:Core/Src/bsp_keys.c **** 	}
+ 120:Core/Src/bsp_keys.c **** 
+ 121:Core/Src/bsp_keys.c **** 	uint16_t rawMask = Keys_ScanRawMask();
+ 407              		.loc 1 121 2 is_stmt 1 view .LVU91
+ 408              		.loc 1 121 21 is_stmt 0 view .LVU92
+ 409 0008 FFF7FEFF 		bl	Keys_ScanRawMask
+ 410              	.LVL27:
+ 411              		.loc 1 121 21 view .LVU93
+ 412 000c 0446     		mov	r4, r0
+ 413              	.LVL28:
+ 122:Core/Src/bsp_keys.c **** 	uint32_t now = HAL_GetTick();
+ 414              		.loc 1 122 2 is_stmt 1 view .LVU94
+ 415              		.loc 1 122 17 is_stmt 0 view .LVU95
+ 416 000e FFF7FEFF 		bl	HAL_GetTick
+ 417              	.LVL29:
+ 123:Core/Src/bsp_keys.c **** 
+ 124:Core/Src/bsp_keys.c **** 	if (rawMask != s_lastRawMask)
+ 418              		.loc 1 124 2 is_stmt 1 view .LVU96
+ 419              		.loc 1 124 14 is_stmt 0 view .LVU97
+ 420 0012 234B     		ldr	r3, .L45
+ 421 0014 1B88     		ldrh	r3, [r3]
+ 422              		.loc 1 124 5 view .LVU98
+ 423 0016 A342     		cmp	r3, r4
+ 424 0018 05D0     		beq	.L30
+ 125:Core/Src/bsp_keys.c **** 	{
+ 126:Core/Src/bsp_keys.c **** 		s_lastRawMask = rawMask;
+ 425              		.loc 1 126 3 is_stmt 1 view .LVU99
+ 426              		.loc 1 126 17 is_stmt 0 view .LVU100
+ 427 001a 214B     		ldr	r3, .L45
+ 428 001c 1C80     		strh	r4, [r3]	@ movhi
+ARM GAS  /tmp/cc7K8UJE.s 			page 11
+
+
+ 127:Core/Src/bsp_keys.c **** 		s_lastChangeTick = now;
+ 429              		.loc 1 127 3 is_stmt 1 view .LVU101
+ 430              		.loc 1 127 20 is_stmt 0 view .LVU102
+ 431 001e 214B     		ldr	r3, .L45+4
+ 432 0020 1860     		str	r0, [r3]
+ 128:Core/Src/bsp_keys.c **** 		return false;
+ 433              		.loc 1 128 3 is_stmt 1 view .LVU103
+ 434              		.loc 1 128 10 is_stmt 0 view .LVU104
+ 435 0022 0020     		movs	r0, #0
+ 436              	.LVL30:
+ 437              	.L29:
+ 129:Core/Src/bsp_keys.c **** 	}
+ 130:Core/Src/bsp_keys.c **** 
+ 131:Core/Src/bsp_keys.c **** 	if ((now - s_lastChangeTick) < KEY_DEBOUNCE_MS)
+ 132:Core/Src/bsp_keys.c **** 	{
+ 133:Core/Src/bsp_keys.c **** 		return false;
+ 134:Core/Src/bsp_keys.c **** 	}
+ 135:Core/Src/bsp_keys.c **** 
+ 136:Core/Src/bsp_keys.c **** 	if (rawMask == s_stableMask)
+ 137:Core/Src/bsp_keys.c **** 	{
+ 138:Core/Src/bsp_keys.c **** 		return false;
+ 139:Core/Src/bsp_keys.c **** 	}
+ 140:Core/Src/bsp_keys.c **** 
+ 141:Core/Src/bsp_keys.c **** 	uint16_t changed = (uint16_t)(rawMask ^ s_stableMask);
+ 142:Core/Src/bsp_keys.c **** 	s_stableMask = rawMask;
+ 143:Core/Src/bsp_keys.c **** 
+ 144:Core/Src/bsp_keys.c **** 	for (uint8_t row = 0u; row < KEY_ROWS; ++row)
+ 145:Core/Src/bsp_keys.c **** 	{
+ 146:Core/Src/bsp_keys.c **** 		for (uint8_t col = 0u; col < KEY_COLS; ++col)
+ 147:Core/Src/bsp_keys.c **** 		{
+ 148:Core/Src/bsp_keys.c **** 			uint16_t bit = (uint16_t)(1u << key_index(row, col));
+ 149:Core/Src/bsp_keys.c **** 			if ((changed & bit) != 0u)
+ 150:Core/Src/bsp_keys.c **** 			{
+ 151:Core/Src/bsp_keys.c **** 				KeyCode code = s_keyMap[row][col];
+ 152:Core/Src/bsp_keys.c **** 				if (code == KEY_NONE)
+ 153:Core/Src/bsp_keys.c **** 				{
+ 154:Core/Src/bsp_keys.c **** 					continue;
+ 155:Core/Src/bsp_keys.c **** 				}
+ 156:Core/Src/bsp_keys.c **** 
+ 157:Core/Src/bsp_keys.c **** 				out_event->code = code;
+ 158:Core/Src/bsp_keys.c **** 				out_event->pressed = ((rawMask & bit) != 0u);
+ 159:Core/Src/bsp_keys.c **** 				return true;
+ 160:Core/Src/bsp_keys.c **** 			}
+ 161:Core/Src/bsp_keys.c **** 		}
+ 162:Core/Src/bsp_keys.c **** 	}
+ 163:Core/Src/bsp_keys.c **** 
+ 164:Core/Src/bsp_keys.c **** 	return false;
+ 165:Core/Src/bsp_keys.c **** }
+ 438              		.loc 1 165 1 view .LVU105
+ 439 0024 38BD     		pop	{r3, r4, r5, pc}
+ 440              	.LVL31:
+ 441              	.L30:
+ 131:Core/Src/bsp_keys.c **** 	{
+ 442              		.loc 1 131 2 is_stmt 1 view .LVU106
+ 131:Core/Src/bsp_keys.c **** 	{
+ 443              		.loc 1 131 11 is_stmt 0 view .LVU107
+ 444 0026 1F4B     		ldr	r3, .L45+4
+ARM GAS  /tmp/cc7K8UJE.s 			page 12
+
+
+ 445 0028 1B68     		ldr	r3, [r3]
+ 446 002a C01A     		subs	r0, r0, r3
+ 447              	.LVL32:
+ 131:Core/Src/bsp_keys.c **** 	{
+ 448              		.loc 1 131 5 view .LVU108
+ 449 002c 1328     		cmp	r0, #19
+ 450 002e 33D9     		bls	.L36
+ 136:Core/Src/bsp_keys.c **** 	{
+ 451              		.loc 1 136 2 is_stmt 1 view .LVU109
+ 136:Core/Src/bsp_keys.c **** 	{
+ 452              		.loc 1 136 14 is_stmt 0 view .LVU110
+ 453 0030 1D4B     		ldr	r3, .L45+8
+ 454 0032 1B88     		ldrh	r3, [r3]
+ 136:Core/Src/bsp_keys.c **** 	{
+ 455              		.loc 1 136 5 view .LVU111
+ 456 0034 A342     		cmp	r3, r4
+ 457 0036 31D0     		beq	.L37
+ 141:Core/Src/bsp_keys.c **** 	s_stableMask = rawMask;
+ 458              		.loc 1 141 2 is_stmt 1 view .LVU112
+ 141:Core/Src/bsp_keys.c **** 	s_stableMask = rawMask;
+ 459              		.loc 1 141 11 is_stmt 0 view .LVU113
+ 460 0038 6340     		eors	r3, r3, r4
+ 461 003a 1FFA83FC 		uxth	ip, r3
+ 462              	.LVL33:
+ 142:Core/Src/bsp_keys.c **** 
+ 463              		.loc 1 142 2 is_stmt 1 view .LVU114
+ 142:Core/Src/bsp_keys.c **** 
+ 464              		.loc 1 142 15 is_stmt 0 view .LVU115
+ 465 003e 1A4B     		ldr	r3, .L45+8
+ 466 0040 1C80     		strh	r4, [r3]	@ movhi
+ 144:Core/Src/bsp_keys.c **** 	{
+ 467              		.loc 1 144 2 is_stmt 1 view .LVU116
+ 468              	.LBB21:
+ 144:Core/Src/bsp_keys.c **** 	{
+ 469              		.loc 1 144 7 view .LVU117
+ 470              	.LVL34:
+ 144:Core/Src/bsp_keys.c **** 	{
+ 471              		.loc 1 144 15 is_stmt 0 view .LVU118
+ 472 0042 0020     		movs	r0, #0
+ 473              	.LVL35:
+ 474              	.L31:
+ 144:Core/Src/bsp_keys.c **** 	{
+ 475              		.loc 1 144 25 is_stmt 1 discriminator 1 view .LVU119
+ 144:Core/Src/bsp_keys.c **** 	{
+ 476              		.loc 1 144 2 is_stmt 0 discriminator 1 view .LVU120
+ 477 0044 0328     		cmp	r0, #3
+ 478 0046 23D8     		bhi	.L43
+ 479              	.LBB22:
+ 146:Core/Src/bsp_keys.c **** 		{
+ 480              		.loc 1 146 16 view .LVU121
+ 481 0048 0022     		movs	r2, #0
+ 482 004a 01E0     		b	.L34
+ 483              	.LVL36:
+ 484              	.L32:
+ 146:Core/Src/bsp_keys.c **** 		{
+ 485              		.loc 1 146 42 is_stmt 1 discriminator 2 view .LVU122
+ 486 004c 0132     		adds	r2, r2, #1
+ARM GAS  /tmp/cc7K8UJE.s 			page 13
+
+
+ 487              	.LVL37:
+ 146:Core/Src/bsp_keys.c **** 		{
+ 488              		.loc 1 146 42 is_stmt 0 discriminator 2 view .LVU123
+ 489 004e D2B2     		uxtb	r2, r2
+ 490              	.LVL38:
+ 491              	.L34:
+ 146:Core/Src/bsp_keys.c **** 		{
+ 492              		.loc 1 146 26 is_stmt 1 discriminator 1 view .LVU124
+ 146:Core/Src/bsp_keys.c **** 		{
+ 493              		.loc 1 146 3 is_stmt 0 discriminator 1 view .LVU125
+ 494 0050 032A     		cmp	r2, #3
+ 495 0052 1AD8     		bhi	.L44
+ 496              	.LBB23:
+ 148:Core/Src/bsp_keys.c **** 			if ((changed & bit) != 0u)
+ 497              		.loc 1 148 4 is_stmt 1 view .LVU126
+ 498              	.LVL39:
+ 499              	.LBB24:
+ 500              	.LBI24:
+  66:Core/Src/bsp_keys.c **** {
+ 501              		.loc 1 66 23 view .LVU127
+ 502              	.LBB25:
+  68:Core/Src/bsp_keys.c **** }
+ 503              		.loc 1 68 2 view .LVU128
+  68:Core/Src/bsp_keys.c **** }
+ 504              		.loc 1 68 23 is_stmt 0 view .LVU129
+ 505 0054 8300     		lsls	r3, r0, #2
+ 506 0056 DBB2     		uxtb	r3, r3
+  68:Core/Src/bsp_keys.c **** }
+ 507              		.loc 1 68 9 view .LVU130
+ 508 0058 1344     		add	r3, r3, r2
+ 509 005a DBB2     		uxtb	r3, r3
+ 510              	.LVL40:
+  68:Core/Src/bsp_keys.c **** }
+ 511              		.loc 1 68 9 view .LVU131
+ 512              	.LBE25:
+ 513              	.LBE24:
+ 148:Core/Src/bsp_keys.c **** 			if ((changed & bit) != 0u)
+ 514              		.loc 1 148 33 view .LVU132
+ 515 005c 0121     		movs	r1, #1
+ 516 005e 01FA03F3 		lsl	r3, r1, r3
+ 148:Core/Src/bsp_keys.c **** 			if ((changed & bit) != 0u)
+ 517              		.loc 1 148 13 view .LVU133
+ 518 0062 1FFA83FE 		uxth	lr, r3
+ 519              	.LVL41:
+ 149:Core/Src/bsp_keys.c **** 			{
+ 520              		.loc 1 149 4 is_stmt 1 view .LVU134
+ 149:Core/Src/bsp_keys.c **** 			{
+ 521              		.loc 1 149 7 is_stmt 0 view .LVU135
+ 522 0066 13EA0C0F 		tst	r3, ip
+ 523 006a EFD0     		beq	.L32
+ 524              	.LBB26:
+ 151:Core/Src/bsp_keys.c **** 				if (code == KEY_NONE)
+ 525              		.loc 1 151 5 is_stmt 1 view .LVU136
+ 151:Core/Src/bsp_keys.c **** 				if (code == KEY_NONE)
+ 526              		.loc 1 151 13 is_stmt 0 view .LVU137
+ 527 006c 0F49     		ldr	r1, .L45+12
+ 528 006e 01EB8001 		add	r1, r1, r0, lsl #2
+ARM GAS  /tmp/cc7K8UJE.s 			page 14
+
+
+ 529 0072 8B5C     		ldrb	r3, [r1, r2]	@ zero_extendqisi2
+ 530              	.LVL42:
+ 152:Core/Src/bsp_keys.c **** 				{
+ 531              		.loc 1 152 5 is_stmt 1 view .LVU138
+ 152:Core/Src/bsp_keys.c **** 				{
+ 532              		.loc 1 152 8 is_stmt 0 view .LVU139
+ 533 0074 002B     		cmp	r3, #0
+ 534 0076 E9D0     		beq	.L32
+ 157:Core/Src/bsp_keys.c **** 				out_event->pressed = ((rawMask & bit) != 0u);
+ 535              		.loc 1 157 5 is_stmt 1 view .LVU140
+ 157:Core/Src/bsp_keys.c **** 				out_event->pressed = ((rawMask & bit) != 0u);
+ 536              		.loc 1 157 21 is_stmt 0 view .LVU141
+ 537 0078 2B70     		strb	r3, [r5]
+ 158:Core/Src/bsp_keys.c **** 				return true;
+ 538              		.loc 1 158 5 is_stmt 1 view .LVU142
+ 158:Core/Src/bsp_keys.c **** 				return true;
+ 539              		.loc 1 158 43 is_stmt 0 view .LVU143
+ 540 007a 14EA0E0F 		tst	r4, lr
+ 541 007e 14BF     		ite	ne
+ 542 0080 0123     		movne	r3, #1
+ 543              	.LVL43:
+ 158:Core/Src/bsp_keys.c **** 				return true;
+ 544              		.loc 1 158 43 view .LVU144
+ 545 0082 0023     		moveq	r3, #0
+ 158:Core/Src/bsp_keys.c **** 				return true;
+ 546              		.loc 1 158 24 view .LVU145
+ 547 0084 6B70     		strb	r3, [r5, #1]
+ 159:Core/Src/bsp_keys.c **** 			}
+ 548              		.loc 1 159 5 is_stmt 1 view .LVU146
+ 159:Core/Src/bsp_keys.c **** 			}
+ 549              		.loc 1 159 12 is_stmt 0 view .LVU147
+ 550 0086 0120     		movs	r0, #1
+ 551              	.LVL44:
+ 159:Core/Src/bsp_keys.c **** 			}
+ 552              		.loc 1 159 12 view .LVU148
+ 553 0088 CCE7     		b	.L29
+ 554              	.LVL45:
+ 555              	.L44:
+ 159:Core/Src/bsp_keys.c **** 			}
+ 556              		.loc 1 159 12 view .LVU149
+ 557              	.LBE26:
+ 558              	.LBE23:
+ 559              	.LBE22:
+ 144:Core/Src/bsp_keys.c **** 	{
+ 560              		.loc 1 144 41 is_stmt 1 discriminator 2 view .LVU150
+ 561 008a 0130     		adds	r0, r0, #1
+ 562              	.LVL46:
+ 144:Core/Src/bsp_keys.c **** 	{
+ 563              		.loc 1 144 41 is_stmt 0 discriminator 2 view .LVU151
+ 564 008c C0B2     		uxtb	r0, r0
+ 565              	.LVL47:
+ 144:Core/Src/bsp_keys.c **** 	{
+ 566              		.loc 1 144 41 discriminator 2 view .LVU152
+ 567 008e D9E7     		b	.L31
+ 568              	.LVL48:
+ 569              	.L43:
+ 144:Core/Src/bsp_keys.c **** 	{
+ARM GAS  /tmp/cc7K8UJE.s 			page 15
+
+
+ 570              		.loc 1 144 41 discriminator 2 view .LVU153
+ 571              	.LBE21:
+ 164:Core/Src/bsp_keys.c **** }
+ 572              		.loc 1 164 9 view .LVU154
+ 573 0090 0020     		movs	r0, #0
+ 574              	.LVL49:
+ 575              	.LBB27:
+ 164:Core/Src/bsp_keys.c **** }
+ 576              		.loc 1 164 9 view .LVU155
+ 577 0092 C7E7     		b	.L29
+ 578              	.LVL50:
+ 579              	.L35:
+ 580              	.LCFI9:
+ 581              		.cfi_def_cfa_offset 0
+ 582              		.cfi_restore 3
+ 583              		.cfi_restore 4
+ 584              		.cfi_restore 5
+ 585              		.cfi_restore 14
+ 164:Core/Src/bsp_keys.c **** }
+ 586              		.loc 1 164 9 view .LVU156
+ 587              	.LBE27:
+ 118:Core/Src/bsp_keys.c **** 	}
+ 588              		.loc 1 118 10 view .LVU157
+ 589 0094 0020     		movs	r0, #0
+ 590              	.LVL51:
+ 591              		.loc 1 165 1 view .LVU158
+ 592 0096 7047     		bx	lr
+ 593              	.LVL52:
+ 594              	.L36:
+ 595              	.LCFI10:
+ 596              		.cfi_def_cfa_offset 16
+ 597              		.cfi_offset 3, -16
+ 598              		.cfi_offset 4, -12
+ 599              		.cfi_offset 5, -8
+ 600              		.cfi_offset 14, -4
+ 133:Core/Src/bsp_keys.c **** 	}
+ 601              		.loc 1 133 10 view .LVU159
+ 602 0098 0020     		movs	r0, #0
+ 603 009a C3E7     		b	.L29
+ 604              	.L37:
+ 138:Core/Src/bsp_keys.c **** 	}
+ 605              		.loc 1 138 10 view .LVU160
+ 606 009c 0020     		movs	r0, #0
+ 607 009e C1E7     		b	.L29
+ 608              	.L46:
+ 609              		.align	2
+ 610              	.L45:
+ 611 00a0 00000000 		.word	.LANCHOR2
+ 612 00a4 00000000 		.word	.LANCHOR4
+ 613 00a8 00000000 		.word	.LANCHOR3
+ 614 00ac 00000000 		.word	.LANCHOR5
+ 615              		.cfi_endproc
+ 616              	.LFE70:
+ 618              		.section	.bss.s_lastChangeTick,"aw",%nobits
+ 619              		.align	2
+ 620              		.set	.LANCHOR4,. + 0
+ 623              	s_lastChangeTick:
+ARM GAS  /tmp/cc7K8UJE.s 			page 16
+
+
+ 624 0000 00000000 		.space	4
+ 625              		.section	.bss.s_lastRawMask,"aw",%nobits
+ 626              		.align	1
+ 627              		.set	.LANCHOR2,. + 0
+ 630              	s_lastRawMask:
+ 631 0000 0000     		.space	2
+ 632              		.section	.bss.s_stableMask,"aw",%nobits
+ 633              		.align	1
+ 634              		.set	.LANCHOR3,. + 0
+ 637              	s_stableMask:
+ 638 0000 0000     		.space	2
+ 639              		.section	.rodata.s_colPins,"a"
+ 640              		.align	2
+ 641              		.set	.LANCHOR0,. + 0
+ 644              	s_colPins:
+ 645 0000 000C0140 		.word	1073810432
+ 646 0004 0002     		.short	512
+ 647 0006 0000     		.space	2
+ 648 0008 000C0140 		.word	1073810432
+ 649 000c 0010     		.short	4096
+ 650 000e 0000     		.space	2
+ 651 0010 000C0140 		.word	1073810432
+ 652 0014 0020     		.short	8192
+ 653 0016 0000     		.space	2
+ 654 0018 000C0140 		.word	1073810432
+ 655 001c 0040     		.short	16384
+ 656 001e 0000     		.space	2
+ 657              		.section	.rodata.s_keyMap,"a"
+ 658              		.align	2
+ 659              		.set	.LANCHOR5,. + 0
+ 662              	s_keyMap:
+ 663 0000 05       		.byte	5
+ 664 0001 06       		.byte	6
+ 665 0002 07       		.byte	7
+ 666 0003 01       		.byte	1
+ 667 0004 08       		.byte	8
+ 668 0005 09       		.byte	9
+ 669 0006 0A       		.byte	10
+ 670 0007 02       		.byte	2
+ 671 0008 0B       		.byte	11
+ 672 0009 0C       		.byte	12
+ 673 000a 0D       		.byte	13
+ 674 000b 03       		.byte	3
+ 675 000c 0E       		.byte	14
+ 676 000d 0F       		.byte	15
+ 677 000e 10       		.byte	16
+ 678 000f 04       		.byte	4
+ 679              		.section	.rodata.s_rowPins,"a"
+ 680              		.align	2
+ 681              		.set	.LANCHOR1,. + 0
+ 684              	s_rowPins:
+ 685 0000 000C0140 		.word	1073810432
+ 686 0004 2000     		.short	32
+ 687 0006 0000     		.space	2
+ 688 0008 000C0140 		.word	1073810432
+ 689 000c 4000     		.short	64
+ 690 000e 0000     		.space	2
+ARM GAS  /tmp/cc7K8UJE.s 			page 17
+
+
+ 691 0010 000C0140 		.word	1073810432
+ 692 0014 8000     		.short	128
+ 693 0016 0000     		.space	2
+ 694 0018 000C0140 		.word	1073810432
+ 695 001c 0001     		.short	256
+ 696 001e 0000     		.space	2
+ 697              		.text
+ 698              	.Letext0:
+ 699              		.file 2 "/usr/lib/gcc/arm-none-eabi/10.3.1/include/stdint.h"
+ 700              		.file 3 "Core/Inc/bsp.h"
+ 701              		.file 4 "Drivers/CMSIS/Device/ST/STM32F1xx/Include/stm32f103xb.h"
+ 702              		.file 5 "Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_gpio.h"
+ 703              		.file 6 "Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h"
+ARM GAS  /tmp/cc7K8UJE.s 			page 18
+
+
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 bsp_keys.c
+     /tmp/cc7K8UJE.s:16     .text.Keys_ConfigGpio:0000000000000000 $t
+     /tmp/cc7K8UJE.s:23     .text.Keys_ConfigGpio:0000000000000000 Keys_ConfigGpio
+     /tmp/cc7K8UJE.s:97     .text.Keys_ConfigGpio:0000000000000048 $d
+     /tmp/cc7K8UJE.s:102    .text.Keys_AllColsLow:0000000000000000 $t
+     /tmp/cc7K8UJE.s:108    .text.Keys_AllColsLow:0000000000000000 Keys_AllColsLow
+     /tmp/cc7K8UJE.s:156    .text.Keys_AllColsLow:0000000000000024 $d
+     /tmp/cc7K8UJE.s:161    .text.Keys_ScanRawMask:0000000000000000 $t
+     /tmp/cc7K8UJE.s:167    .text.Keys_ScanRawMask:0000000000000000 Keys_ScanRawMask
+     /tmp/cc7K8UJE.s:325    .text.Keys_ScanRawMask:000000000000007c $d
+     /tmp/cc7K8UJE.s:331    .text.BSP_KeysDrv_Init:0000000000000000 $t
+     /tmp/cc7K8UJE.s:338    .text.BSP_KeysDrv_Init:0000000000000000 BSP_KeysDrv_Init
+     /tmp/cc7K8UJE.s:373    .text.BSP_KeysDrv_Init:000000000000001c $d
+     /tmp/cc7K8UJE.s:380    .text.BSP_KeysDrv_GetEvent:0000000000000000 $t
+     /tmp/cc7K8UJE.s:387    .text.BSP_KeysDrv_GetEvent:0000000000000000 BSP_KeysDrv_GetEvent
+     /tmp/cc7K8UJE.s:611    .text.BSP_KeysDrv_GetEvent:00000000000000a0 $d
+     /tmp/cc7K8UJE.s:619    .bss.s_lastChangeTick:0000000000000000 $d
+     /tmp/cc7K8UJE.s:623    .bss.s_lastChangeTick:0000000000000000 s_lastChangeTick
+     /tmp/cc7K8UJE.s:626    .bss.s_lastRawMask:0000000000000000 $d
+     /tmp/cc7K8UJE.s:630    .bss.s_lastRawMask:0000000000000000 s_lastRawMask
+     /tmp/cc7K8UJE.s:633    .bss.s_stableMask:0000000000000000 $d
+     /tmp/cc7K8UJE.s:637    .bss.s_stableMask:0000000000000000 s_stableMask
+     /tmp/cc7K8UJE.s:640    .rodata.s_colPins:0000000000000000 $d
+     /tmp/cc7K8UJE.s:644    .rodata.s_colPins:0000000000000000 s_colPins
+     /tmp/cc7K8UJE.s:658    .rodata.s_keyMap:0000000000000000 $d
+     /tmp/cc7K8UJE.s:662    .rodata.s_keyMap:0000000000000000 s_keyMap
+     /tmp/cc7K8UJE.s:680    .rodata.s_rowPins:0000000000000000 $d
+     /tmp/cc7K8UJE.s:684    .rodata.s_rowPins:0000000000000000 s_rowPins
+
+UNDEFINED SYMBOLS
+HAL_GPIO_Init
+HAL_GPIO_WritePin
+HAL_GPIO_ReadPin
+HAL_GetTick

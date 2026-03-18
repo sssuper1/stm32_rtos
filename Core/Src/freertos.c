@@ -27,6 +27,8 @@
 /* USER CODE BEGIN Includes */
 #include "app_menu.h"
 #include "app_param_dict.h"
+#include "app_param_update.h"
+#include "app_param_uart_map.h"
 #include "app_uart_proto.h"
 #include "app_uart_rx.h"
 #include "bsp.h"
@@ -107,6 +109,31 @@ static inline void ParamDict_Unlock(void)
   (void)osMutexRelease(gParamMutexHandle);
 }
 
+bool APP_ParamUpdate_RequestValue(ParamId_t id, int32_t value)
+{
+  if (gParamUpdateQueueHandle == NULL)
+  {
+    return false;
+  }
+
+  ParamUpdateMsg_t txMsg;
+  txMsg.id = id;
+  txMsg.value = value;
+
+  return (osMessageQueuePut(gParamUpdateQueueHandle, &txMsg, 0U, 0U) == osOK);
+}
+
+bool APP_ParamUpdate_Request(ParamId_t id)
+{
+  int32_t value = 0;
+  if (!APP_ParamDict_GetValue(id, &value))
+  {
+    return false;
+  }
+
+  return APP_ParamUpdate_RequestValue(id, value);
+}
+
 /* Map ParamUpdateMsg to UART write-frame payload and send it (example). */
 static void UART_SendParamWrite(const ParamUpdateMsg_t *msg);
 /* USER CODE END FunctionPrototypes */
@@ -182,32 +209,24 @@ void StartDefaultTask(void *argument)
   BSP_Init();
   BSP_Lcd_Init();
   BSP_Keys_Init();
+
   (void)APP_Menu_Init();
+  uint32_t ignoreKeysUntil = osKernelGetTickCount() + 300U;
 
   /* Infinite loop */
   for(;;)
   {
-    int32_t workModeBefore = 0;
-    (void)APP_ParamDict_GetValue(PARAM_ID_WORK_MODE, &workModeBefore);
-
     /* 1. Read key input (polling or from buffer) */
     MenuKey_t key = HMI_ReadKey();
+    if (osKernelGetTickCount() < ignoreKeysUntil)
+    {
+      key = MENU_KEY_NONE;
+    }
 
     /* 2. Drive menu state machine if there is a key event */
     if (key != MENU_KEY_NONE)
     {
       (void)APP_Menu_HandleKey(key);
-
-      int32_t workModeAfter = workModeBefore;
-      if (APP_ParamDict_GetValue(PARAM_ID_WORK_MODE, &workModeAfter) &&
-          (workModeAfter != workModeBefore) &&
-          (gParamUpdateQueueHandle != NULL))
-      {
-        ParamUpdateMsg_t txMsg;
-        txMsg.id = PARAM_ID_WORK_MODE;
-        txMsg.value = workModeAfter;
-        (void)osMessageQueuePut(gParamUpdateQueueHandle, &txMsg, 0U, 0U);
-      }
     }
 
     /* 3. Delay to control polling period (e.g. 10ms) */
@@ -290,6 +309,18 @@ static MenuKey_t HMI_ReadKey(void)
     case KEY_DOWN: return MENU_KEY_DOWN;
     case KEY_OK:   return MENU_KEY_OK;
     case KEY_BACK: return MENU_KEY_BACK;
+    case KEY_NUM_0: return MENU_KEY_NUM_0;
+    case KEY_NUM_1: return MENU_KEY_NUM_1;
+    case KEY_NUM_2: return MENU_KEY_NUM_2;
+    case KEY_NUM_3: return MENU_KEY_NUM_3;
+    case KEY_NUM_4: return MENU_KEY_NUM_4;
+    case KEY_NUM_5: return MENU_KEY_NUM_5;
+    case KEY_NUM_6: return MENU_KEY_NUM_6;
+    case KEY_NUM_7: return MENU_KEY_NUM_7;
+    case KEY_NUM_8: return MENU_KEY_NUM_8;
+    case KEY_NUM_9: return MENU_KEY_NUM_9;
+    case KEY_STAR:  return MENU_KEY_STAR;
+    case KEY_HASH:  return MENU_KEY_HASH;
     default:       return MENU_KEY_NONE;
   }
 
@@ -320,25 +351,13 @@ static void UART_SendParamWrite(const ParamUpdateMsg_t *msg)
   uint8_t  valueBytes[4] = {0};
   uint8_t  valueLen = 0U;
 
-  switch (msg->id)
+  if (!APP_ParamUartMap_BuildWrite(msg->id, msg->value, &addr, valueBytes, &valueLen))
   {
-    case PARAM_ID_WORK_MODE:
-      /* 地址 0x12340000 (PARAM_CH1_FREQ_HOPPING_MODE) */
-      addr = 0x12340000u;
-      valueBytes[0] = (uint8_t)(msg->value & 0xFF);
-      valueLen = 1U;
-      break;
-
-    case PARAM_ID_ROUTING_PROTOCOL:
-      /* 地址 0x12310000 (PARAM_CH1_ROUTING_PROTOCOL) */
-      addr = 0x12310000u;
-      valueBytes[0] = (uint8_t)(msg->value & 0xFF);
-      valueLen = 1U;
-      break;
-
-    default:
-      /* 未映射的参数暂不下发 */
-      return;
+    ParamDict_Lock();
+    (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_UART_ACK_STATE, 2); /* fail */
+    (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_UART_ACK_CMD, 0x01);
+    ParamDict_Unlock();
+    return;
   }
 
   /* 长度字段: 命令字(1) + 地址(4) + valueLen */
@@ -361,10 +380,21 @@ static void UART_SendParamWrite(const ParamUpdateMsg_t *msg)
 
   payloadLen = idx;
 
-  /* 命令字选择：根据协议设计，这里假设 0x04 为“写寄存器”命令，
+  ParamDict_Lock();
+  (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_UART_ACK_STATE, 3); /* pending */
+  (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_UART_ACK_CMD, 0x01);
+  ParamDict_Unlock();
+
+  /* 命令字选择：根据协议设计，参数写入命令字使用 0x01，
    * 消息类型使用 0xFF 表示主动请求。具体值可根据实际 enum 定义调整。
    */
-  (void)APP_UartProto_SendRaw(0x04u, 0xFFu, payload, payloadLen);
+  if (!APP_UartProto_SendRaw(0x01u, 0xFFu, payload, payloadLen))
+  {
+    ParamDict_Lock();
+    (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_UART_ACK_STATE, 2); /* fail */
+    (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_UART_ACK_CMD, 0x01);
+    ParamDict_Unlock();
+  }
 }
 
 /* USER CODE END Application */

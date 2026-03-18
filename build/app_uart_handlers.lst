@@ -1,4 +1,4 @@
-ARM GAS  /tmp/ccSrUpcT.s 			page 1
+ARM GAS  /tmp/ccjJqYyO.s 			page 1
 
 
    1              		.cpu cortex-m3
@@ -58,7 +58,7 @@ ARM GAS  /tmp/ccSrUpcT.s 			page 1
   42 000a 8278     		ldrb	r2, [r0, #2]	@ zero_extendqisi2
   12:Core/Src/app_uart_handlers.c ****          ((uint32_t)p[1] << 16) |
   43              		.loc 1 12 33 view .LVU7
-ARM GAS  /tmp/ccSrUpcT.s 			page 2
+ARM GAS  /tmp/ccjJqYyO.s 			page 2
 
 
   44 000c 43EA0223 		orr	r3, r3, r2, lsl #8
@@ -118,7 +118,7 @@ ARM GAS  /tmp/ccSrUpcT.s 			page 1
   23:Core/Src/app_uart_handlers.c **** {
   93              		.loc 1 23 1 is_stmt 1 view -0
   94              		.cfi_startproc
-ARM GAS  /tmp/ccSrUpcT.s 			page 3
+ARM GAS  /tmp/ccjJqYyO.s 			page 3
 
 
   95              		@ args = 0, pretend = 0, frame = 0
@@ -139,1018 +139,1571 @@ ARM GAS  /tmp/ccSrUpcT.s 			page 1
  108 0006 08BD     		pop	{r3, pc}
  109              		.cfi_endproc
  110              	.LFE6:
- 112              		.section	.text.handle_cmd_0x05,"ax",%progbits
+ 112              		.section	.text.handle_cmd_0x02,"ax",%progbits
  113              		.align	1
  114              		.syntax unified
  115              		.thumb
  116              		.thumb_func
  117              		.fpu softvfp
- 119              	handle_cmd_0x05:
+ 119              	handle_cmd_0x02:
  120              	.LVL6:
- 121              	.LFB8:
+ 121              	.LFB7:
   26:Core/Src/app_uart_handlers.c **** 
-  27:Core/Src/app_uart_handlers.c **** /* 根据协议文档，0x08 用于“开机显示参数”等基础配置。
-  28:Core/Src/app_uart_handlers.c ****  * 这里先给出一个最小示例：假设 payload[0] 承载“当前工作模式”，
-  29:Core/Src/app_uart_handlers.c ****  * 用于刷新数据字典中的 PARAM_ID_WORK_MODE。
-  30:Core/Src/app_uart_handlers.c ****  *
-  31:Core/Src/app_uart_handlers.c ****  * 后续你可以根据实际的 struct 定义，扩展解析更多字段。
-  32:Core/Src/app_uart_handlers.c ****  */
-  33:Core/Src/app_uart_handlers.c **** static void handle_cmd_0x08(const uint8_t *payload, uint16_t payloadLen)
-  34:Core/Src/app_uart_handlers.c **** {
-  35:Core/Src/app_uart_handlers.c ****   if ((payload == NULL) || (payloadLen < 1u))
-  36:Core/Src/app_uart_handlers.c ****   {
-  37:Core/Src/app_uart_handlers.c ****     return;
-  38:Core/Src/app_uart_handlers.c ****   }
-  39:Core/Src/app_uart_handlers.c **** 
-  40:Core/Src/app_uart_handlers.c ****   int32_t mode = (int32_t)payload[0]; /* 假定第 0 字节为工作模式 */
-  41:Core/Src/app_uart_handlers.c **** 
-  42:Core/Src/app_uart_handlers.c ****   if (gParamMutexHandle != NULL)
-  43:Core/Src/app_uart_handlers.c ****   {
-  44:Core/Src/app_uart_handlers.c ****     (void)osMutexAcquire(gParamMutexHandle, osWaitForever);
-  45:Core/Src/app_uart_handlers.c ****   }
-  46:Core/Src/app_uart_handlers.c **** 
-  47:Core/Src/app_uart_handlers.c ****   (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_WORK_MODE, mode);
-  48:Core/Src/app_uart_handlers.c **** 
-  49:Core/Src/app_uart_handlers.c ****   if (gParamMutexHandle != NULL)
-  50:Core/Src/app_uart_handlers.c ****   {
-  51:Core/Src/app_uart_handlers.c ****     (void)osMutexRelease(gParamMutexHandle);
-  52:Core/Src/app_uart_handlers.c ****   }
-  53:Core/Src/app_uart_handlers.c **** 
-  54:Core/Src/app_uart_handlers.c ****   APP_Menu_RefreshCurrent();
-  55:Core/Src/app_uart_handlers.c **** }
-ARM GAS  /tmp/ccSrUpcT.s 			page 4
-
-
-  56:Core/Src/app_uart_handlers.c **** 
-  57:Core/Src/app_uart_handlers.c **** /* 0x05: 设备基础信息（简化映射）
-  58:Core/Src/app_uart_handlers.c ****  * payload[0..3]   : IPv4 (u32 big-endian)
-  59:Core/Src/app_uart_handlers.c ****  * payload[4..7]   : 经度 (i32)
-  60:Core/Src/app_uart_handlers.c ****  * payload[8..11]  : 纬度 (i32)
-  61:Core/Src/app_uart_handlers.c ****  * payload[12..13] : 高度 (i16)
-  62:Core/Src/app_uart_handlers.c ****  * payload[14]     : 卫星锁定状态
-  63:Core/Src/app_uart_handlers.c ****  */
-  64:Core/Src/app_uart_handlers.c **** static void handle_cmd_0x05(const uint8_t *payload, uint16_t payloadLen)
-  65:Core/Src/app_uart_handlers.c **** {
- 122              		.loc 1 65 1 is_stmt 1 view -0
+  27:Core/Src/app_uart_handlers.c **** /* 0x02: 参数写入应答
+  28:Core/Src/app_uart_handlers.c ****  * - msgType: 0x00=成功, 0x01=失败
+  29:Core/Src/app_uart_handlers.c ****  * - payload[0] (可选): 被应答命令字
+  30:Core/Src/app_uart_handlers.c ****  */
+  31:Core/Src/app_uart_handlers.c **** static void handle_cmd_0x02(uint8_t msgType, const uint8_t *payload, uint16_t payloadLen)
+  32:Core/Src/app_uart_handlers.c **** {
+ 122              		.loc 1 32 1 is_stmt 1 view -0
  123              		.cfi_startproc
  124              		@ args = 0, pretend = 0, frame = 0
  125              		@ frame_needed = 0, uses_anonymous_args = 0
-  66:Core/Src/app_uart_handlers.c ****   if ((payload == NULL) || (payloadLen < 4u))
- 126              		.loc 1 66 3 view .LVU22
- 127              		.loc 1 66 6 is_stmt 0 view .LVU23
- 128 0000 0028     		cmp	r0, #0
- 129 0002 41D0     		beq	.L14
-  65:Core/Src/app_uart_handlers.c ****   if ((payload == NULL) || (payloadLen < 4u))
- 130              		.loc 1 65 1 discriminator 1 view .LVU24
- 131 0004 38B5     		push	{r3, r4, r5, lr}
- 132              	.LCFI1:
- 133              		.cfi_def_cfa_offset 16
- 134              		.cfi_offset 3, -16
- 135              		.cfi_offset 4, -12
- 136              		.cfi_offset 5, -8
- 137              		.cfi_offset 14, -4
- 138 0006 0C46     		mov	r4, r1
- 139 0008 0546     		mov	r5, r0
- 140              		.loc 1 66 25 discriminator 1 view .LVU25
- 141 000a 0329     		cmp	r1, #3
- 142 000c 1CD9     		bls	.L5
-  67:Core/Src/app_uart_handlers.c ****   {
-  68:Core/Src/app_uart_handlers.c ****     return;
-  69:Core/Src/app_uart_handlers.c ****   }
-  70:Core/Src/app_uart_handlers.c **** 
-  71:Core/Src/app_uart_handlers.c ****   if (gParamMutexHandle != NULL)
- 143              		.loc 1 71 3 is_stmt 1 view .LVU26
- 144              		.loc 1 71 25 is_stmt 0 view .LVU27
- 145 000e 1F4B     		ldr	r3, .L21
- 146 0010 1868     		ldr	r0, [r3]
- 147              	.LVL7:
- 148              		.loc 1 71 6 view .LVU28
- 149 0012 18B1     		cbz	r0, .L7
-  72:Core/Src/app_uart_handlers.c ****   {
-  73:Core/Src/app_uart_handlers.c ****     (void)osMutexAcquire(gParamMutexHandle, osWaitForever);
- 150              		.loc 1 73 5 is_stmt 1 view .LVU29
- 151              		.loc 1 73 11 is_stmt 0 view .LVU30
- 152 0014 4FF0FF31 		mov	r1, #-1
- 153              	.LVL8:
- 154              		.loc 1 73 11 view .LVU31
- 155 0018 FFF7FEFF 		bl	osMutexAcquire
- 156              	.LVL9:
- 157              	.L7:
-  74:Core/Src/app_uart_handlers.c ****   }
-  75:Core/Src/app_uart_handlers.c **** 
-ARM GAS  /tmp/ccSrUpcT.s 			page 5
+ 126              		.loc 1 32 1 is_stmt 0 view .LVU22
+ 127 0000 38B5     		push	{r3, r4, r5, lr}
+ 128              	.LCFI1:
+ 129              		.cfi_def_cfa_offset 16
+ 130              		.cfi_offset 3, -16
+ 131              		.cfi_offset 4, -12
+ 132              		.cfi_offset 5, -8
+ 133              		.cfi_offset 14, -4
+  33:Core/Src/app_uart_handlers.c ****   int32_t ackState = 0;
+ 134              		.loc 1 33 3 is_stmt 1 view .LVU23
+ 135              	.LVL7:
+  34:Core/Src/app_uart_handlers.c ****   int32_t ackCmd = 0x01;
+ 136              		.loc 1 34 3 view .LVU24
+  35:Core/Src/app_uart_handlers.c **** 
+  36:Core/Src/app_uart_handlers.c ****   if (msgType == 0x00u)
+ 137              		.loc 1 36 3 view .LVU25
+ 138              		.loc 1 36 6 is_stmt 0 view .LVU26
+ 139 0002 18B1     		cbz	r0, .L10
+  37:Core/Src/app_uart_handlers.c ****   {
+ARM GAS  /tmp/ccjJqYyO.s 			page 4
 
 
-  76:Core/Src/app_uart_handlers.c ****   (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_NET_IP_ADDR, (int32_t)read_be_u32(payload));
- 158              		.loc 1 76 3 is_stmt 1 view .LVU32
- 159              		.loc 1 76 69 is_stmt 0 view .LVU33
- 160 001c 2846     		mov	r0, r5
- 161 001e FFF7FEFF 		bl	read_be_u32
- 162              	.LVL10:
- 163 0022 0146     		mov	r1, r0
- 164              		.loc 1 76 9 view .LVU34
- 165 0024 0220     		movs	r0, #2
- 166 0026 FFF7FEFF 		bl	APP_ParamDict_SetValueUnsafe
- 167              	.LVL11:
-  77:Core/Src/app_uart_handlers.c **** 
-  78:Core/Src/app_uart_handlers.c ****   if (payloadLen >= 8u)
- 168              		.loc 1 78 3 is_stmt 1 view .LVU35
- 169              		.loc 1 78 6 is_stmt 0 view .LVU36
- 170 002a 072C     		cmp	r4, #7
- 171 002c 0DD8     		bhi	.L17
- 172              	.L8:
-  79:Core/Src/app_uart_handlers.c ****   {
-  80:Core/Src/app_uart_handlers.c ****     (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_GPS_LONGITUDE, read_be_i32(&payload[4]));
-  81:Core/Src/app_uart_handlers.c ****   }
-  82:Core/Src/app_uart_handlers.c ****   if (payloadLen >= 12u)
- 173              		.loc 1 82 3 is_stmt 1 view .LVU37
- 174              		.loc 1 82 6 is_stmt 0 view .LVU38
- 175 002e 0B2C     		cmp	r4, #11
- 176 0030 13D8     		bhi	.L18
- 177              	.L9:
-  83:Core/Src/app_uart_handlers.c ****   {
-  84:Core/Src/app_uart_handlers.c ****     (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_GPS_LATITUDE, read_be_i32(&payload[8]));
-  85:Core/Src/app_uart_handlers.c ****   }
-  86:Core/Src/app_uart_handlers.c ****   if (payloadLen >= 14u)
- 178              		.loc 1 86 3 is_stmt 1 view .LVU39
- 179              		.loc 1 86 6 is_stmt 0 view .LVU40
- 180 0032 0D2C     		cmp	r4, #13
- 181 0034 1AD8     		bhi	.L19
- 182              	.L10:
-  87:Core/Src/app_uart_handlers.c ****   {
-  88:Core/Src/app_uart_handlers.c ****     (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_GPS_ALTITUDE, (int32_t)read_be_i16(&payload[12]));
-  89:Core/Src/app_uart_handlers.c ****   }
-  90:Core/Src/app_uart_handlers.c ****   if (payloadLen >= 15u)
- 183              		.loc 1 90 3 is_stmt 1 view .LVU41
- 184              		.loc 1 90 6 is_stmt 0 view .LVU42
- 185 0036 0E2C     		cmp	r4, #14
- 186 0038 21D8     		bhi	.L20
- 187              	.L11:
+  38:Core/Src/app_uart_handlers.c ****     ackState = 1;
+  39:Core/Src/app_uart_handlers.c ****   }
+  40:Core/Src/app_uart_handlers.c ****   else if (msgType == 0x01u)
+ 140              		.loc 1 40 8 is_stmt 1 view .LVU27
+ 141              		.loc 1 40 11 is_stmt 0 view .LVU28
+ 142 0004 0128     		cmp	r0, #1
+ 143 0006 06D0     		beq	.L11
+  33:Core/Src/app_uart_handlers.c ****   int32_t ackCmd = 0x01;
+ 144              		.loc 1 33 11 view .LVU29
+ 145 0008 0025     		movs	r5, #0
+ 146 000a 00E0     		b	.L6
+ 147              	.L10:
+  38:Core/Src/app_uart_handlers.c ****   }
+ 148              		.loc 1 38 14 view .LVU30
+ 149 000c 0125     		movs	r5, #1
+ 150              	.L6:
+ 151              	.LVL8:
+  41:Core/Src/app_uart_handlers.c ****   {
+  42:Core/Src/app_uart_handlers.c ****     ackState = 2;
+  43:Core/Src/app_uart_handlers.c ****   }
+  44:Core/Src/app_uart_handlers.c **** 
+  45:Core/Src/app_uart_handlers.c ****   if ((payload != NULL) && (payloadLen >= 1u))
+ 152              		.loc 1 45 3 is_stmt 1 view .LVU31
+ 153              		.loc 1 45 6 is_stmt 0 view .LVU32
+ 154 000e 21B1     		cbz	r1, .L12
+ 155              		.loc 1 45 25 discriminator 1 view .LVU33
+ 156 0010 2AB1     		cbz	r2, .L13
+  46:Core/Src/app_uart_handlers.c ****   {
+  47:Core/Src/app_uart_handlers.c ****     ackCmd = (int32_t)payload[0];
+ 157              		.loc 1 47 5 is_stmt 1 view .LVU34
+ 158              		.loc 1 47 30 is_stmt 0 view .LVU35
+ 159 0012 0C78     		ldrb	r4, [r1]	@ zero_extendqisi2
+ 160              	.LVL9:
+ 161              		.loc 1 47 30 view .LVU36
+ 162 0014 04E0     		b	.L7
+ 163              	.LVL10:
+ 164              	.L11:
+  42:Core/Src/app_uart_handlers.c ****   }
+ 165              		.loc 1 42 14 view .LVU37
+ 166 0016 0225     		movs	r5, #2
+ 167 0018 F9E7     		b	.L6
+ 168              	.LVL11:
+ 169              	.L12:
+  34:Core/Src/app_uart_handlers.c **** 
+ 170              		.loc 1 34 11 view .LVU38
+ 171 001a 0124     		movs	r4, #1
+ 172 001c 00E0     		b	.L7
+ 173              	.L13:
+ 174 001e 0124     		movs	r4, #1
+ 175              	.LVL12:
+ 176              	.L7:
+  48:Core/Src/app_uart_handlers.c ****   }
+  49:Core/Src/app_uart_handlers.c **** 
+  50:Core/Src/app_uart_handlers.c ****   if (gParamMutexHandle != NULL)
+ 177              		.loc 1 50 3 is_stmt 1 view .LVU39
+ 178              		.loc 1 50 25 is_stmt 0 view .LVU40
+ 179 0020 0B4B     		ldr	r3, .L15
+ARM GAS  /tmp/ccjJqYyO.s 			page 5
+
+
+ 180 0022 1868     		ldr	r0, [r3]
+ 181              	.LVL13:
+ 182              		.loc 1 50 6 view .LVU41
+ 183 0024 18B1     		cbz	r0, .L8
+  51:Core/Src/app_uart_handlers.c ****   {
+  52:Core/Src/app_uart_handlers.c ****     (void)osMutexAcquire(gParamMutexHandle, osWaitForever);
+ 184              		.loc 1 52 5 is_stmt 1 view .LVU42
+ 185              		.loc 1 52 11 is_stmt 0 view .LVU43
+ 186 0026 4FF0FF31 		mov	r1, #-1
+ 187              	.LVL14:
+ 188              		.loc 1 52 11 view .LVU44
+ 189 002a FFF7FEFF 		bl	osMutexAcquire
+ 190              	.LVL15:
+ 191              	.L8:
+  53:Core/Src/app_uart_handlers.c ****   }
+  54:Core/Src/app_uart_handlers.c **** 
+  55:Core/Src/app_uart_handlers.c ****   (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_UART_ACK_STATE, ackState);
+ 192              		.loc 1 55 3 is_stmt 1 view .LVU45
+ 193              		.loc 1 55 9 is_stmt 0 view .LVU46
+ 194 002e 2946     		mov	r1, r5
+ 195 0030 5A20     		movs	r0, #90
+ 196 0032 FFF7FEFF 		bl	APP_ParamDict_SetValueUnsafe
+ 197              	.LVL16:
+  56:Core/Src/app_uart_handlers.c ****   (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_UART_ACK_CMD, ackCmd);
+ 198              		.loc 1 56 3 is_stmt 1 view .LVU47
+ 199              		.loc 1 56 9 is_stmt 0 view .LVU48
+ 200 0036 2146     		mov	r1, r4
+ 201 0038 5B20     		movs	r0, #91
+ 202 003a FFF7FEFF 		bl	APP_ParamDict_SetValueUnsafe
+ 203              	.LVL17:
+  57:Core/Src/app_uart_handlers.c **** 
+  58:Core/Src/app_uart_handlers.c ****   if (gParamMutexHandle != NULL)
+ 204              		.loc 1 58 3 is_stmt 1 view .LVU49
+ 205              		.loc 1 58 25 is_stmt 0 view .LVU50
+ 206 003e 044B     		ldr	r3, .L15
+ 207 0040 1868     		ldr	r0, [r3]
+ 208              		.loc 1 58 6 view .LVU51
+ 209 0042 08B1     		cbz	r0, .L9
+  59:Core/Src/app_uart_handlers.c ****   {
+  60:Core/Src/app_uart_handlers.c ****     (void)osMutexRelease(gParamMutexHandle);
+ 210              		.loc 1 60 5 is_stmt 1 view .LVU52
+ 211              		.loc 1 60 11 is_stmt 0 view .LVU53
+ 212 0044 FFF7FEFF 		bl	osMutexRelease
+ 213              	.LVL18:
+ 214              	.L9:
+  61:Core/Src/app_uart_handlers.c ****   }
+  62:Core/Src/app_uart_handlers.c **** 
+  63:Core/Src/app_uart_handlers.c ****   APP_Menu_RefreshCurrent();
+ 215              		.loc 1 63 3 is_stmt 1 view .LVU54
+ 216 0048 FFF7FEFF 		bl	APP_Menu_RefreshCurrent
+ 217              	.LVL19:
+  64:Core/Src/app_uart_handlers.c **** }
+ 218              		.loc 1 64 1 is_stmt 0 view .LVU55
+ 219 004c 38BD     		pop	{r3, r4, r5, pc}
+ 220              	.LVL20:
+ 221              	.L16:
+ 222              		.loc 1 64 1 view .LVU56
+ARM GAS  /tmp/ccjJqYyO.s 			page 6
+
+
+ 223 004e 00BF     		.align	2
+ 224              	.L15:
+ 225 0050 00000000 		.word	gParamMutexHandle
+ 226              		.cfi_endproc
+ 227              	.LFE7:
+ 229              		.section	.text.handle_cmd_0x05,"ax",%progbits
+ 230              		.align	1
+ 231              		.syntax unified
+ 232              		.thumb
+ 233              		.thumb_func
+ 234              		.fpu softvfp
+ 236              	handle_cmd_0x05:
+ 237              	.LVL21:
+ 238              	.LFB9:
+  65:Core/Src/app_uart_handlers.c **** 
+  66:Core/Src/app_uart_handlers.c **** /* 0x08: 开机显示参数
+  67:Core/Src/app_uart_handlers.c ****  * payload 固定顺序（按图片/协议表定义）：
+  68:Core/Src/app_uart_handlers.c ****  * [0..2]   当前时间: hour/min/sec (3 * uint1)
+  69:Core/Src/app_uart_handlers.c ****  * [3]      入网状态
+  70:Core/Src/app_uart_handlers.c ****  * [4]      波形档位
+  71:Core/Src/app_uart_handlers.c ****  * [5]      信号带宽
+  72:Core/Src/app_uart_handlers.c ****  * [6]      跳频方式
+  73:Core/Src/app_uart_handlers.c ****  * [7..10]  点频工作频点 (1000uint4)
+  74:Core/Src/app_uart_handlers.c ****  * [11..14] 自适应选频1 (1000uint4)
+  75:Core/Src/app_uart_handlers.c ****  * [15..18] 自适应选频2 (1000uint4)
+  76:Core/Src/app_uart_handlers.c ****  * [19..22] 自适应选频3 (1000uint4)
+  77:Core/Src/app_uart_handlers.c ****  * [23..26] 自适应选频4 (1000uint4)
+  78:Core/Src/app_uart_handlers.c ****  * [27]     空域滤波
+  79:Core/Src/app_uart_handlers.c ****  * [28]     内外同步模式
+  80:Core/Src/app_uart_handlers.c ****  * [29]     发射功率
+  81:Core/Src/app_uart_handlers.c ****  * [30]     发射功率衰减量
+  82:Core/Src/app_uart_handlers.c ****  */
+  83:Core/Src/app_uart_handlers.c **** static void handle_cmd_0x08(const uint8_t *payload, uint16_t payloadLen)
+  84:Core/Src/app_uart_handlers.c **** {
+  85:Core/Src/app_uart_handlers.c ****   if ((payload == NULL) || (payloadLen == 0u))
+  86:Core/Src/app_uart_handlers.c ****   {
+  87:Core/Src/app_uart_handlers.c ****     return;
+  88:Core/Src/app_uart_handlers.c ****   }
+  89:Core/Src/app_uart_handlers.c **** 
+  90:Core/Src/app_uart_handlers.c ****   if (gParamMutexHandle != NULL)
   91:Core/Src/app_uart_handlers.c ****   {
-  92:Core/Src/app_uart_handlers.c ****     (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_SAT_LOCK, (int32_t)payload[14]);
+  92:Core/Src/app_uart_handlers.c ****     (void)osMutexAcquire(gParamMutexHandle, osWaitForever);
   93:Core/Src/app_uart_handlers.c ****   }
   94:Core/Src/app_uart_handlers.c **** 
-  95:Core/Src/app_uart_handlers.c ****   if (gParamMutexHandle != NULL)
- 188              		.loc 1 95 3 is_stmt 1 view .LVU43
- 189              		.loc 1 95 25 is_stmt 0 view .LVU44
- 190 003a 144B     		ldr	r3, .L21
- 191 003c 1868     		ldr	r0, [r3]
- 192              		.loc 1 95 6 view .LVU45
- 193 003e 08B1     		cbz	r0, .L12
+  95:Core/Src/app_uart_handlers.c ****   if (payloadLen >= 1u)
   96:Core/Src/app_uart_handlers.c ****   {
-ARM GAS  /tmp/ccSrUpcT.s 			page 6
-
-
-  97:Core/Src/app_uart_handlers.c ****     (void)osMutexRelease(gParamMutexHandle);
- 194              		.loc 1 97 5 is_stmt 1 view .LVU46
- 195              		.loc 1 97 11 is_stmt 0 view .LVU47
- 196 0040 FFF7FEFF 		bl	osMutexRelease
- 197              	.LVL12:
- 198              	.L12:
+  97:Core/Src/app_uart_handlers.c ****     (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_TIME_HOUR, (int32_t)payload[0]);
   98:Core/Src/app_uart_handlers.c ****   }
-  99:Core/Src/app_uart_handlers.c **** 
- 100:Core/Src/app_uart_handlers.c ****   APP_Menu_RefreshCurrent();
- 199              		.loc 1 100 3 is_stmt 1 view .LVU48
- 200 0044 FFF7FEFF 		bl	APP_Menu_RefreshCurrent
- 201              	.LVL13:
- 202              	.L5:
- 101:Core/Src/app_uart_handlers.c **** }
- 203              		.loc 1 101 1 is_stmt 0 view .LVU49
- 204 0048 38BD     		pop	{r3, r4, r5, pc}
- 205              	.LVL14:
- 206              	.L17:
-  80:Core/Src/app_uart_handlers.c ****   }
- 207              		.loc 1 80 5 is_stmt 1 view .LVU50
-  80:Core/Src/app_uart_handlers.c ****   }
- 208              		.loc 1 80 11 is_stmt 0 view .LVU51
- 209 004a 281D     		adds	r0, r5, #4
- 210 004c FFF7FEFF 		bl	read_be_i32
- 211              	.LVL15:
- 212 0050 0146     		mov	r1, r0
- 213 0052 1420     		movs	r0, #20
- 214 0054 FFF7FEFF 		bl	APP_ParamDict_SetValueUnsafe
- 215              	.LVL16:
- 216 0058 E9E7     		b	.L8
- 217              	.L18:
-  84:Core/Src/app_uart_handlers.c ****   }
- 218              		.loc 1 84 5 is_stmt 1 view .LVU52
-  84:Core/Src/app_uart_handlers.c ****   }
- 219              		.loc 1 84 11 is_stmt 0 view .LVU53
- 220 005a 05F10800 		add	r0, r5, #8
- 221 005e FFF7FEFF 		bl	read_be_i32
- 222              	.LVL17:
- 223 0062 0146     		mov	r1, r0
- 224 0064 1520     		movs	r0, #21
- 225 0066 FFF7FEFF 		bl	APP_ParamDict_SetValueUnsafe
- 226              	.LVL18:
- 227 006a E2E7     		b	.L9
- 228              	.L19:
-  88:Core/Src/app_uart_handlers.c ****   }
- 229              		.loc 1 88 5 is_stmt 1 view .LVU54
-  88:Core/Src/app_uart_handlers.c ****   }
- 230              		.loc 1 88 72 is_stmt 0 view .LVU55
- 231 006c 05F10C00 		add	r0, r5, #12
- 232 0070 FFF7FEFF 		bl	read_be_i16
- 233              	.LVL19:
- 234 0074 0146     		mov	r1, r0
-  88:Core/Src/app_uart_handlers.c ****   }
- 235              		.loc 1 88 11 view .LVU56
- 236 0076 1620     		movs	r0, #22
- 237 0078 FFF7FEFF 		bl	APP_ParamDict_SetValueUnsafe
- 238              	.LVL20:
-ARM GAS  /tmp/ccSrUpcT.s 			page 7
+  99:Core/Src/app_uart_handlers.c ****   if (payloadLen >= 2u)
+ 100:Core/Src/app_uart_handlers.c ****   {
+ 101:Core/Src/app_uart_handlers.c ****     (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_TIME_MINUTE, (int32_t)payload[1]);
+ 102:Core/Src/app_uart_handlers.c ****   }
+ 103:Core/Src/app_uart_handlers.c ****   if (payloadLen >= 3u)
+ 104:Core/Src/app_uart_handlers.c ****   {
+ 105:Core/Src/app_uart_handlers.c ****     (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_TIME_SECOND, (int32_t)payload[2]);
+ 106:Core/Src/app_uart_handlers.c ****   }
+ 107:Core/Src/app_uart_handlers.c ****   if (payloadLen >= 4u)
+ARM GAS  /tmp/ccjJqYyO.s 			page 7
 
 
- 239 007c DBE7     		b	.L10
- 240              	.L20:
-  92:Core/Src/app_uart_handlers.c ****   }
- 241              		.loc 1 92 5 is_stmt 1 view .LVU57
-  92:Core/Src/app_uart_handlers.c ****   }
- 242              		.loc 1 92 11 is_stmt 0 view .LVU58
- 243 007e A97B     		ldrb	r1, [r5, #14]	@ zero_extendqisi2
- 244 0080 1720     		movs	r0, #23
- 245 0082 FFF7FEFF 		bl	APP_ParamDict_SetValueUnsafe
- 246              	.LVL21:
- 247 0086 D8E7     		b	.L11
- 248              	.LVL22:
- 249              	.L14:
- 250              	.LCFI2:
- 251              		.cfi_def_cfa_offset 0
- 252              		.cfi_restore 3
- 253              		.cfi_restore 4
- 254              		.cfi_restore 5
- 255              		.cfi_restore 14
-  92:Core/Src/app_uart_handlers.c ****   }
- 256              		.loc 1 92 11 view .LVU59
- 257 0088 7047     		bx	lr
- 258              	.L22:
- 259 008a 00BF     		.align	2
- 260              	.L21:
- 261 008c 00000000 		.word	gParamMutexHandle
- 262              		.cfi_endproc
- 263              	.LFE8:
- 265              		.section	.text.handle_cmd_0x06,"ax",%progbits
- 266              		.align	1
- 267              		.syntax unified
- 268              		.thumb
- 269              		.thumb_func
- 270              		.fpu softvfp
- 272              	handle_cmd_0x06:
- 273              	.LVL23:
- 274              	.LFB9:
- 102:Core/Src/app_uart_handlers.c **** 
- 103:Core/Src/app_uart_handlers.c **** /* 0x06: 流量统计
- 104:Core/Src/app_uart_handlers.c ****  * payload[0..3]   : ETH_TX
- 105:Core/Src/app_uart_handlers.c ****  * payload[4..7]   : ETH_RX
- 106:Core/Src/app_uart_handlers.c ****  * payload[8..11]  : VOICE_TX
- 107:Core/Src/app_uart_handlers.c ****  * payload[12..15] : VOICE_RX
- 108:Core/Src/app_uart_handlers.c ****  */
- 109:Core/Src/app_uart_handlers.c **** static void handle_cmd_0x06(const uint8_t *payload, uint16_t payloadLen)
- 110:Core/Src/app_uart_handlers.c **** {
- 275              		.loc 1 110 1 is_stmt 1 view -0
- 276              		.cfi_startproc
- 277              		@ args = 0, pretend = 0, frame = 0
- 278              		@ frame_needed = 0, uses_anonymous_args = 0
- 111:Core/Src/app_uart_handlers.c ****   if ((payload == NULL) || (payloadLen < 16u))
- 279              		.loc 1 111 3 view .LVU61
- 280              		.loc 1 111 6 is_stmt 0 view .LVU62
- 281 0000 80B3     		cbz	r0, .L28
- 110:Core/Src/app_uart_handlers.c ****   if ((payload == NULL) || (payloadLen < 16u))
- 282              		.loc 1 110 1 discriminator 1 view .LVU63
- 283 0002 10B5     		push	{r4, lr}
-ARM GAS  /tmp/ccSrUpcT.s 			page 8
-
-
- 284              	.LCFI3:
- 285              		.cfi_def_cfa_offset 8
- 286              		.cfi_offset 4, -8
- 287              		.cfi_offset 14, -4
- 288 0004 0446     		mov	r4, r0
- 289              		.loc 1 111 25 discriminator 1 view .LVU64
- 290 0006 0F29     		cmp	r1, #15
- 291 0008 2BD9     		bls	.L23
+ 108:Core/Src/app_uart_handlers.c ****   {
+ 109:Core/Src/app_uart_handlers.c ****     (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_NET_JOIN_STATE, (int32_t)payload[3]);
+ 110:Core/Src/app_uart_handlers.c ****   }
+ 111:Core/Src/app_uart_handlers.c ****   if (payloadLen >= 5u)
  112:Core/Src/app_uart_handlers.c ****   {
- 113:Core/Src/app_uart_handlers.c ****     return;
+ 113:Core/Src/app_uart_handlers.c ****     (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_WAVEFORM_GEAR, (int32_t)payload[4]);
  114:Core/Src/app_uart_handlers.c ****   }
- 115:Core/Src/app_uart_handlers.c **** 
- 116:Core/Src/app_uart_handlers.c ****   if (gParamMutexHandle != NULL)
- 292              		.loc 1 116 3 is_stmt 1 view .LVU65
- 293              		.loc 1 116 25 is_stmt 0 view .LVU66
- 294 000a 174B     		ldr	r3, .L31
- 295 000c 1868     		ldr	r0, [r3]
- 296              	.LVL24:
- 297              		.loc 1 116 6 view .LVU67
- 298 000e 18B1     		cbz	r0, .L25
- 117:Core/Src/app_uart_handlers.c ****   {
- 118:Core/Src/app_uart_handlers.c ****     (void)osMutexAcquire(gParamMutexHandle, osWaitForever);
- 299              		.loc 1 118 5 is_stmt 1 view .LVU68
- 300              		.loc 1 118 11 is_stmt 0 view .LVU69
- 301 0010 4FF0FF31 		mov	r1, #-1
- 302              	.LVL25:
- 303              		.loc 1 118 11 view .LVU70
- 304 0014 FFF7FEFF 		bl	osMutexAcquire
- 305              	.LVL26:
- 306              	.L25:
- 119:Core/Src/app_uart_handlers.c ****   }
- 120:Core/Src/app_uart_handlers.c **** 
- 121:Core/Src/app_uart_handlers.c ****   (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_ETH_TX_CNT, (int32_t)read_be_u32(&payload[0]));
- 307              		.loc 1 121 3 is_stmt 1 view .LVU71
- 308              		.loc 1 121 68 is_stmt 0 view .LVU72
- 309 0018 2046     		mov	r0, r4
- 310 001a FFF7FEFF 		bl	read_be_u32
- 311              	.LVL27:
- 312 001e 0146     		mov	r1, r0
- 313              		.loc 1 121 9 view .LVU73
- 314 0020 1E20     		movs	r0, #30
- 315 0022 FFF7FEFF 		bl	APP_ParamDict_SetValueUnsafe
- 316              	.LVL28:
- 122:Core/Src/app_uart_handlers.c ****   (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_ETH_RX_CNT, (int32_t)read_be_u32(&payload[4]));
- 317              		.loc 1 122 3 is_stmt 1 view .LVU74
- 318              		.loc 1 122 68 is_stmt 0 view .LVU75
- 319 0026 201D     		adds	r0, r4, #4
- 320 0028 FFF7FEFF 		bl	read_be_u32
- 321              	.LVL29:
- 322 002c 0146     		mov	r1, r0
- 323              		.loc 1 122 9 view .LVU76
- 324 002e 1F20     		movs	r0, #31
- 325 0030 FFF7FEFF 		bl	APP_ParamDict_SetValueUnsafe
- 326              	.LVL30:
- 123:Core/Src/app_uart_handlers.c ****   (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_VOICE_TX_CNT, (int32_t)read_be_u32(&payload[8]));
- 327              		.loc 1 123 3 is_stmt 1 view .LVU77
- 328              		.loc 1 123 70 is_stmt 0 view .LVU78
-ARM GAS  /tmp/ccSrUpcT.s 			page 9
-
-
- 329 0034 04F10800 		add	r0, r4, #8
- 330 0038 FFF7FEFF 		bl	read_be_u32
- 331              	.LVL31:
- 332 003c 0146     		mov	r1, r0
- 333              		.loc 1 123 9 view .LVU79
- 334 003e 2020     		movs	r0, #32
- 335 0040 FFF7FEFF 		bl	APP_ParamDict_SetValueUnsafe
- 336              	.LVL32:
- 124:Core/Src/app_uart_handlers.c ****   (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_VOICE_RX_CNT, (int32_t)read_be_u32(&payload[12]));
- 337              		.loc 1 124 3 is_stmt 1 view .LVU80
- 338              		.loc 1 124 70 is_stmt 0 view .LVU81
- 339 0044 04F10C00 		add	r0, r4, #12
- 340 0048 FFF7FEFF 		bl	read_be_u32
- 341              	.LVL33:
- 342 004c 0146     		mov	r1, r0
- 343              		.loc 1 124 9 view .LVU82
- 344 004e 2120     		movs	r0, #33
- 345 0050 FFF7FEFF 		bl	APP_ParamDict_SetValueUnsafe
- 346              	.LVL34:
- 125:Core/Src/app_uart_handlers.c **** 
- 126:Core/Src/app_uart_handlers.c ****   if (gParamMutexHandle != NULL)
- 347              		.loc 1 126 3 is_stmt 1 view .LVU83
- 348              		.loc 1 126 25 is_stmt 0 view .LVU84
- 349 0054 044B     		ldr	r3, .L31
- 350 0056 1868     		ldr	r0, [r3]
- 351              		.loc 1 126 6 view .LVU85
- 352 0058 08B1     		cbz	r0, .L26
- 127:Core/Src/app_uart_handlers.c ****   {
- 128:Core/Src/app_uart_handlers.c ****     (void)osMutexRelease(gParamMutexHandle);
- 353              		.loc 1 128 5 is_stmt 1 view .LVU86
- 354              		.loc 1 128 11 is_stmt 0 view .LVU87
- 355 005a FFF7FEFF 		bl	osMutexRelease
- 356              	.LVL35:
- 357              	.L26:
- 129:Core/Src/app_uart_handlers.c ****   }
- 130:Core/Src/app_uart_handlers.c **** 
- 131:Core/Src/app_uart_handlers.c ****   APP_Menu_RefreshCurrent();
- 358              		.loc 1 131 3 is_stmt 1 view .LVU88
- 359 005e FFF7FEFF 		bl	APP_Menu_RefreshCurrent
- 360              	.LVL36:
- 361              	.L23:
- 132:Core/Src/app_uart_handlers.c **** }
- 362              		.loc 1 132 1 is_stmt 0 view .LVU89
- 363 0062 10BD     		pop	{r4, pc}
- 364              	.LVL37:
- 365              	.L28:
- 366              	.LCFI4:
- 367              		.cfi_def_cfa_offset 0
- 368              		.cfi_restore 4
- 369              		.cfi_restore 14
- 370              		.loc 1 132 1 view .LVU90
- 371 0064 7047     		bx	lr
- 372              	.L32:
- 373 0066 00BF     		.align	2
- 374              	.L31:
- 375 0068 00000000 		.word	gParamMutexHandle
- 376              		.cfi_endproc
-ARM GAS  /tmp/ccSrUpcT.s 			page 10
-
-
- 377              	.LFE9:
- 379              		.section	.text.handle_cmd_0x07,"ax",%progbits
- 380              		.align	1
- 381              		.syntax unified
- 382              		.thumb
- 383              		.thumb_func
- 384              		.fpu softvfp
- 386              	handle_cmd_0x07:
- 387              	.LVL38:
- 388              	.LFB10:
- 133:Core/Src/app_uart_handlers.c **** 
- 134:Core/Src/app_uart_handlers.c **** /* 0x07: 自检状态
- 135:Core/Src/app_uart_handlers.c ****  * payload[0]      : battery
- 136:Core/Src/app_uart_handlers.c ****  * payload[1..2]   : temperature(0.1C, i16)
- 137:Core/Src/app_uart_handlers.c ****  * payload[3]      : fan state
- 138:Core/Src/app_uart_handlers.c ****  * payload[4]      : sat lock
- 139:Core/Src/app_uart_handlers.c ****  */
- 140:Core/Src/app_uart_handlers.c **** static void handle_cmd_0x07(const uint8_t *payload, uint16_t payloadLen)
- 141:Core/Src/app_uart_handlers.c **** {
- 389              		.loc 1 141 1 is_stmt 1 view -0
- 390              		.cfi_startproc
- 391              		@ args = 0, pretend = 0, frame = 0
- 392              		@ frame_needed = 0, uses_anonymous_args = 0
- 142:Core/Src/app_uart_handlers.c ****   if ((payload == NULL) || (payloadLen < 1u))
- 393              		.loc 1 142 3 view .LVU92
- 394              		.loc 1 142 6 is_stmt 0 view .LVU93
- 395 0000 70B3     		cbz	r0, .L41
- 141:Core/Src/app_uart_handlers.c ****   if ((payload == NULL) || (payloadLen < 1u))
- 396              		.loc 1 141 1 discriminator 1 view .LVU94
- 397 0002 38B5     		push	{r3, r4, r5, lr}
- 398              	.LCFI5:
- 399              		.cfi_def_cfa_offset 16
- 400              		.cfi_offset 3, -16
- 401              		.cfi_offset 4, -12
- 402              		.cfi_offset 5, -8
- 403              		.cfi_offset 14, -4
- 404 0004 0C46     		mov	r4, r1
- 405 0006 0546     		mov	r5, r0
- 406              		.loc 1 142 25 discriminator 1 view .LVU95
- 407 0008 B9B1     		cbz	r1, .L33
- 143:Core/Src/app_uart_handlers.c ****   {
- 144:Core/Src/app_uart_handlers.c ****     return;
- 145:Core/Src/app_uart_handlers.c ****   }
- 146:Core/Src/app_uart_handlers.c **** 
- 147:Core/Src/app_uart_handlers.c ****   if (gParamMutexHandle != NULL)
- 408              		.loc 1 147 3 is_stmt 1 view .LVU96
- 409              		.loc 1 147 25 is_stmt 0 view .LVU97
- 410 000a 164B     		ldr	r3, .L47
- 411 000c 1868     		ldr	r0, [r3]
- 412              	.LVL39:
- 413              		.loc 1 147 6 view .LVU98
- 414 000e 18B1     		cbz	r0, .L35
+ 115:Core/Src/app_uart_handlers.c ****   if (payloadLen >= 6u)
+ 116:Core/Src/app_uart_handlers.c ****   {
+ 117:Core/Src/app_uart_handlers.c ****     (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_SIGNAL_BANDWIDTH, (int32_t)payload[5]);
+ 118:Core/Src/app_uart_handlers.c ****   }
+ 119:Core/Src/app_uart_handlers.c ****   if (payloadLen >= 7u)
+ 120:Core/Src/app_uart_handlers.c ****   {
+ 121:Core/Src/app_uart_handlers.c ****     (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_FREQ_HOP_MODE, (int32_t)payload[6]);
+ 122:Core/Src/app_uart_handlers.c ****   }
+ 123:Core/Src/app_uart_handlers.c ****   if (payloadLen >= 11u)
+ 124:Core/Src/app_uart_handlers.c ****   {
+ 125:Core/Src/app_uart_handlers.c ****     (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_FIXED_FREQ, (int32_t)read_be_u32(&payload[7]));
+ 126:Core/Src/app_uart_handlers.c ****   }
+ 127:Core/Src/app_uart_handlers.c ****   if (payloadLen >= 15u)
+ 128:Core/Src/app_uart_handlers.c ****   {
+ 129:Core/Src/app_uart_handlers.c ****     (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_ADAPT_FREQ1, (int32_t)read_be_u32(&payload[11]));
+ 130:Core/Src/app_uart_handlers.c ****   }
+ 131:Core/Src/app_uart_handlers.c ****   if (payloadLen >= 19u)
+ 132:Core/Src/app_uart_handlers.c ****   {
+ 133:Core/Src/app_uart_handlers.c ****     (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_ADAPT_FREQ2, (int32_t)read_be_u32(&payload[15]));
+ 134:Core/Src/app_uart_handlers.c ****   }
+ 135:Core/Src/app_uart_handlers.c ****   if (payloadLen >= 23u)
+ 136:Core/Src/app_uart_handlers.c ****   {
+ 137:Core/Src/app_uart_handlers.c ****     (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_ADAPT_FREQ3, (int32_t)read_be_u32(&payload[19]));
+ 138:Core/Src/app_uart_handlers.c ****   }
+ 139:Core/Src/app_uart_handlers.c ****   if (payloadLen >= 27u)
+ 140:Core/Src/app_uart_handlers.c ****   {
+ 141:Core/Src/app_uart_handlers.c ****     (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_ADAPT_FREQ4, (int32_t)read_be_u32(&payload[23]));
+ 142:Core/Src/app_uart_handlers.c ****   }
+ 143:Core/Src/app_uart_handlers.c ****   if (payloadLen >= 28u)
+ 144:Core/Src/app_uart_handlers.c ****   {
+ 145:Core/Src/app_uart_handlers.c ****     (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_SPATIAL_FILTER, (int32_t)payload[27]);
+ 146:Core/Src/app_uart_handlers.c ****   }
+ 147:Core/Src/app_uart_handlers.c ****   if (payloadLen >= 29u)
  148:Core/Src/app_uart_handlers.c ****   {
- 149:Core/Src/app_uart_handlers.c ****     (void)osMutexAcquire(gParamMutexHandle, osWaitForever);
- 415              		.loc 1 149 5 is_stmt 1 view .LVU99
- 416              		.loc 1 149 11 is_stmt 0 view .LVU100
- 417 0010 4FF0FF31 		mov	r1, #-1
-ARM GAS  /tmp/ccSrUpcT.s 			page 11
-
-
- 418              	.LVL40:
- 419              		.loc 1 149 11 view .LVU101
- 420 0014 FFF7FEFF 		bl	osMutexAcquire
- 421              	.LVL41:
- 422              	.L35:
+ 149:Core/Src/app_uart_handlers.c ****     (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_SYNC_MODE, (int32_t)payload[28]);
  150:Core/Src/app_uart_handlers.c ****   }
- 151:Core/Src/app_uart_handlers.c **** 
- 152:Core/Src/app_uart_handlers.c ****   (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_BATTERY_CAP, (int32_t)payload[0]);
- 423              		.loc 1 152 3 is_stmt 1 view .LVU102
- 424              		.loc 1 152 9 is_stmt 0 view .LVU103
- 425 0018 2978     		ldrb	r1, [r5]	@ zero_extendqisi2
- 426 001a 2820     		movs	r0, #40
- 427 001c FFF7FEFF 		bl	APP_ParamDict_SetValueUnsafe
- 428              	.LVL42:
- 153:Core/Src/app_uart_handlers.c **** 
- 154:Core/Src/app_uart_handlers.c ****   if (payloadLen >= 3u)
- 429              		.loc 1 154 3 is_stmt 1 view .LVU104
- 430              		.loc 1 154 6 is_stmt 0 view .LVU105
- 431 0020 022C     		cmp	r4, #2
- 432 0022 0BD8     		bhi	.L44
- 433              	.L36:
- 155:Core/Src/app_uart_handlers.c ****   {
- 156:Core/Src/app_uart_handlers.c ****     (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_ENV_TEMPERATURE, (int32_t)read_be_i16(&payload[1]))
- 157:Core/Src/app_uart_handlers.c ****   }
- 158:Core/Src/app_uart_handlers.c ****   if (payloadLen >= 4u)
- 434              		.loc 1 158 3 is_stmt 1 view .LVU106
- 435              		.loc 1 158 6 is_stmt 0 view .LVU107
- 436 0024 032C     		cmp	r4, #3
- 437 0026 11D8     		bhi	.L45
- 438              	.L37:
- 159:Core/Src/app_uart_handlers.c ****   {
- 160:Core/Src/app_uart_handlers.c ****     (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_FAN_STATE, (int32_t)payload[3]);
- 161:Core/Src/app_uart_handlers.c ****   }
- 162:Core/Src/app_uart_handlers.c ****   if (payloadLen >= 5u)
- 439              		.loc 1 162 3 is_stmt 1 view .LVU108
- 440              		.loc 1 162 6 is_stmt 0 view .LVU109
- 441 0028 042C     		cmp	r4, #4
- 442 002a 14D8     		bhi	.L46
- 443              	.L38:
- 163:Core/Src/app_uart_handlers.c ****   {
- 164:Core/Src/app_uart_handlers.c ****     (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_SAT_LOCK, (int32_t)payload[4]);
- 165:Core/Src/app_uart_handlers.c ****   }
- 166:Core/Src/app_uart_handlers.c **** 
- 167:Core/Src/app_uart_handlers.c ****   if (gParamMutexHandle != NULL)
- 444              		.loc 1 167 3 is_stmt 1 view .LVU110
- 445              		.loc 1 167 25 is_stmt 0 view .LVU111
- 446 002c 0D4B     		ldr	r3, .L47
- 447 002e 1868     		ldr	r0, [r3]
- 448              		.loc 1 167 6 view .LVU112
- 449 0030 08B1     		cbz	r0, .L39
- 168:Core/Src/app_uart_handlers.c ****   {
- 169:Core/Src/app_uart_handlers.c ****     (void)osMutexRelease(gParamMutexHandle);
- 450              		.loc 1 169 5 is_stmt 1 view .LVU113
- 451              		.loc 1 169 11 is_stmt 0 view .LVU114
- 452 0032 FFF7FEFF 		bl	osMutexRelease
- 453              	.LVL43:
- 454              	.L39:
-ARM GAS  /tmp/ccSrUpcT.s 			page 12
+ 151:Core/Src/app_uart_handlers.c ****   if (payloadLen >= 30u)
+ 152:Core/Src/app_uart_handlers.c ****   {
+ 153:Core/Src/app_uart_handlers.c ****     (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_TX_POWER, (int32_t)payload[29]);
+ 154:Core/Src/app_uart_handlers.c ****   }
+ 155:Core/Src/app_uart_handlers.c ****   if (payloadLen >= 31u)
+ 156:Core/Src/app_uart_handlers.c ****   {
+ 157:Core/Src/app_uart_handlers.c ****     (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_TX_POWER_ATTEN, (int32_t)payload[30]);
+ 158:Core/Src/app_uart_handlers.c ****   }
+ 159:Core/Src/app_uart_handlers.c **** 
+ 160:Core/Src/app_uart_handlers.c ****   if (gParamMutexHandle != NULL)
+ 161:Core/Src/app_uart_handlers.c ****   {
+ 162:Core/Src/app_uart_handlers.c ****     (void)osMutexRelease(gParamMutexHandle);
+ 163:Core/Src/app_uart_handlers.c ****   }
+ 164:Core/Src/app_uart_handlers.c **** 
+ARM GAS  /tmp/ccjJqYyO.s 			page 8
 
 
- 170:Core/Src/app_uart_handlers.c ****   }
- 171:Core/Src/app_uart_handlers.c **** 
- 172:Core/Src/app_uart_handlers.c ****   APP_Menu_RefreshCurrent();
- 455              		.loc 1 172 3 is_stmt 1 view .LVU115
- 456 0036 FFF7FEFF 		bl	APP_Menu_RefreshCurrent
- 457              	.LVL44:
- 458              	.L33:
- 173:Core/Src/app_uart_handlers.c **** }
- 459              		.loc 1 173 1 is_stmt 0 view .LVU116
- 460 003a 38BD     		pop	{r3, r4, r5, pc}
- 461              	.LVL45:
- 462              	.L44:
- 156:Core/Src/app_uart_handlers.c ****   }
- 463              		.loc 1 156 5 is_stmt 1 view .LVU117
- 156:Core/Src/app_uart_handlers.c ****   }
- 464              		.loc 1 156 75 is_stmt 0 view .LVU118
- 465 003c 681C     		adds	r0, r5, #1
- 466 003e FFF7FEFF 		bl	read_be_i16
- 467              	.LVL46:
- 468 0042 0146     		mov	r1, r0
- 156:Core/Src/app_uart_handlers.c ****   }
- 469              		.loc 1 156 11 view .LVU119
- 470 0044 0420     		movs	r0, #4
- 471 0046 FFF7FEFF 		bl	APP_ParamDict_SetValueUnsafe
- 472              	.LVL47:
- 473 004a EBE7     		b	.L36
- 474              	.L45:
- 160:Core/Src/app_uart_handlers.c ****   }
- 475              		.loc 1 160 5 is_stmt 1 view .LVU120
- 160:Core/Src/app_uart_handlers.c ****   }
- 476              		.loc 1 160 11 is_stmt 0 view .LVU121
- 477 004c E978     		ldrb	r1, [r5, #3]	@ zero_extendqisi2
- 478 004e 2920     		movs	r0, #41
- 479 0050 FFF7FEFF 		bl	APP_ParamDict_SetValueUnsafe
- 480              	.LVL48:
- 481 0054 E8E7     		b	.L37
- 482              	.L46:
- 164:Core/Src/app_uart_handlers.c ****   }
- 483              		.loc 1 164 5 is_stmt 1 view .LVU122
- 164:Core/Src/app_uart_handlers.c ****   }
- 484              		.loc 1 164 11 is_stmt 0 view .LVU123
- 485 0056 2979     		ldrb	r1, [r5, #4]	@ zero_extendqisi2
- 486 0058 1720     		movs	r0, #23
- 487 005a FFF7FEFF 		bl	APP_ParamDict_SetValueUnsafe
- 488              	.LVL49:
- 489 005e E5E7     		b	.L38
- 490              	.LVL50:
- 491              	.L41:
- 492              	.LCFI6:
- 493              		.cfi_def_cfa_offset 0
- 494              		.cfi_restore 3
- 495              		.cfi_restore 4
- 496              		.cfi_restore 5
- 497              		.cfi_restore 14
- 164:Core/Src/app_uart_handlers.c ****   }
- 498              		.loc 1 164 11 view .LVU124
- 499 0060 7047     		bx	lr
-ARM GAS  /tmp/ccSrUpcT.s 			page 13
+ 165:Core/Src/app_uart_handlers.c ****   APP_Menu_RefreshCurrent();
+ 166:Core/Src/app_uart_handlers.c **** }
+ 167:Core/Src/app_uart_handlers.c **** 
+ 168:Core/Src/app_uart_handlers.c **** /* 0x05: 设备基础信息（简化映射）
+ 169:Core/Src/app_uart_handlers.c ****  * payload[0..3]   : IPv4 (u32 big-endian)
+ 170:Core/Src/app_uart_handlers.c ****  * payload[4..7]   : 经度 (i32)
+ 171:Core/Src/app_uart_handlers.c ****  * payload[8..11]  : 纬度 (i32)
+ 172:Core/Src/app_uart_handlers.c ****  * payload[12..13] : 高度 (i16)
+ 173:Core/Src/app_uart_handlers.c ****  * payload[14]     : 卫星锁定状态
+ 174:Core/Src/app_uart_handlers.c ****  */
+ 175:Core/Src/app_uart_handlers.c **** static void handle_cmd_0x05(const uint8_t *payload, uint16_t payloadLen)
+ 176:Core/Src/app_uart_handlers.c **** {
+ 239              		.loc 1 176 1 is_stmt 1 view -0
+ 240              		.cfi_startproc
+ 241              		@ args = 0, pretend = 0, frame = 0
+ 242              		@ frame_needed = 0, uses_anonymous_args = 0
+ 177:Core/Src/app_uart_handlers.c ****   if ((payload == NULL) || (payloadLen < 4u))
+ 243              		.loc 1 177 3 view .LVU58
+ 244              		.loc 1 177 6 is_stmt 0 view .LVU59
+ 245 0000 0028     		cmp	r0, #0
+ 246 0002 41D0     		beq	.L26
+ 176:Core/Src/app_uart_handlers.c ****   if ((payload == NULL) || (payloadLen < 4u))
+ 247              		.loc 1 176 1 discriminator 1 view .LVU60
+ 248 0004 38B5     		push	{r3, r4, r5, lr}
+ 249              	.LCFI2:
+ 250              		.cfi_def_cfa_offset 16
+ 251              		.cfi_offset 3, -16
+ 252              		.cfi_offset 4, -12
+ 253              		.cfi_offset 5, -8
+ 254              		.cfi_offset 14, -4
+ 255 0006 0C46     		mov	r4, r1
+ 256 0008 0546     		mov	r5, r0
+ 257              		.loc 1 177 25 discriminator 1 view .LVU61
+ 258 000a 0329     		cmp	r1, #3
+ 259 000c 1CD9     		bls	.L17
+ 178:Core/Src/app_uart_handlers.c ****   {
+ 179:Core/Src/app_uart_handlers.c ****     return;
+ 180:Core/Src/app_uart_handlers.c ****   }
+ 181:Core/Src/app_uart_handlers.c **** 
+ 182:Core/Src/app_uart_handlers.c ****   if (gParamMutexHandle != NULL)
+ 260              		.loc 1 182 3 is_stmt 1 view .LVU62
+ 261              		.loc 1 182 25 is_stmt 0 view .LVU63
+ 262 000e 1F4B     		ldr	r3, .L33
+ 263 0010 1868     		ldr	r0, [r3]
+ 264              	.LVL22:
+ 265              		.loc 1 182 6 view .LVU64
+ 266 0012 18B1     		cbz	r0, .L19
+ 183:Core/Src/app_uart_handlers.c ****   {
+ 184:Core/Src/app_uart_handlers.c ****     (void)osMutexAcquire(gParamMutexHandle, osWaitForever);
+ 267              		.loc 1 184 5 is_stmt 1 view .LVU65
+ 268              		.loc 1 184 11 is_stmt 0 view .LVU66
+ 269 0014 4FF0FF31 		mov	r1, #-1
+ 270              	.LVL23:
+ 271              		.loc 1 184 11 view .LVU67
+ 272 0018 FFF7FEFF 		bl	osMutexAcquire
+ 273              	.LVL24:
+ 274              	.L19:
+ARM GAS  /tmp/ccjJqYyO.s 			page 9
 
 
- 500              	.L48:
- 501 0062 00BF     		.align	2
- 502              	.L47:
- 503 0064 00000000 		.word	gParamMutexHandle
- 504              		.cfi_endproc
- 505              	.LFE10:
- 507              		.section	.text.handle_cmd_0x08,"ax",%progbits
- 508              		.align	1
- 509              		.syntax unified
- 510              		.thumb
- 511              		.thumb_func
- 512              		.fpu softvfp
- 514              	handle_cmd_0x08:
- 515              	.LVL51:
- 516              	.LFB7:
-  34:Core/Src/app_uart_handlers.c ****   if ((payload == NULL) || (payloadLen < 1u))
- 517              		.loc 1 34 1 is_stmt 1 view -0
- 518              		.cfi_startproc
- 519              		@ args = 0, pretend = 0, frame = 0
- 520              		@ frame_needed = 0, uses_anonymous_args = 0
-  35:Core/Src/app_uart_handlers.c ****   {
- 521              		.loc 1 35 3 view .LVU126
-  35:Core/Src/app_uart_handlers.c ****   {
- 522              		.loc 1 35 6 is_stmt 0 view .LVU127
- 523 0000 A8B1     		cbz	r0, .L54
-  35:Core/Src/app_uart_handlers.c ****   {
- 524              		.loc 1 35 25 discriminator 1 view .LVU128
- 525 0002 A1B1     		cbz	r1, .L54
-  34:Core/Src/app_uart_handlers.c ****   if ((payload == NULL) || (payloadLen < 1u))
- 526              		.loc 1 34 1 view .LVU129
- 527 0004 10B5     		push	{r4, lr}
- 528              	.LCFI7:
- 529              		.cfi_def_cfa_offset 8
- 530              		.cfi_offset 4, -8
- 531              		.cfi_offset 14, -4
-  40:Core/Src/app_uart_handlers.c **** 
- 532              		.loc 1 40 3 is_stmt 1 view .LVU130
-  40:Core/Src/app_uart_handlers.c **** 
- 533              		.loc 1 40 34 is_stmt 0 view .LVU131
- 534 0006 0478     		ldrb	r4, [r0]	@ zero_extendqisi2
- 535              	.LVL52:
-  42:Core/Src/app_uart_handlers.c ****   {
- 536              		.loc 1 42 3 is_stmt 1 view .LVU132
-  42:Core/Src/app_uart_handlers.c ****   {
- 537              		.loc 1 42 25 is_stmt 0 view .LVU133
- 538 0008 094B     		ldr	r3, .L57
- 539 000a 1868     		ldr	r0, [r3]
- 540              	.LVL53:
-  42:Core/Src/app_uart_handlers.c ****   {
- 541              		.loc 1 42 6 view .LVU134
- 542 000c 18B1     		cbz	r0, .L51
-  44:Core/Src/app_uart_handlers.c ****   }
- 543              		.loc 1 44 5 is_stmt 1 view .LVU135
-  44:Core/Src/app_uart_handlers.c ****   }
- 544              		.loc 1 44 11 is_stmt 0 view .LVU136
- 545 000e 4FF0FF31 		mov	r1, #-1
- 546              	.LVL54:
-ARM GAS  /tmp/ccSrUpcT.s 			page 14
-
-
-  44:Core/Src/app_uart_handlers.c ****   }
- 547              		.loc 1 44 11 view .LVU137
- 548 0012 FFF7FEFF 		bl	osMutexAcquire
- 549              	.LVL55:
- 550              	.L51:
-  47:Core/Src/app_uart_handlers.c **** 
- 551              		.loc 1 47 3 is_stmt 1 view .LVU138
-  47:Core/Src/app_uart_handlers.c **** 
- 552              		.loc 1 47 9 is_stmt 0 view .LVU139
- 553 0016 2146     		mov	r1, r4
- 554 0018 0120     		movs	r0, #1
- 555 001a FFF7FEFF 		bl	APP_ParamDict_SetValueUnsafe
- 556              	.LVL56:
-  49:Core/Src/app_uart_handlers.c ****   {
- 557              		.loc 1 49 3 is_stmt 1 view .LVU140
-  49:Core/Src/app_uart_handlers.c ****   {
- 558              		.loc 1 49 25 is_stmt 0 view .LVU141
- 559 001e 044B     		ldr	r3, .L57
- 560 0020 1868     		ldr	r0, [r3]
-  49:Core/Src/app_uart_handlers.c ****   {
- 561              		.loc 1 49 6 view .LVU142
- 562 0022 08B1     		cbz	r0, .L52
-  51:Core/Src/app_uart_handlers.c ****   }
- 563              		.loc 1 51 5 is_stmt 1 view .LVU143
-  51:Core/Src/app_uart_handlers.c ****   }
- 564              		.loc 1 51 11 is_stmt 0 view .LVU144
- 565 0024 FFF7FEFF 		bl	osMutexRelease
- 566              	.LVL57:
- 567              	.L52:
-  54:Core/Src/app_uart_handlers.c **** }
- 568              		.loc 1 54 3 is_stmt 1 view .LVU145
- 569 0028 FFF7FEFF 		bl	APP_Menu_RefreshCurrent
- 570              	.LVL58:
-  55:Core/Src/app_uart_handlers.c **** 
- 571              		.loc 1 55 1 is_stmt 0 view .LVU146
- 572 002c 10BD     		pop	{r4, pc}
- 573              	.LVL59:
- 574              	.L54:
- 575              	.LCFI8:
- 576              		.cfi_def_cfa_offset 0
- 577              		.cfi_restore 4
- 578              		.cfi_restore 14
-  55:Core/Src/app_uart_handlers.c **** 
- 579              		.loc 1 55 1 view .LVU147
- 580 002e 7047     		bx	lr
- 581              	.L58:
- 582              		.align	2
- 583              	.L57:
- 584 0030 00000000 		.word	gParamMutexHandle
- 585              		.cfi_endproc
- 586              	.LFE7:
- 588              		.section	.text.handle_cmd_0x09,"ax",%progbits
- 589              		.align	1
- 590              		.syntax unified
- 591              		.thumb
- 592              		.thumb_func
- 593              		.fpu softvfp
-ARM GAS  /tmp/ccSrUpcT.s 			page 15
-
-
- 595              	handle_cmd_0x09:
- 596              	.LVL60:
- 597              	.LFB11:
- 174:Core/Src/app_uart_handlers.c **** 
- 175:Core/Src/app_uart_handlers.c **** /* 0x09: 邻居信息（简化映射）
- 176:Core/Src/app_uart_handlers.c ****  * payload[0] : neighbor count
- 177:Core/Src/app_uart_handlers.c ****  * payload[1] : first/strongest RSSI (i8)
- 178:Core/Src/app_uart_handlers.c ****  */
- 179:Core/Src/app_uart_handlers.c **** static void handle_cmd_0x09(const uint8_t *payload, uint16_t payloadLen)
- 180:Core/Src/app_uart_handlers.c **** {
- 598              		.loc 1 180 1 is_stmt 1 view -0
- 599              		.cfi_startproc
- 600              		@ args = 0, pretend = 0, frame = 0
- 601              		@ frame_needed = 0, uses_anonymous_args = 0
- 181:Core/Src/app_uart_handlers.c ****   if ((payload == NULL) || (payloadLen < 1u))
- 602              		.loc 1 181 3 view .LVU149
- 603              		.loc 1 181 6 is_stmt 0 view .LVU150
- 604 0000 F0B1     		cbz	r0, .L65
- 180:Core/Src/app_uart_handlers.c ****   if ((payload == NULL) || (payloadLen < 1u))
- 605              		.loc 1 180 1 discriminator 1 view .LVU151
- 606 0002 38B5     		push	{r3, r4, r5, lr}
- 607              	.LCFI9:
- 608              		.cfi_def_cfa_offset 16
- 609              		.cfi_offset 3, -16
- 610              		.cfi_offset 4, -12
- 611              		.cfi_offset 5, -8
- 612              		.cfi_offset 14, -4
- 613 0004 0C46     		mov	r4, r1
- 614 0006 0546     		mov	r5, r0
- 615              		.loc 1 181 25 discriminator 1 view .LVU152
- 616 0008 99B1     		cbz	r1, .L59
- 182:Core/Src/app_uart_handlers.c ****   {
- 183:Core/Src/app_uart_handlers.c ****     return;
- 184:Core/Src/app_uart_handlers.c ****   }
- 185:Core/Src/app_uart_handlers.c **** 
- 186:Core/Src/app_uart_handlers.c ****   if (gParamMutexHandle != NULL)
- 617              		.loc 1 186 3 is_stmt 1 view .LVU153
- 618              		.loc 1 186 25 is_stmt 0 view .LVU154
- 619 000a 0E4B     		ldr	r3, .L69
- 620 000c 1868     		ldr	r0, [r3]
- 621              	.LVL61:
- 622              		.loc 1 186 6 view .LVU155
- 623 000e 18B1     		cbz	r0, .L61
- 187:Core/Src/app_uart_handlers.c ****   {
- 188:Core/Src/app_uart_handlers.c ****     (void)osMutexAcquire(gParamMutexHandle, osWaitForever);
- 624              		.loc 1 188 5 is_stmt 1 view .LVU156
- 625              		.loc 1 188 11 is_stmt 0 view .LVU157
- 626 0010 4FF0FF31 		mov	r1, #-1
- 627              	.LVL62:
- 628              		.loc 1 188 11 view .LVU158
- 629 0014 FFF7FEFF 		bl	osMutexAcquire
- 630              	.LVL63:
- 631              	.L61:
- 189:Core/Src/app_uart_handlers.c ****   }
- 190:Core/Src/app_uart_handlers.c **** 
- 191:Core/Src/app_uart_handlers.c ****   (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_NEIGHBOR_COUNT, (int32_t)payload[0]);
- 632              		.loc 1 191 3 is_stmt 1 view .LVU159
-ARM GAS  /tmp/ccSrUpcT.s 			page 16
-
-
- 633              		.loc 1 191 9 is_stmt 0 view .LVU160
- 634 0018 2978     		ldrb	r1, [r5]	@ zero_extendqisi2
- 635 001a 3220     		movs	r0, #50
- 636 001c FFF7FEFF 		bl	APP_ParamDict_SetValueUnsafe
- 637              	.LVL64:
- 192:Core/Src/app_uart_handlers.c ****   if (payloadLen >= 2u)
- 638              		.loc 1 192 3 is_stmt 1 view .LVU161
- 639              		.loc 1 192 6 is_stmt 0 view .LVU162
- 640 0020 012C     		cmp	r4, #1
- 641 0022 07D8     		bhi	.L68
- 642              	.L62:
- 193:Core/Src/app_uart_handlers.c ****   {
- 194:Core/Src/app_uart_handlers.c ****     (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_NEIGHBOR_RSSI, (int32_t)(int8_t)payload[1]);
- 195:Core/Src/app_uart_handlers.c ****   }
- 196:Core/Src/app_uart_handlers.c **** 
- 197:Core/Src/app_uart_handlers.c ****   if (gParamMutexHandle != NULL)
- 643              		.loc 1 197 3 is_stmt 1 view .LVU163
- 644              		.loc 1 197 25 is_stmt 0 view .LVU164
- 645 0024 074B     		ldr	r3, .L69
- 646 0026 1868     		ldr	r0, [r3]
- 647              		.loc 1 197 6 view .LVU165
- 648 0028 08B1     		cbz	r0, .L63
+ 185:Core/Src/app_uart_handlers.c ****   }
+ 186:Core/Src/app_uart_handlers.c **** 
+ 187:Core/Src/app_uart_handlers.c ****   (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_NET_IP_ADDR, (int32_t)read_be_u32(payload));
+ 275              		.loc 1 187 3 is_stmt 1 view .LVU68
+ 276              		.loc 1 187 69 is_stmt 0 view .LVU69
+ 277 001c 2846     		mov	r0, r5
+ 278 001e FFF7FEFF 		bl	read_be_u32
+ 279              	.LVL25:
+ 280 0022 0146     		mov	r1, r0
+ 281              		.loc 1 187 9 view .LVU70
+ 282 0024 0220     		movs	r0, #2
+ 283 0026 FFF7FEFF 		bl	APP_ParamDict_SetValueUnsafe
+ 284              	.LVL26:
+ 188:Core/Src/app_uart_handlers.c **** 
+ 189:Core/Src/app_uart_handlers.c ****   if (payloadLen >= 8u)
+ 285              		.loc 1 189 3 is_stmt 1 view .LVU71
+ 286              		.loc 1 189 6 is_stmt 0 view .LVU72
+ 287 002a 072C     		cmp	r4, #7
+ 288 002c 0DD8     		bhi	.L29
+ 289              	.L20:
+ 190:Core/Src/app_uart_handlers.c ****   {
+ 191:Core/Src/app_uart_handlers.c ****     (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_GPS_LONGITUDE, read_be_i32(&payload[4]));
+ 192:Core/Src/app_uart_handlers.c ****   }
+ 193:Core/Src/app_uart_handlers.c ****   if (payloadLen >= 12u)
+ 290              		.loc 1 193 3 is_stmt 1 view .LVU73
+ 291              		.loc 1 193 6 is_stmt 0 view .LVU74
+ 292 002e 0B2C     		cmp	r4, #11
+ 293 0030 13D8     		bhi	.L30
+ 294              	.L21:
+ 194:Core/Src/app_uart_handlers.c ****   {
+ 195:Core/Src/app_uart_handlers.c ****     (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_GPS_LATITUDE, read_be_i32(&payload[8]));
+ 196:Core/Src/app_uart_handlers.c ****   }
+ 197:Core/Src/app_uart_handlers.c ****   if (payloadLen >= 14u)
+ 295              		.loc 1 197 3 is_stmt 1 view .LVU75
+ 296              		.loc 1 197 6 is_stmt 0 view .LVU76
+ 297 0032 0D2C     		cmp	r4, #13
+ 298 0034 1AD8     		bhi	.L31
+ 299              	.L22:
  198:Core/Src/app_uart_handlers.c ****   {
- 199:Core/Src/app_uart_handlers.c ****     (void)osMutexRelease(gParamMutexHandle);
- 649              		.loc 1 199 5 is_stmt 1 view .LVU166
- 650              		.loc 1 199 11 is_stmt 0 view .LVU167
- 651 002a FFF7FEFF 		bl	osMutexRelease
- 652              	.LVL65:
- 653              	.L63:
+ 199:Core/Src/app_uart_handlers.c ****     (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_GPS_ALTITUDE, (int32_t)read_be_i16(&payload[12]));
  200:Core/Src/app_uart_handlers.c ****   }
- 201:Core/Src/app_uart_handlers.c **** 
- 202:Core/Src/app_uart_handlers.c ****   APP_Menu_RefreshCurrent();
- 654              		.loc 1 202 3 is_stmt 1 view .LVU168
- 655 002e FFF7FEFF 		bl	APP_Menu_RefreshCurrent
- 656              	.LVL66:
- 657              	.L59:
- 203:Core/Src/app_uart_handlers.c **** }
- 658              		.loc 1 203 1 is_stmt 0 view .LVU169
- 659 0032 38BD     		pop	{r3, r4, r5, pc}
- 660              	.LVL67:
- 661              	.L68:
- 194:Core/Src/app_uart_handlers.c ****   }
- 662              		.loc 1 194 5 is_stmt 1 view .LVU170
- 194:Core/Src/app_uart_handlers.c ****   }
- 663              		.loc 1 194 11 is_stmt 0 view .LVU171
- 664 0034 95F90110 		ldrsb	r1, [r5, #1]
- 665 0038 3320     		movs	r0, #51
- 666 003a FFF7FEFF 		bl	APP_ParamDict_SetValueUnsafe
- 667              	.LVL68:
- 668 003e F1E7     		b	.L62
- 669              	.LVL69:
- 670              	.L65:
- 671              	.LCFI10:
- 672              		.cfi_def_cfa_offset 0
- 673              		.cfi_restore 3
- 674              		.cfi_restore 4
- 675              		.cfi_restore 5
-ARM GAS  /tmp/ccSrUpcT.s 			page 17
+ 201:Core/Src/app_uart_handlers.c ****   if (payloadLen >= 15u)
+ 300              		.loc 1 201 3 is_stmt 1 view .LVU77
+ 301              		.loc 1 201 6 is_stmt 0 view .LVU78
+ 302 0036 0E2C     		cmp	r4, #14
+ 303 0038 21D8     		bhi	.L32
+ 304              	.L23:
+ 202:Core/Src/app_uart_handlers.c ****   {
+ 203:Core/Src/app_uart_handlers.c ****     (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_SAT_LOCK, (int32_t)payload[14]);
+ 204:Core/Src/app_uart_handlers.c ****   }
+ 205:Core/Src/app_uart_handlers.c **** 
+ 206:Core/Src/app_uart_handlers.c ****   if (gParamMutexHandle != NULL)
+ 305              		.loc 1 206 3 is_stmt 1 view .LVU79
+ 306              		.loc 1 206 25 is_stmt 0 view .LVU80
+ 307 003a 144B     		ldr	r3, .L33
+ 308 003c 1868     		ldr	r0, [r3]
+ 309              		.loc 1 206 6 view .LVU81
+ARM GAS  /tmp/ccjJqYyO.s 			page 10
 
 
- 676              		.cfi_restore 14
- 194:Core/Src/app_uart_handlers.c ****   }
- 677              		.loc 1 194 11 view .LVU172
- 678 0040 7047     		bx	lr
- 679              	.L70:
- 680 0042 00BF     		.align	2
- 681              	.L69:
- 682 0044 00000000 		.word	gParamMutexHandle
- 683              		.cfi_endproc
- 684              	.LFE11:
- 686              		.section	.text.APP_UartRx_OnFrame,"ax",%progbits
- 687              		.align	1
- 688              		.global	APP_UartRx_OnFrame
- 689              		.syntax unified
- 690              		.thumb
- 691              		.thumb_func
- 692              		.fpu softvfp
- 694              	APP_UartRx_OnFrame:
- 695              	.LVL70:
- 696              	.LFB12:
- 204:Core/Src/app_uart_handlers.c **** 
- 205:Core/Src/app_uart_handlers.c **** void APP_UartRx_OnFrame(uint8_t cmd,
- 206:Core/Src/app_uart_handlers.c ****                         uint8_t msgType,
- 207:Core/Src/app_uart_handlers.c ****                         const uint8_t *payload,
- 208:Core/Src/app_uart_handlers.c ****                         uint16_t payloadLen)
- 209:Core/Src/app_uart_handlers.c **** {
- 697              		.loc 1 209 1 is_stmt 1 view -0
- 698              		.cfi_startproc
- 699              		@ args = 0, pretend = 0, frame = 0
- 700              		@ frame_needed = 0, uses_anonymous_args = 0
- 701              		.loc 1 209 1 is_stmt 0 view .LVU174
- 702 0000 08B5     		push	{r3, lr}
- 703              	.LCFI11:
- 704              		.cfi_def_cfa_offset 8
- 705              		.cfi_offset 3, -8
- 706              		.cfi_offset 14, -4
- 707 0002 1946     		mov	r1, r3
- 708              	.LVL71:
- 210:Core/Src/app_uart_handlers.c ****   (void)msgType;
- 709              		.loc 1 210 3 is_stmt 1 view .LVU175
- 211:Core/Src/app_uart_handlers.c **** 
- 212:Core/Src/app_uart_handlers.c ****   switch (cmd)
- 710              		.loc 1 212 3 view .LVU176
- 711 0004 A0F1050C 		sub	ip, r0, #5
- 712 0008 BCF1040F 		cmp	ip, #4
- 713 000c 07D8     		bhi	.L71
- 714 000e DFE80CF0 		tbb	[pc, ip]
- 715              	.LVL72:
- 716              	.L74:
- 717 0012 03       		.byte	(.L78-.L74)/2
- 718 0013 07       		.byte	(.L77-.L74)/2
- 719 0014 0B       		.byte	(.L76-.L74)/2
- 720 0015 0F       		.byte	(.L75-.L74)/2
- 721 0016 13       		.byte	(.L73-.L74)/2
- 722 0017 00       		.p2align 1
- 723              	.L78:
- 213:Core/Src/app_uart_handlers.c ****   {
-ARM GAS  /tmp/ccSrUpcT.s 			page 18
+ 310 003e 08B1     		cbz	r0, .L24
+ 207:Core/Src/app_uart_handlers.c ****   {
+ 208:Core/Src/app_uart_handlers.c ****     (void)osMutexRelease(gParamMutexHandle);
+ 311              		.loc 1 208 5 is_stmt 1 view .LVU82
+ 312              		.loc 1 208 11 is_stmt 0 view .LVU83
+ 313 0040 FFF7FEFF 		bl	osMutexRelease
+ 314              	.LVL27:
+ 315              	.L24:
+ 209:Core/Src/app_uart_handlers.c ****   }
+ 210:Core/Src/app_uart_handlers.c **** 
+ 211:Core/Src/app_uart_handlers.c ****   APP_Menu_RefreshCurrent();
+ 316              		.loc 1 211 3 is_stmt 1 view .LVU84
+ 317 0044 FFF7FEFF 		bl	APP_Menu_RefreshCurrent
+ 318              	.LVL28:
+ 319              	.L17:
+ 212:Core/Src/app_uart_handlers.c **** }
+ 320              		.loc 1 212 1 is_stmt 0 view .LVU85
+ 321 0048 38BD     		pop	{r3, r4, r5, pc}
+ 322              	.LVL29:
+ 323              	.L29:
+ 191:Core/Src/app_uart_handlers.c ****   }
+ 324              		.loc 1 191 5 is_stmt 1 view .LVU86
+ 191:Core/Src/app_uart_handlers.c ****   }
+ 325              		.loc 1 191 11 is_stmt 0 view .LVU87
+ 326 004a 281D     		adds	r0, r5, #4
+ 327 004c FFF7FEFF 		bl	read_be_i32
+ 328              	.LVL30:
+ 329 0050 0146     		mov	r1, r0
+ 330 0052 1420     		movs	r0, #20
+ 331 0054 FFF7FEFF 		bl	APP_ParamDict_SetValueUnsafe
+ 332              	.LVL31:
+ 333 0058 E9E7     		b	.L20
+ 334              	.L30:
+ 195:Core/Src/app_uart_handlers.c ****   }
+ 335              		.loc 1 195 5 is_stmt 1 view .LVU88
+ 195:Core/Src/app_uart_handlers.c ****   }
+ 336              		.loc 1 195 11 is_stmt 0 view .LVU89
+ 337 005a 05F10800 		add	r0, r5, #8
+ 338 005e FFF7FEFF 		bl	read_be_i32
+ 339              	.LVL32:
+ 340 0062 0146     		mov	r1, r0
+ 341 0064 1520     		movs	r0, #21
+ 342 0066 FFF7FEFF 		bl	APP_ParamDict_SetValueUnsafe
+ 343              	.LVL33:
+ 344 006a E2E7     		b	.L21
+ 345              	.L31:
+ 199:Core/Src/app_uart_handlers.c ****   }
+ 346              		.loc 1 199 5 is_stmt 1 view .LVU90
+ 199:Core/Src/app_uart_handlers.c ****   }
+ 347              		.loc 1 199 72 is_stmt 0 view .LVU91
+ 348 006c 05F10C00 		add	r0, r5, #12
+ 349 0070 FFF7FEFF 		bl	read_be_i16
+ 350              	.LVL34:
+ 351 0074 0146     		mov	r1, r0
+ 199:Core/Src/app_uart_handlers.c ****   }
+ 352              		.loc 1 199 11 view .LVU92
+ 353 0076 1620     		movs	r0, #22
+ARM GAS  /tmp/ccjJqYyO.s 			page 11
 
 
- 214:Core/Src/app_uart_handlers.c ****     case 0x05u:
- 215:Core/Src/app_uart_handlers.c ****       handle_cmd_0x05(payload, payloadLen);
- 724              		.loc 1 215 7 view .LVU177
- 725 0018 1046     		mov	r0, r2
- 726              	.LVL73:
- 727              		.loc 1 215 7 is_stmt 0 view .LVU178
- 728 001a FFF7FEFF 		bl	handle_cmd_0x05
- 729              	.LVL74:
- 216:Core/Src/app_uart_handlers.c ****       break;
- 730              		.loc 1 216 7 is_stmt 1 view .LVU179
- 731              	.L71:
- 217:Core/Src/app_uart_handlers.c **** 
- 218:Core/Src/app_uart_handlers.c ****     case 0x06u:
- 219:Core/Src/app_uart_handlers.c ****       handle_cmd_0x06(payload, payloadLen);
- 220:Core/Src/app_uart_handlers.c ****       break;
- 221:Core/Src/app_uart_handlers.c **** 
- 222:Core/Src/app_uart_handlers.c ****     case 0x07u:
- 223:Core/Src/app_uart_handlers.c ****       handle_cmd_0x07(payload, payloadLen);
- 224:Core/Src/app_uart_handlers.c ****       break;
- 225:Core/Src/app_uart_handlers.c **** 
- 226:Core/Src/app_uart_handlers.c ****     case 0x08u:
- 227:Core/Src/app_uart_handlers.c ****       handle_cmd_0x08(payload, payloadLen);
- 228:Core/Src/app_uart_handlers.c ****       break;
- 229:Core/Src/app_uart_handlers.c **** 
- 230:Core/Src/app_uart_handlers.c ****     case 0x09u:
- 231:Core/Src/app_uart_handlers.c ****       handle_cmd_0x09(payload, payloadLen);
- 232:Core/Src/app_uart_handlers.c ****       break;
- 233:Core/Src/app_uart_handlers.c **** 
- 234:Core/Src/app_uart_handlers.c ****     default:
- 235:Core/Src/app_uart_handlers.c ****       /* 其他命令暂不处理，后续可按协议文档逐步扩展解析逻辑 */
- 236:Core/Src/app_uart_handlers.c ****       break;
- 237:Core/Src/app_uart_handlers.c ****   }
- 238:Core/Src/app_uart_handlers.c **** }
- 732              		.loc 1 238 1 is_stmt 0 view .LVU180
- 733 001e 08BD     		pop	{r3, pc}
- 734              	.LVL75:
- 735              	.L77:
- 219:Core/Src/app_uart_handlers.c ****       break;
- 736              		.loc 1 219 7 is_stmt 1 view .LVU181
- 737 0020 1046     		mov	r0, r2
- 738              	.LVL76:
- 219:Core/Src/app_uart_handlers.c ****       break;
- 739              		.loc 1 219 7 is_stmt 0 view .LVU182
- 740 0022 FFF7FEFF 		bl	handle_cmd_0x06
- 741              	.LVL77:
- 220:Core/Src/app_uart_handlers.c **** 
- 742              		.loc 1 220 7 is_stmt 1 view .LVU183
- 743 0026 FAE7     		b	.L71
- 744              	.LVL78:
- 745              	.L76:
- 223:Core/Src/app_uart_handlers.c ****       break;
- 746              		.loc 1 223 7 view .LVU184
- 747 0028 1046     		mov	r0, r2
- 748              	.LVL79:
- 223:Core/Src/app_uart_handlers.c ****       break;
- 749              		.loc 1 223 7 is_stmt 0 view .LVU185
- 750 002a FFF7FEFF 		bl	handle_cmd_0x07
-ARM GAS  /tmp/ccSrUpcT.s 			page 19
+ 354 0078 FFF7FEFF 		bl	APP_ParamDict_SetValueUnsafe
+ 355              	.LVL35:
+ 356 007c DBE7     		b	.L22
+ 357              	.L32:
+ 203:Core/Src/app_uart_handlers.c ****   }
+ 358              		.loc 1 203 5 is_stmt 1 view .LVU93
+ 203:Core/Src/app_uart_handlers.c ****   }
+ 359              		.loc 1 203 11 is_stmt 0 view .LVU94
+ 360 007e A97B     		ldrb	r1, [r5, #14]	@ zero_extendqisi2
+ 361 0080 1720     		movs	r0, #23
+ 362 0082 FFF7FEFF 		bl	APP_ParamDict_SetValueUnsafe
+ 363              	.LVL36:
+ 364 0086 D8E7     		b	.L23
+ 365              	.LVL37:
+ 366              	.L26:
+ 367              	.LCFI3:
+ 368              		.cfi_def_cfa_offset 0
+ 369              		.cfi_restore 3
+ 370              		.cfi_restore 4
+ 371              		.cfi_restore 5
+ 372              		.cfi_restore 14
+ 203:Core/Src/app_uart_handlers.c ****   }
+ 373              		.loc 1 203 11 view .LVU95
+ 374 0088 7047     		bx	lr
+ 375              	.L34:
+ 376 008a 00BF     		.align	2
+ 377              	.L33:
+ 378 008c 00000000 		.word	gParamMutexHandle
+ 379              		.cfi_endproc
+ 380              	.LFE9:
+ 382              		.section	.text.handle_cmd_0x06,"ax",%progbits
+ 383              		.align	1
+ 384              		.syntax unified
+ 385              		.thumb
+ 386              		.thumb_func
+ 387              		.fpu softvfp
+ 389              	handle_cmd_0x06:
+ 390              	.LVL38:
+ 391              	.LFB10:
+ 213:Core/Src/app_uart_handlers.c **** 
+ 214:Core/Src/app_uart_handlers.c **** /* 0x06: 流量统计
+ 215:Core/Src/app_uart_handlers.c ****  * payload[0..3]   : ETH_TX
+ 216:Core/Src/app_uart_handlers.c ****  * payload[4..7]   : ETH_RX
+ 217:Core/Src/app_uart_handlers.c ****  * payload[8..11]  : VOICE_TX
+ 218:Core/Src/app_uart_handlers.c ****  * payload[12..15] : VOICE_RX
+ 219:Core/Src/app_uart_handlers.c ****  */
+ 220:Core/Src/app_uart_handlers.c **** static void handle_cmd_0x06(const uint8_t *payload, uint16_t payloadLen)
+ 221:Core/Src/app_uart_handlers.c **** {
+ 392              		.loc 1 221 1 is_stmt 1 view -0
+ 393              		.cfi_startproc
+ 394              		@ args = 0, pretend = 0, frame = 0
+ 395              		@ frame_needed = 0, uses_anonymous_args = 0
+ 222:Core/Src/app_uart_handlers.c ****   if ((payload == NULL) || (payloadLen < 16u))
+ 396              		.loc 1 222 3 view .LVU97
+ 397              		.loc 1 222 6 is_stmt 0 view .LVU98
+ 398 0000 80B3     		cbz	r0, .L40
+ 221:Core/Src/app_uart_handlers.c ****   if ((payload == NULL) || (payloadLen < 16u))
+ARM GAS  /tmp/ccjJqYyO.s 			page 12
 
 
- 751              	.LVL80:
- 224:Core/Src/app_uart_handlers.c **** 
- 752              		.loc 1 224 7 is_stmt 1 view .LVU186
- 753 002e F6E7     		b	.L71
- 754              	.LVL81:
- 755              	.L75:
- 227:Core/Src/app_uart_handlers.c ****       break;
- 756              		.loc 1 227 7 view .LVU187
- 757 0030 1046     		mov	r0, r2
- 758              	.LVL82:
- 227:Core/Src/app_uart_handlers.c ****       break;
- 759              		.loc 1 227 7 is_stmt 0 view .LVU188
- 760 0032 FFF7FEFF 		bl	handle_cmd_0x08
- 761              	.LVL83:
- 228:Core/Src/app_uart_handlers.c **** 
- 762              		.loc 1 228 7 is_stmt 1 view .LVU189
- 763 0036 F2E7     		b	.L71
- 764              	.LVL84:
- 765              	.L73:
- 231:Core/Src/app_uart_handlers.c ****       break;
- 766              		.loc 1 231 7 view .LVU190
- 767 0038 1046     		mov	r0, r2
- 768              	.LVL85:
- 231:Core/Src/app_uart_handlers.c ****       break;
- 769              		.loc 1 231 7 is_stmt 0 view .LVU191
- 770 003a FFF7FEFF 		bl	handle_cmd_0x09
- 771              	.LVL86:
- 232:Core/Src/app_uart_handlers.c **** 
- 772              		.loc 1 232 7 is_stmt 1 view .LVU192
- 773              		.loc 1 238 1 is_stmt 0 view .LVU193
- 774 003e EEE7     		b	.L71
- 775              		.cfi_endproc
- 776              	.LFE12:
- 778              		.text
- 779              	.Letext0:
- 780              		.file 2 "/usr/lib/gcc/arm-none-eabi/10.3.1/include/stdint.h"
- 781              		.file 3 "Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.h"
- 782              		.file 4 "Core/Inc/app_param_dict.h"
- 783              		.file 5 "Core/Inc/app_menu.h"
-ARM GAS  /tmp/ccSrUpcT.s 			page 20
+ 399              		.loc 1 221 1 discriminator 1 view .LVU99
+ 400 0002 10B5     		push	{r4, lr}
+ 401              	.LCFI4:
+ 402              		.cfi_def_cfa_offset 8
+ 403              		.cfi_offset 4, -8
+ 404              		.cfi_offset 14, -4
+ 405 0004 0446     		mov	r4, r0
+ 406              		.loc 1 222 25 discriminator 1 view .LVU100
+ 407 0006 0F29     		cmp	r1, #15
+ 408 0008 2BD9     		bls	.L35
+ 223:Core/Src/app_uart_handlers.c ****   {
+ 224:Core/Src/app_uart_handlers.c ****     return;
+ 225:Core/Src/app_uart_handlers.c ****   }
+ 226:Core/Src/app_uart_handlers.c **** 
+ 227:Core/Src/app_uart_handlers.c ****   if (gParamMutexHandle != NULL)
+ 409              		.loc 1 227 3 is_stmt 1 view .LVU101
+ 410              		.loc 1 227 25 is_stmt 0 view .LVU102
+ 411 000a 174B     		ldr	r3, .L43
+ 412 000c 1868     		ldr	r0, [r3]
+ 413              	.LVL39:
+ 414              		.loc 1 227 6 view .LVU103
+ 415 000e 18B1     		cbz	r0, .L37
+ 228:Core/Src/app_uart_handlers.c ****   {
+ 229:Core/Src/app_uart_handlers.c ****     (void)osMutexAcquire(gParamMutexHandle, osWaitForever);
+ 416              		.loc 1 229 5 is_stmt 1 view .LVU104
+ 417              		.loc 1 229 11 is_stmt 0 view .LVU105
+ 418 0010 4FF0FF31 		mov	r1, #-1
+ 419              	.LVL40:
+ 420              		.loc 1 229 11 view .LVU106
+ 421 0014 FFF7FEFF 		bl	osMutexAcquire
+ 422              	.LVL41:
+ 423              	.L37:
+ 230:Core/Src/app_uart_handlers.c ****   }
+ 231:Core/Src/app_uart_handlers.c **** 
+ 232:Core/Src/app_uart_handlers.c ****   (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_ETH_TX_CNT, (int32_t)read_be_u32(&payload[0]));
+ 424              		.loc 1 232 3 is_stmt 1 view .LVU107
+ 425              		.loc 1 232 68 is_stmt 0 view .LVU108
+ 426 0018 2046     		mov	r0, r4
+ 427 001a FFF7FEFF 		bl	read_be_u32
+ 428              	.LVL42:
+ 429 001e 0146     		mov	r1, r0
+ 430              		.loc 1 232 9 view .LVU109
+ 431 0020 1E20     		movs	r0, #30
+ 432 0022 FFF7FEFF 		bl	APP_ParamDict_SetValueUnsafe
+ 433              	.LVL43:
+ 233:Core/Src/app_uart_handlers.c ****   (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_ETH_RX_CNT, (int32_t)read_be_u32(&payload[4]));
+ 434              		.loc 1 233 3 is_stmt 1 view .LVU110
+ 435              		.loc 1 233 68 is_stmt 0 view .LVU111
+ 436 0026 201D     		adds	r0, r4, #4
+ 437 0028 FFF7FEFF 		bl	read_be_u32
+ 438              	.LVL44:
+ 439 002c 0146     		mov	r1, r0
+ 440              		.loc 1 233 9 view .LVU112
+ 441 002e 1F20     		movs	r0, #31
+ 442 0030 FFF7FEFF 		bl	APP_ParamDict_SetValueUnsafe
+ 443              	.LVL45:
+ 234:Core/Src/app_uart_handlers.c ****   (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_VOICE_TX_CNT, (int32_t)read_be_u32(&payload[8]));
+ARM GAS  /tmp/ccjJqYyO.s 			page 13
+
+
+ 444              		.loc 1 234 3 is_stmt 1 view .LVU113
+ 445              		.loc 1 234 70 is_stmt 0 view .LVU114
+ 446 0034 04F10800 		add	r0, r4, #8
+ 447 0038 FFF7FEFF 		bl	read_be_u32
+ 448              	.LVL46:
+ 449 003c 0146     		mov	r1, r0
+ 450              		.loc 1 234 9 view .LVU115
+ 451 003e 2020     		movs	r0, #32
+ 452 0040 FFF7FEFF 		bl	APP_ParamDict_SetValueUnsafe
+ 453              	.LVL47:
+ 235:Core/Src/app_uart_handlers.c ****   (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_VOICE_RX_CNT, (int32_t)read_be_u32(&payload[12]));
+ 454              		.loc 1 235 3 is_stmt 1 view .LVU116
+ 455              		.loc 1 235 70 is_stmt 0 view .LVU117
+ 456 0044 04F10C00 		add	r0, r4, #12
+ 457 0048 FFF7FEFF 		bl	read_be_u32
+ 458              	.LVL48:
+ 459 004c 0146     		mov	r1, r0
+ 460              		.loc 1 235 9 view .LVU118
+ 461 004e 2120     		movs	r0, #33
+ 462 0050 FFF7FEFF 		bl	APP_ParamDict_SetValueUnsafe
+ 463              	.LVL49:
+ 236:Core/Src/app_uart_handlers.c **** 
+ 237:Core/Src/app_uart_handlers.c ****   if (gParamMutexHandle != NULL)
+ 464              		.loc 1 237 3 is_stmt 1 view .LVU119
+ 465              		.loc 1 237 25 is_stmt 0 view .LVU120
+ 466 0054 044B     		ldr	r3, .L43
+ 467 0056 1868     		ldr	r0, [r3]
+ 468              		.loc 1 237 6 view .LVU121
+ 469 0058 08B1     		cbz	r0, .L38
+ 238:Core/Src/app_uart_handlers.c ****   {
+ 239:Core/Src/app_uart_handlers.c ****     (void)osMutexRelease(gParamMutexHandle);
+ 470              		.loc 1 239 5 is_stmt 1 view .LVU122
+ 471              		.loc 1 239 11 is_stmt 0 view .LVU123
+ 472 005a FFF7FEFF 		bl	osMutexRelease
+ 473              	.LVL50:
+ 474              	.L38:
+ 240:Core/Src/app_uart_handlers.c ****   }
+ 241:Core/Src/app_uart_handlers.c **** 
+ 242:Core/Src/app_uart_handlers.c ****   APP_Menu_RefreshCurrent();
+ 475              		.loc 1 242 3 is_stmt 1 view .LVU124
+ 476 005e FFF7FEFF 		bl	APP_Menu_RefreshCurrent
+ 477              	.LVL51:
+ 478              	.L35:
+ 243:Core/Src/app_uart_handlers.c **** }
+ 479              		.loc 1 243 1 is_stmt 0 view .LVU125
+ 480 0062 10BD     		pop	{r4, pc}
+ 481              	.LVL52:
+ 482              	.L40:
+ 483              	.LCFI5:
+ 484              		.cfi_def_cfa_offset 0
+ 485              		.cfi_restore 4
+ 486              		.cfi_restore 14
+ 487              		.loc 1 243 1 view .LVU126
+ 488 0064 7047     		bx	lr
+ 489              	.L44:
+ 490 0066 00BF     		.align	2
+ 491              	.L43:
+ARM GAS  /tmp/ccjJqYyO.s 			page 14
+
+
+ 492 0068 00000000 		.word	gParamMutexHandle
+ 493              		.cfi_endproc
+ 494              	.LFE10:
+ 496              		.section	.text.handle_cmd_0x07,"ax",%progbits
+ 497              		.align	1
+ 498              		.syntax unified
+ 499              		.thumb
+ 500              		.thumb_func
+ 501              		.fpu softvfp
+ 503              	handle_cmd_0x07:
+ 504              	.LVL53:
+ 505              	.LFB11:
+ 244:Core/Src/app_uart_handlers.c **** 
+ 245:Core/Src/app_uart_handlers.c **** /* 0x07: 自检状态
+ 246:Core/Src/app_uart_handlers.c ****  * payload[0]      : battery
+ 247:Core/Src/app_uart_handlers.c ****  * payload[1..2]   : temperature(0.1C, i16)
+ 248:Core/Src/app_uart_handlers.c ****  * payload[3]      : fan state
+ 249:Core/Src/app_uart_handlers.c ****  * payload[4]      : sat lock
+ 250:Core/Src/app_uart_handlers.c ****  */
+ 251:Core/Src/app_uart_handlers.c **** static void handle_cmd_0x07(const uint8_t *payload, uint16_t payloadLen)
+ 252:Core/Src/app_uart_handlers.c **** {
+ 506              		.loc 1 252 1 is_stmt 1 view -0
+ 507              		.cfi_startproc
+ 508              		@ args = 0, pretend = 0, frame = 0
+ 509              		@ frame_needed = 0, uses_anonymous_args = 0
+ 253:Core/Src/app_uart_handlers.c ****   if ((payload == NULL) || (payloadLen < 1u))
+ 510              		.loc 1 253 3 view .LVU128
+ 511              		.loc 1 253 6 is_stmt 0 view .LVU129
+ 512 0000 70B3     		cbz	r0, .L53
+ 252:Core/Src/app_uart_handlers.c ****   if ((payload == NULL) || (payloadLen < 1u))
+ 513              		.loc 1 252 1 discriminator 1 view .LVU130
+ 514 0002 38B5     		push	{r3, r4, r5, lr}
+ 515              	.LCFI6:
+ 516              		.cfi_def_cfa_offset 16
+ 517              		.cfi_offset 3, -16
+ 518              		.cfi_offset 4, -12
+ 519              		.cfi_offset 5, -8
+ 520              		.cfi_offset 14, -4
+ 521 0004 0C46     		mov	r4, r1
+ 522 0006 0546     		mov	r5, r0
+ 523              		.loc 1 253 25 discriminator 1 view .LVU131
+ 524 0008 B9B1     		cbz	r1, .L45
+ 254:Core/Src/app_uart_handlers.c ****   {
+ 255:Core/Src/app_uart_handlers.c ****     return;
+ 256:Core/Src/app_uart_handlers.c ****   }
+ 257:Core/Src/app_uart_handlers.c **** 
+ 258:Core/Src/app_uart_handlers.c ****   if (gParamMutexHandle != NULL)
+ 525              		.loc 1 258 3 is_stmt 1 view .LVU132
+ 526              		.loc 1 258 25 is_stmt 0 view .LVU133
+ 527 000a 164B     		ldr	r3, .L59
+ 528 000c 1868     		ldr	r0, [r3]
+ 529              	.LVL54:
+ 530              		.loc 1 258 6 view .LVU134
+ 531 000e 18B1     		cbz	r0, .L47
+ 259:Core/Src/app_uart_handlers.c ****   {
+ 260:Core/Src/app_uart_handlers.c ****     (void)osMutexAcquire(gParamMutexHandle, osWaitForever);
+ 532              		.loc 1 260 5 is_stmt 1 view .LVU135
+ARM GAS  /tmp/ccjJqYyO.s 			page 15
+
+
+ 533              		.loc 1 260 11 is_stmt 0 view .LVU136
+ 534 0010 4FF0FF31 		mov	r1, #-1
+ 535              	.LVL55:
+ 536              		.loc 1 260 11 view .LVU137
+ 537 0014 FFF7FEFF 		bl	osMutexAcquire
+ 538              	.LVL56:
+ 539              	.L47:
+ 261:Core/Src/app_uart_handlers.c ****   }
+ 262:Core/Src/app_uart_handlers.c **** 
+ 263:Core/Src/app_uart_handlers.c ****   (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_BATTERY_CAP, (int32_t)payload[0]);
+ 540              		.loc 1 263 3 is_stmt 1 view .LVU138
+ 541              		.loc 1 263 9 is_stmt 0 view .LVU139
+ 542 0018 2978     		ldrb	r1, [r5]	@ zero_extendqisi2
+ 543 001a 2820     		movs	r0, #40
+ 544 001c FFF7FEFF 		bl	APP_ParamDict_SetValueUnsafe
+ 545              	.LVL57:
+ 264:Core/Src/app_uart_handlers.c **** 
+ 265:Core/Src/app_uart_handlers.c ****   if (payloadLen >= 3u)
+ 546              		.loc 1 265 3 is_stmt 1 view .LVU140
+ 547              		.loc 1 265 6 is_stmt 0 view .LVU141
+ 548 0020 022C     		cmp	r4, #2
+ 549 0022 0BD8     		bhi	.L56
+ 550              	.L48:
+ 266:Core/Src/app_uart_handlers.c ****   {
+ 267:Core/Src/app_uart_handlers.c ****     (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_ENV_TEMPERATURE, (int32_t)read_be_i16(&payload[1]))
+ 268:Core/Src/app_uart_handlers.c ****   }
+ 269:Core/Src/app_uart_handlers.c ****   if (payloadLen >= 4u)
+ 551              		.loc 1 269 3 is_stmt 1 view .LVU142
+ 552              		.loc 1 269 6 is_stmt 0 view .LVU143
+ 553 0024 032C     		cmp	r4, #3
+ 554 0026 11D8     		bhi	.L57
+ 555              	.L49:
+ 270:Core/Src/app_uart_handlers.c ****   {
+ 271:Core/Src/app_uart_handlers.c ****     (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_FAN_STATE, (int32_t)payload[3]);
+ 272:Core/Src/app_uart_handlers.c ****   }
+ 273:Core/Src/app_uart_handlers.c ****   if (payloadLen >= 5u)
+ 556              		.loc 1 273 3 is_stmt 1 view .LVU144
+ 557              		.loc 1 273 6 is_stmt 0 view .LVU145
+ 558 0028 042C     		cmp	r4, #4
+ 559 002a 14D8     		bhi	.L58
+ 560              	.L50:
+ 274:Core/Src/app_uart_handlers.c ****   {
+ 275:Core/Src/app_uart_handlers.c ****     (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_SAT_LOCK, (int32_t)payload[4]);
+ 276:Core/Src/app_uart_handlers.c ****   }
+ 277:Core/Src/app_uart_handlers.c **** 
+ 278:Core/Src/app_uart_handlers.c ****   if (gParamMutexHandle != NULL)
+ 561              		.loc 1 278 3 is_stmt 1 view .LVU146
+ 562              		.loc 1 278 25 is_stmt 0 view .LVU147
+ 563 002c 0D4B     		ldr	r3, .L59
+ 564 002e 1868     		ldr	r0, [r3]
+ 565              		.loc 1 278 6 view .LVU148
+ 566 0030 08B1     		cbz	r0, .L51
+ 279:Core/Src/app_uart_handlers.c ****   {
+ 280:Core/Src/app_uart_handlers.c ****     (void)osMutexRelease(gParamMutexHandle);
+ 567              		.loc 1 280 5 is_stmt 1 view .LVU149
+ 568              		.loc 1 280 11 is_stmt 0 view .LVU150
+ 569 0032 FFF7FEFF 		bl	osMutexRelease
+ARM GAS  /tmp/ccjJqYyO.s 			page 16
+
+
+ 570              	.LVL58:
+ 571              	.L51:
+ 281:Core/Src/app_uart_handlers.c ****   }
+ 282:Core/Src/app_uart_handlers.c **** 
+ 283:Core/Src/app_uart_handlers.c ****   APP_Menu_RefreshCurrent();
+ 572              		.loc 1 283 3 is_stmt 1 view .LVU151
+ 573 0036 FFF7FEFF 		bl	APP_Menu_RefreshCurrent
+ 574              	.LVL59:
+ 575              	.L45:
+ 284:Core/Src/app_uart_handlers.c **** }
+ 576              		.loc 1 284 1 is_stmt 0 view .LVU152
+ 577 003a 38BD     		pop	{r3, r4, r5, pc}
+ 578              	.LVL60:
+ 579              	.L56:
+ 267:Core/Src/app_uart_handlers.c ****   }
+ 580              		.loc 1 267 5 is_stmt 1 view .LVU153
+ 267:Core/Src/app_uart_handlers.c ****   }
+ 581              		.loc 1 267 75 is_stmt 0 view .LVU154
+ 582 003c 681C     		adds	r0, r5, #1
+ 583 003e FFF7FEFF 		bl	read_be_i16
+ 584              	.LVL61:
+ 585 0042 0146     		mov	r1, r0
+ 267:Core/Src/app_uart_handlers.c ****   }
+ 586              		.loc 1 267 11 view .LVU155
+ 587 0044 0420     		movs	r0, #4
+ 588 0046 FFF7FEFF 		bl	APP_ParamDict_SetValueUnsafe
+ 589              	.LVL62:
+ 590 004a EBE7     		b	.L48
+ 591              	.L57:
+ 271:Core/Src/app_uart_handlers.c ****   }
+ 592              		.loc 1 271 5 is_stmt 1 view .LVU156
+ 271:Core/Src/app_uart_handlers.c ****   }
+ 593              		.loc 1 271 11 is_stmt 0 view .LVU157
+ 594 004c E978     		ldrb	r1, [r5, #3]	@ zero_extendqisi2
+ 595 004e 2920     		movs	r0, #41
+ 596 0050 FFF7FEFF 		bl	APP_ParamDict_SetValueUnsafe
+ 597              	.LVL63:
+ 598 0054 E8E7     		b	.L49
+ 599              	.L58:
+ 275:Core/Src/app_uart_handlers.c ****   }
+ 600              		.loc 1 275 5 is_stmt 1 view .LVU158
+ 275:Core/Src/app_uart_handlers.c ****   }
+ 601              		.loc 1 275 11 is_stmt 0 view .LVU159
+ 602 0056 2979     		ldrb	r1, [r5, #4]	@ zero_extendqisi2
+ 603 0058 1720     		movs	r0, #23
+ 604 005a FFF7FEFF 		bl	APP_ParamDict_SetValueUnsafe
+ 605              	.LVL64:
+ 606 005e E5E7     		b	.L50
+ 607              	.LVL65:
+ 608              	.L53:
+ 609              	.LCFI7:
+ 610              		.cfi_def_cfa_offset 0
+ 611              		.cfi_restore 3
+ 612              		.cfi_restore 4
+ 613              		.cfi_restore 5
+ 614              		.cfi_restore 14
+ 275:Core/Src/app_uart_handlers.c ****   }
+ARM GAS  /tmp/ccjJqYyO.s 			page 17
+
+
+ 615              		.loc 1 275 11 view .LVU160
+ 616 0060 7047     		bx	lr
+ 617              	.L60:
+ 618 0062 00BF     		.align	2
+ 619              	.L59:
+ 620 0064 00000000 		.word	gParamMutexHandle
+ 621              		.cfi_endproc
+ 622              	.LFE11:
+ 624              		.section	.text.handle_cmd_0x08,"ax",%progbits
+ 625              		.align	1
+ 626              		.syntax unified
+ 627              		.thumb
+ 628              		.thumb_func
+ 629              		.fpu softvfp
+ 631              	handle_cmd_0x08:
+ 632              	.LVL66:
+ 633              	.LFB8:
+  84:Core/Src/app_uart_handlers.c ****   if ((payload == NULL) || (payloadLen == 0u))
+ 634              		.loc 1 84 1 is_stmt 1 view -0
+ 635              		.cfi_startproc
+ 636              		@ args = 0, pretend = 0, frame = 0
+ 637              		@ frame_needed = 0, uses_anonymous_args = 0
+  85:Core/Src/app_uart_handlers.c ****   {
+ 638              		.loc 1 85 3 view .LVU162
+  85:Core/Src/app_uart_handlers.c ****   {
+ 639              		.loc 1 85 6 is_stmt 0 view .LVU163
+ 640 0000 0028     		cmp	r0, #0
+ 641 0002 00F09380 		beq	.L81
+  84:Core/Src/app_uart_handlers.c ****   if ((payload == NULL) || (payloadLen == 0u))
+ 642              		.loc 1 84 1 discriminator 1 view .LVU164
+ 643 0006 38B5     		push	{r3, r4, r5, lr}
+ 644              	.LCFI8:
+ 645              		.cfi_def_cfa_offset 16
+ 646              		.cfi_offset 3, -16
+ 647              		.cfi_offset 4, -12
+ 648              		.cfi_offset 5, -8
+ 649              		.cfi_offset 14, -4
+ 650 0008 0C46     		mov	r4, r1
+ 651 000a 0546     		mov	r5, r0
+  85:Core/Src/app_uart_handlers.c ****   {
+ 652              		.loc 1 85 25 discriminator 1 view .LVU165
+ 653 000c 79B3     		cbz	r1, .L61
+  90:Core/Src/app_uart_handlers.c ****   {
+ 654              		.loc 1 90 3 is_stmt 1 view .LVU166
+  90:Core/Src/app_uart_handlers.c ****   {
+ 655              		.loc 1 90 25 is_stmt 0 view .LVU167
+ 656 000e 484B     		ldr	r3, .L99
+ 657 0010 1868     		ldr	r0, [r3]
+ 658              	.LVL67:
+  90:Core/Src/app_uart_handlers.c ****   {
+ 659              		.loc 1 90 6 view .LVU168
+ 660 0012 18B1     		cbz	r0, .L63
+  92:Core/Src/app_uart_handlers.c ****   }
+ 661              		.loc 1 92 5 is_stmt 1 view .LVU169
+  92:Core/Src/app_uart_handlers.c ****   }
+ 662              		.loc 1 92 11 is_stmt 0 view .LVU170
+ 663 0014 4FF0FF31 		mov	r1, #-1
+ARM GAS  /tmp/ccjJqYyO.s 			page 18
+
+
+ 664              	.LVL68:
+  92:Core/Src/app_uart_handlers.c ****   }
+ 665              		.loc 1 92 11 view .LVU171
+ 666 0018 FFF7FEFF 		bl	osMutexAcquire
+ 667              	.LVL69:
+ 668              	.L63:
+  95:Core/Src/app_uart_handlers.c ****   {
+ 669              		.loc 1 95 3 is_stmt 1 view .LVU172
+  97:Core/Src/app_uart_handlers.c ****   }
+ 670              		.loc 1 97 5 view .LVU173
+  97:Core/Src/app_uart_handlers.c ****   }
+ 671              		.loc 1 97 11 is_stmt 0 view .LVU174
+ 672 001c 2978     		ldrb	r1, [r5]	@ zero_extendqisi2
+ 673 001e 3C20     		movs	r0, #60
+ 674 0020 FFF7FEFF 		bl	APP_ParamDict_SetValueUnsafe
+ 675              	.LVL70:
+  99:Core/Src/app_uart_handlers.c ****   {
+ 676              		.loc 1 99 3 is_stmt 1 view .LVU175
+  99:Core/Src/app_uart_handlers.c ****   {
+ 677              		.loc 1 99 6 is_stmt 0 view .LVU176
+ 678 0024 012C     		cmp	r4, #1
+ 679 0026 23D8     		bhi	.L84
+ 680              	.L64:
+ 103:Core/Src/app_uart_handlers.c ****   {
+ 681              		.loc 1 103 3 is_stmt 1 view .LVU177
+ 103:Core/Src/app_uart_handlers.c ****   {
+ 682              		.loc 1 103 6 is_stmt 0 view .LVU178
+ 683 0028 022C     		cmp	r4, #2
+ 684 002a 26D8     		bhi	.L85
+ 685              	.L65:
+ 107:Core/Src/app_uart_handlers.c ****   {
+ 686              		.loc 1 107 3 is_stmt 1 view .LVU179
+ 107:Core/Src/app_uart_handlers.c ****   {
+ 687              		.loc 1 107 6 is_stmt 0 view .LVU180
+ 688 002c 032C     		cmp	r4, #3
+ 689 002e 29D8     		bhi	.L86
+ 690              	.L66:
+ 111:Core/Src/app_uart_handlers.c ****   {
+ 691              		.loc 1 111 3 is_stmt 1 view .LVU181
+ 111:Core/Src/app_uart_handlers.c ****   {
+ 692              		.loc 1 111 6 is_stmt 0 view .LVU182
+ 693 0030 042C     		cmp	r4, #4
+ 694 0032 2CD8     		bhi	.L87
+ 695              	.L67:
+ 115:Core/Src/app_uart_handlers.c ****   {
+ 696              		.loc 1 115 3 is_stmt 1 view .LVU183
+ 115:Core/Src/app_uart_handlers.c ****   {
+ 697              		.loc 1 115 6 is_stmt 0 view .LVU184
+ 698 0034 052C     		cmp	r4, #5
+ 699 0036 2FD8     		bhi	.L88
+ 700              	.L68:
+ 119:Core/Src/app_uart_handlers.c ****   {
+ 701              		.loc 1 119 3 is_stmt 1 view .LVU185
+ 119:Core/Src/app_uart_handlers.c ****   {
+ 702              		.loc 1 119 6 is_stmt 0 view .LVU186
+ 703 0038 062C     		cmp	r4, #6
+ 704 003a 32D8     		bhi	.L89
+ARM GAS  /tmp/ccjJqYyO.s 			page 19
+
+
+ 705              	.L69:
+ 123:Core/Src/app_uart_handlers.c ****   {
+ 706              		.loc 1 123 3 is_stmt 1 view .LVU187
+ 123:Core/Src/app_uart_handlers.c ****   {
+ 707              		.loc 1 123 6 is_stmt 0 view .LVU188
+ 708 003c 0A2C     		cmp	r4, #10
+ 709 003e 35D8     		bhi	.L90
+ 710              	.L70:
+ 127:Core/Src/app_uart_handlers.c ****   {
+ 711              		.loc 1 127 3 is_stmt 1 view .LVU189
+ 127:Core/Src/app_uart_handlers.c ****   {
+ 712              		.loc 1 127 6 is_stmt 0 view .LVU190
+ 713 0040 0E2C     		cmp	r4, #14
+ 714 0042 3BD8     		bhi	.L91
+ 715              	.L71:
+ 131:Core/Src/app_uart_handlers.c ****   {
+ 716              		.loc 1 131 3 is_stmt 1 view .LVU191
+ 131:Core/Src/app_uart_handlers.c ****   {
+ 717              		.loc 1 131 6 is_stmt 0 view .LVU192
+ 718 0044 122C     		cmp	r4, #18
+ 719 0046 42D8     		bhi	.L92
+ 720              	.L72:
+ 135:Core/Src/app_uart_handlers.c ****   {
+ 721              		.loc 1 135 3 is_stmt 1 view .LVU193
+ 135:Core/Src/app_uart_handlers.c ****   {
+ 722              		.loc 1 135 6 is_stmt 0 view .LVU194
+ 723 0048 162C     		cmp	r4, #22
+ 724 004a 49D8     		bhi	.L93
+ 725              	.L73:
+ 139:Core/Src/app_uart_handlers.c ****   {
+ 726              		.loc 1 139 3 is_stmt 1 view .LVU195
+ 139:Core/Src/app_uart_handlers.c ****   {
+ 727              		.loc 1 139 6 is_stmt 0 view .LVU196
+ 728 004c 1A2C     		cmp	r4, #26
+ 729 004e 50D8     		bhi	.L94
+ 730              	.L74:
+ 143:Core/Src/app_uart_handlers.c ****   {
+ 731              		.loc 1 143 3 is_stmt 1 view .LVU197
+ 143:Core/Src/app_uart_handlers.c ****   {
+ 732              		.loc 1 143 6 is_stmt 0 view .LVU198
+ 733 0050 1B2C     		cmp	r4, #27
+ 734 0052 57D8     		bhi	.L95
+ 735              	.L75:
+ 147:Core/Src/app_uart_handlers.c ****   {
+ 736              		.loc 1 147 3 is_stmt 1 view .LVU199
+ 147:Core/Src/app_uart_handlers.c ****   {
+ 737              		.loc 1 147 6 is_stmt 0 view .LVU200
+ 738 0054 1C2C     		cmp	r4, #28
+ 739 0056 5AD8     		bhi	.L96
+ 740              	.L76:
+ 151:Core/Src/app_uart_handlers.c ****   {
+ 741              		.loc 1 151 3 is_stmt 1 view .LVU201
+ 151:Core/Src/app_uart_handlers.c ****   {
+ 742              		.loc 1 151 6 is_stmt 0 view .LVU202
+ 743 0058 1D2C     		cmp	r4, #29
+ 744 005a 5DD8     		bhi	.L97
+ 745              	.L77:
+ARM GAS  /tmp/ccjJqYyO.s 			page 20
+
+
+ 155:Core/Src/app_uart_handlers.c ****   {
+ 746              		.loc 1 155 3 is_stmt 1 view .LVU203
+ 155:Core/Src/app_uart_handlers.c ****   {
+ 747              		.loc 1 155 6 is_stmt 0 view .LVU204
+ 748 005c 1E2C     		cmp	r4, #30
+ 749 005e 60D8     		bhi	.L98
+ 750              	.L78:
+ 160:Core/Src/app_uart_handlers.c ****   {
+ 751              		.loc 1 160 3 is_stmt 1 view .LVU205
+ 160:Core/Src/app_uart_handlers.c ****   {
+ 752              		.loc 1 160 25 is_stmt 0 view .LVU206
+ 753 0060 334B     		ldr	r3, .L99
+ 754 0062 1868     		ldr	r0, [r3]
+ 160:Core/Src/app_uart_handlers.c ****   {
+ 755              		.loc 1 160 6 view .LVU207
+ 756 0064 08B1     		cbz	r0, .L79
+ 162:Core/Src/app_uart_handlers.c ****   }
+ 757              		.loc 1 162 5 is_stmt 1 view .LVU208
+ 162:Core/Src/app_uart_handlers.c ****   }
+ 758              		.loc 1 162 11 is_stmt 0 view .LVU209
+ 759 0066 FFF7FEFF 		bl	osMutexRelease
+ 760              	.LVL71:
+ 761              	.L79:
+ 165:Core/Src/app_uart_handlers.c **** }
+ 762              		.loc 1 165 3 is_stmt 1 view .LVU210
+ 763 006a FFF7FEFF 		bl	APP_Menu_RefreshCurrent
+ 764              	.LVL72:
+ 765              	.L61:
+ 166:Core/Src/app_uart_handlers.c **** 
+ 766              		.loc 1 166 1 is_stmt 0 view .LVU211
+ 767 006e 38BD     		pop	{r3, r4, r5, pc}
+ 768              	.LVL73:
+ 769              	.L84:
+ 101:Core/Src/app_uart_handlers.c ****   }
+ 770              		.loc 1 101 5 is_stmt 1 view .LVU212
+ 101:Core/Src/app_uart_handlers.c ****   }
+ 771              		.loc 1 101 11 is_stmt 0 view .LVU213
+ 772 0070 6978     		ldrb	r1, [r5, #1]	@ zero_extendqisi2
+ 773 0072 3D20     		movs	r0, #61
+ 774 0074 FFF7FEFF 		bl	APP_ParamDict_SetValueUnsafe
+ 775              	.LVL74:
+ 776 0078 D6E7     		b	.L64
+ 777              	.L85:
+ 105:Core/Src/app_uart_handlers.c ****   }
+ 778              		.loc 1 105 5 is_stmt 1 view .LVU214
+ 105:Core/Src/app_uart_handlers.c ****   }
+ 779              		.loc 1 105 11 is_stmt 0 view .LVU215
+ 780 007a A978     		ldrb	r1, [r5, #2]	@ zero_extendqisi2
+ 781 007c 3E20     		movs	r0, #62
+ 782 007e FFF7FEFF 		bl	APP_ParamDict_SetValueUnsafe
+ 783              	.LVL75:
+ 784 0082 D3E7     		b	.L65
+ 785              	.L86:
+ 109:Core/Src/app_uart_handlers.c ****   }
+ 786              		.loc 1 109 5 is_stmt 1 view .LVU216
+ 109:Core/Src/app_uart_handlers.c ****   }
+ 787              		.loc 1 109 11 is_stmt 0 view .LVU217
+ARM GAS  /tmp/ccjJqYyO.s 			page 21
+
+
+ 788 0084 E978     		ldrb	r1, [r5, #3]	@ zero_extendqisi2
+ 789 0086 3F20     		movs	r0, #63
+ 790 0088 FFF7FEFF 		bl	APP_ParamDict_SetValueUnsafe
+ 791              	.LVL76:
+ 792 008c D0E7     		b	.L66
+ 793              	.L87:
+ 113:Core/Src/app_uart_handlers.c ****   }
+ 794              		.loc 1 113 5 is_stmt 1 view .LVU218
+ 113:Core/Src/app_uart_handlers.c ****   }
+ 795              		.loc 1 113 11 is_stmt 0 view .LVU219
+ 796 008e 2979     		ldrb	r1, [r5, #4]	@ zero_extendqisi2
+ 797 0090 4020     		movs	r0, #64
+ 798 0092 FFF7FEFF 		bl	APP_ParamDict_SetValueUnsafe
+ 799              	.LVL77:
+ 800 0096 CDE7     		b	.L67
+ 801              	.L88:
+ 117:Core/Src/app_uart_handlers.c ****   }
+ 802              		.loc 1 117 5 is_stmt 1 view .LVU220
+ 117:Core/Src/app_uart_handlers.c ****   }
+ 803              		.loc 1 117 11 is_stmt 0 view .LVU221
+ 804 0098 6979     		ldrb	r1, [r5, #5]	@ zero_extendqisi2
+ 805 009a 4120     		movs	r0, #65
+ 806 009c FFF7FEFF 		bl	APP_ParamDict_SetValueUnsafe
+ 807              	.LVL78:
+ 808 00a0 CAE7     		b	.L68
+ 809              	.L89:
+ 121:Core/Src/app_uart_handlers.c ****   }
+ 810              		.loc 1 121 5 is_stmt 1 view .LVU222
+ 121:Core/Src/app_uart_handlers.c ****   }
+ 811              		.loc 1 121 11 is_stmt 0 view .LVU223
+ 812 00a2 A979     		ldrb	r1, [r5, #6]	@ zero_extendqisi2
+ 813 00a4 4220     		movs	r0, #66
+ 814 00a6 FFF7FEFF 		bl	APP_ParamDict_SetValueUnsafe
+ 815              	.LVL79:
+ 816 00aa C7E7     		b	.L69
+ 817              	.L90:
+ 125:Core/Src/app_uart_handlers.c ****   }
+ 818              		.loc 1 125 5 is_stmt 1 view .LVU224
+ 125:Core/Src/app_uart_handlers.c ****   }
+ 819              		.loc 1 125 70 is_stmt 0 view .LVU225
+ 820 00ac E81D     		adds	r0, r5, #7
+ 821 00ae FFF7FEFF 		bl	read_be_u32
+ 822              	.LVL80:
+ 823 00b2 0146     		mov	r1, r0
+ 125:Core/Src/app_uart_handlers.c ****   }
+ 824              		.loc 1 125 11 view .LVU226
+ 825 00b4 4320     		movs	r0, #67
+ 826 00b6 FFF7FEFF 		bl	APP_ParamDict_SetValueUnsafe
+ 827              	.LVL81:
+ 828 00ba C1E7     		b	.L70
+ 829              	.L91:
+ 129:Core/Src/app_uart_handlers.c ****   }
+ 830              		.loc 1 129 5 is_stmt 1 view .LVU227
+ 129:Core/Src/app_uart_handlers.c ****   }
+ 831              		.loc 1 129 71 is_stmt 0 view .LVU228
+ 832 00bc 05F10B00 		add	r0, r5, #11
+ 833 00c0 FFF7FEFF 		bl	read_be_u32
+ARM GAS  /tmp/ccjJqYyO.s 			page 22
+
+
+ 834              	.LVL82:
+ 835 00c4 0146     		mov	r1, r0
+ 129:Core/Src/app_uart_handlers.c ****   }
+ 836              		.loc 1 129 11 view .LVU229
+ 837 00c6 4420     		movs	r0, #68
+ 838 00c8 FFF7FEFF 		bl	APP_ParamDict_SetValueUnsafe
+ 839              	.LVL83:
+ 840 00cc BAE7     		b	.L71
+ 841              	.L92:
+ 133:Core/Src/app_uart_handlers.c ****   }
+ 842              		.loc 1 133 5 is_stmt 1 view .LVU230
+ 133:Core/Src/app_uart_handlers.c ****   }
+ 843              		.loc 1 133 71 is_stmt 0 view .LVU231
+ 844 00ce 05F10F00 		add	r0, r5, #15
+ 845 00d2 FFF7FEFF 		bl	read_be_u32
+ 846              	.LVL84:
+ 847 00d6 0146     		mov	r1, r0
+ 133:Core/Src/app_uart_handlers.c ****   }
+ 848              		.loc 1 133 11 view .LVU232
+ 849 00d8 4520     		movs	r0, #69
+ 850 00da FFF7FEFF 		bl	APP_ParamDict_SetValueUnsafe
+ 851              	.LVL85:
+ 852 00de B3E7     		b	.L72
+ 853              	.L93:
+ 137:Core/Src/app_uart_handlers.c ****   }
+ 854              		.loc 1 137 5 is_stmt 1 view .LVU233
+ 137:Core/Src/app_uart_handlers.c ****   }
+ 855              		.loc 1 137 71 is_stmt 0 view .LVU234
+ 856 00e0 05F11300 		add	r0, r5, #19
+ 857 00e4 FFF7FEFF 		bl	read_be_u32
+ 858              	.LVL86:
+ 859 00e8 0146     		mov	r1, r0
+ 137:Core/Src/app_uart_handlers.c ****   }
+ 860              		.loc 1 137 11 view .LVU235
+ 861 00ea 4620     		movs	r0, #70
+ 862 00ec FFF7FEFF 		bl	APP_ParamDict_SetValueUnsafe
+ 863              	.LVL87:
+ 864 00f0 ACE7     		b	.L73
+ 865              	.L94:
+ 141:Core/Src/app_uart_handlers.c ****   }
+ 866              		.loc 1 141 5 is_stmt 1 view .LVU236
+ 141:Core/Src/app_uart_handlers.c ****   }
+ 867              		.loc 1 141 71 is_stmt 0 view .LVU237
+ 868 00f2 05F11700 		add	r0, r5, #23
+ 869 00f6 FFF7FEFF 		bl	read_be_u32
+ 870              	.LVL88:
+ 871 00fa 0146     		mov	r1, r0
+ 141:Core/Src/app_uart_handlers.c ****   }
+ 872              		.loc 1 141 11 view .LVU238
+ 873 00fc 4720     		movs	r0, #71
+ 874 00fe FFF7FEFF 		bl	APP_ParamDict_SetValueUnsafe
+ 875              	.LVL89:
+ 876 0102 A5E7     		b	.L74
+ 877              	.L95:
+ 145:Core/Src/app_uart_handlers.c ****   }
+ 878              		.loc 1 145 5 is_stmt 1 view .LVU239
+ 145:Core/Src/app_uart_handlers.c ****   }
+ARM GAS  /tmp/ccjJqYyO.s 			page 23
+
+
+ 879              		.loc 1 145 11 is_stmt 0 view .LVU240
+ 880 0104 E97E     		ldrb	r1, [r5, #27]	@ zero_extendqisi2
+ 881 0106 4820     		movs	r0, #72
+ 882 0108 FFF7FEFF 		bl	APP_ParamDict_SetValueUnsafe
+ 883              	.LVL90:
+ 884 010c A2E7     		b	.L75
+ 885              	.L96:
+ 149:Core/Src/app_uart_handlers.c ****   }
+ 886              		.loc 1 149 5 is_stmt 1 view .LVU241
+ 149:Core/Src/app_uart_handlers.c ****   }
+ 887              		.loc 1 149 11 is_stmt 0 view .LVU242
+ 888 010e 297F     		ldrb	r1, [r5, #28]	@ zero_extendqisi2
+ 889 0110 4920     		movs	r0, #73
+ 890 0112 FFF7FEFF 		bl	APP_ParamDict_SetValueUnsafe
+ 891              	.LVL91:
+ 892 0116 9FE7     		b	.L76
+ 893              	.L97:
+ 153:Core/Src/app_uart_handlers.c ****   }
+ 894              		.loc 1 153 5 is_stmt 1 view .LVU243
+ 153:Core/Src/app_uart_handlers.c ****   }
+ 895              		.loc 1 153 11 is_stmt 0 view .LVU244
+ 896 0118 697F     		ldrb	r1, [r5, #29]	@ zero_extendqisi2
+ 897 011a 4A20     		movs	r0, #74
+ 898 011c FFF7FEFF 		bl	APP_ParamDict_SetValueUnsafe
+ 899              	.LVL92:
+ 900 0120 9CE7     		b	.L77
+ 901              	.L98:
+ 157:Core/Src/app_uart_handlers.c ****   }
+ 902              		.loc 1 157 5 is_stmt 1 view .LVU245
+ 157:Core/Src/app_uart_handlers.c ****   }
+ 903              		.loc 1 157 11 is_stmt 0 view .LVU246
+ 904 0122 A97F     		ldrb	r1, [r5, #30]	@ zero_extendqisi2
+ 905 0124 4B20     		movs	r0, #75
+ 906 0126 FFF7FEFF 		bl	APP_ParamDict_SetValueUnsafe
+ 907              	.LVL93:
+ 908 012a 99E7     		b	.L78
+ 909              	.LVL94:
+ 910              	.L81:
+ 911              	.LCFI9:
+ 912              		.cfi_def_cfa_offset 0
+ 913              		.cfi_restore 3
+ 914              		.cfi_restore 4
+ 915              		.cfi_restore 5
+ 916              		.cfi_restore 14
+ 157:Core/Src/app_uart_handlers.c ****   }
+ 917              		.loc 1 157 11 view .LVU247
+ 918 012c 7047     		bx	lr
+ 919              	.L100:
+ 920 012e 00BF     		.align	2
+ 921              	.L99:
+ 922 0130 00000000 		.word	gParamMutexHandle
+ 923              		.cfi_endproc
+ 924              	.LFE8:
+ 926              		.section	.text.handle_cmd_0x09,"ax",%progbits
+ 927              		.align	1
+ 928              		.syntax unified
+ 929              		.thumb
+ARM GAS  /tmp/ccjJqYyO.s 			page 24
+
+
+ 930              		.thumb_func
+ 931              		.fpu softvfp
+ 933              	handle_cmd_0x09:
+ 934              	.LVL95:
+ 935              	.LFB12:
+ 285:Core/Src/app_uart_handlers.c **** 
+ 286:Core/Src/app_uart_handlers.c **** /* 0x09: 邻居信息（简化映射）
+ 287:Core/Src/app_uart_handlers.c ****  * payload[0] : neighbor count
+ 288:Core/Src/app_uart_handlers.c ****  * payload[1] : first/strongest RSSI (i8)
+ 289:Core/Src/app_uart_handlers.c ****  */
+ 290:Core/Src/app_uart_handlers.c **** static void handle_cmd_0x09(const uint8_t *payload, uint16_t payloadLen)
+ 291:Core/Src/app_uart_handlers.c **** {
+ 936              		.loc 1 291 1 is_stmt 1 view -0
+ 937              		.cfi_startproc
+ 938              		@ args = 0, pretend = 0, frame = 0
+ 939              		@ frame_needed = 0, uses_anonymous_args = 0
+ 292:Core/Src/app_uart_handlers.c ****   if ((payload == NULL) || (payloadLen < 1u))
+ 940              		.loc 1 292 3 view .LVU249
+ 941              		.loc 1 292 6 is_stmt 0 view .LVU250
+ 942 0000 F0B1     		cbz	r0, .L107
+ 291:Core/Src/app_uart_handlers.c ****   if ((payload == NULL) || (payloadLen < 1u))
+ 943              		.loc 1 291 1 discriminator 1 view .LVU251
+ 944 0002 38B5     		push	{r3, r4, r5, lr}
+ 945              	.LCFI10:
+ 946              		.cfi_def_cfa_offset 16
+ 947              		.cfi_offset 3, -16
+ 948              		.cfi_offset 4, -12
+ 949              		.cfi_offset 5, -8
+ 950              		.cfi_offset 14, -4
+ 951 0004 0C46     		mov	r4, r1
+ 952 0006 0546     		mov	r5, r0
+ 953              		.loc 1 292 25 discriminator 1 view .LVU252
+ 954 0008 99B1     		cbz	r1, .L101
+ 293:Core/Src/app_uart_handlers.c ****   {
+ 294:Core/Src/app_uart_handlers.c ****     return;
+ 295:Core/Src/app_uart_handlers.c ****   }
+ 296:Core/Src/app_uart_handlers.c **** 
+ 297:Core/Src/app_uart_handlers.c ****   if (gParamMutexHandle != NULL)
+ 955              		.loc 1 297 3 is_stmt 1 view .LVU253
+ 956              		.loc 1 297 25 is_stmt 0 view .LVU254
+ 957 000a 0E4B     		ldr	r3, .L111
+ 958 000c 1868     		ldr	r0, [r3]
+ 959              	.LVL96:
+ 960              		.loc 1 297 6 view .LVU255
+ 961 000e 18B1     		cbz	r0, .L103
+ 298:Core/Src/app_uart_handlers.c ****   {
+ 299:Core/Src/app_uart_handlers.c ****     (void)osMutexAcquire(gParamMutexHandle, osWaitForever);
+ 962              		.loc 1 299 5 is_stmt 1 view .LVU256
+ 963              		.loc 1 299 11 is_stmt 0 view .LVU257
+ 964 0010 4FF0FF31 		mov	r1, #-1
+ 965              	.LVL97:
+ 966              		.loc 1 299 11 view .LVU258
+ 967 0014 FFF7FEFF 		bl	osMutexAcquire
+ 968              	.LVL98:
+ 969              	.L103:
+ 300:Core/Src/app_uart_handlers.c ****   }
+ 301:Core/Src/app_uart_handlers.c **** 
+ARM GAS  /tmp/ccjJqYyO.s 			page 25
+
+
+ 302:Core/Src/app_uart_handlers.c ****   (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_NEIGHBOR_COUNT, (int32_t)payload[0]);
+ 970              		.loc 1 302 3 is_stmt 1 view .LVU259
+ 971              		.loc 1 302 9 is_stmt 0 view .LVU260
+ 972 0018 2978     		ldrb	r1, [r5]	@ zero_extendqisi2
+ 973 001a 5020     		movs	r0, #80
+ 974 001c FFF7FEFF 		bl	APP_ParamDict_SetValueUnsafe
+ 975              	.LVL99:
+ 303:Core/Src/app_uart_handlers.c ****   if (payloadLen >= 2u)
+ 976              		.loc 1 303 3 is_stmt 1 view .LVU261
+ 977              		.loc 1 303 6 is_stmt 0 view .LVU262
+ 978 0020 012C     		cmp	r4, #1
+ 979 0022 07D8     		bhi	.L110
+ 980              	.L104:
+ 304:Core/Src/app_uart_handlers.c ****   {
+ 305:Core/Src/app_uart_handlers.c ****     (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_NEIGHBOR_RSSI, (int32_t)(int8_t)payload[1]);
+ 306:Core/Src/app_uart_handlers.c ****   }
+ 307:Core/Src/app_uart_handlers.c **** 
+ 308:Core/Src/app_uart_handlers.c ****   if (gParamMutexHandle != NULL)
+ 981              		.loc 1 308 3 is_stmt 1 view .LVU263
+ 982              		.loc 1 308 25 is_stmt 0 view .LVU264
+ 983 0024 074B     		ldr	r3, .L111
+ 984 0026 1868     		ldr	r0, [r3]
+ 985              		.loc 1 308 6 view .LVU265
+ 986 0028 08B1     		cbz	r0, .L105
+ 309:Core/Src/app_uart_handlers.c ****   {
+ 310:Core/Src/app_uart_handlers.c ****     (void)osMutexRelease(gParamMutexHandle);
+ 987              		.loc 1 310 5 is_stmt 1 view .LVU266
+ 988              		.loc 1 310 11 is_stmt 0 view .LVU267
+ 989 002a FFF7FEFF 		bl	osMutexRelease
+ 990              	.LVL100:
+ 991              	.L105:
+ 311:Core/Src/app_uart_handlers.c ****   }
+ 312:Core/Src/app_uart_handlers.c **** 
+ 313:Core/Src/app_uart_handlers.c ****   APP_Menu_RefreshCurrent();
+ 992              		.loc 1 313 3 is_stmt 1 view .LVU268
+ 993 002e FFF7FEFF 		bl	APP_Menu_RefreshCurrent
+ 994              	.LVL101:
+ 995              	.L101:
+ 314:Core/Src/app_uart_handlers.c **** }
+ 996              		.loc 1 314 1 is_stmt 0 view .LVU269
+ 997 0032 38BD     		pop	{r3, r4, r5, pc}
+ 998              	.LVL102:
+ 999              	.L110:
+ 305:Core/Src/app_uart_handlers.c ****   }
+ 1000              		.loc 1 305 5 is_stmt 1 view .LVU270
+ 305:Core/Src/app_uart_handlers.c ****   }
+ 1001              		.loc 1 305 11 is_stmt 0 view .LVU271
+ 1002 0034 95F90110 		ldrsb	r1, [r5, #1]
+ 1003 0038 5120     		movs	r0, #81
+ 1004 003a FFF7FEFF 		bl	APP_ParamDict_SetValueUnsafe
+ 1005              	.LVL103:
+ 1006 003e F1E7     		b	.L104
+ 1007              	.LVL104:
+ 1008              	.L107:
+ 1009              	.LCFI11:
+ 1010              		.cfi_def_cfa_offset 0
+ 1011              		.cfi_restore 3
+ARM GAS  /tmp/ccjJqYyO.s 			page 26
+
+
+ 1012              		.cfi_restore 4
+ 1013              		.cfi_restore 5
+ 1014              		.cfi_restore 14
+ 305:Core/Src/app_uart_handlers.c ****   }
+ 1015              		.loc 1 305 11 view .LVU272
+ 1016 0040 7047     		bx	lr
+ 1017              	.L112:
+ 1018 0042 00BF     		.align	2
+ 1019              	.L111:
+ 1020 0044 00000000 		.word	gParamMutexHandle
+ 1021              		.cfi_endproc
+ 1022              	.LFE12:
+ 1024              		.section	.text.APP_UartRx_OnFrame,"ax",%progbits
+ 1025              		.align	1
+ 1026              		.global	APP_UartRx_OnFrame
+ 1027              		.syntax unified
+ 1028              		.thumb
+ 1029              		.thumb_func
+ 1030              		.fpu softvfp
+ 1032              	APP_UartRx_OnFrame:
+ 1033              	.LVL105:
+ 1034              	.LFB13:
+ 315:Core/Src/app_uart_handlers.c **** 
+ 316:Core/Src/app_uart_handlers.c **** void APP_UartRx_OnFrame(uint8_t cmd,
+ 317:Core/Src/app_uart_handlers.c ****                         uint8_t msgType,
+ 318:Core/Src/app_uart_handlers.c ****                         const uint8_t *payload,
+ 319:Core/Src/app_uart_handlers.c ****                         uint16_t payloadLen)
+ 320:Core/Src/app_uart_handlers.c **** {
+ 1035              		.loc 1 320 1 is_stmt 1 view -0
+ 1036              		.cfi_startproc
+ 1037              		@ args = 0, pretend = 0, frame = 0
+ 1038              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1039              		.loc 1 320 1 is_stmt 0 view .LVU274
+ 1040 0000 08B5     		push	{r3, lr}
+ 1041              	.LCFI12:
+ 1042              		.cfi_def_cfa_offset 8
+ 1043              		.cfi_offset 3, -8
+ 1044              		.cfi_offset 14, -4
+ 1045 0002 8446     		mov	ip, r0
+ 1046 0004 8E46     		mov	lr, r1
+ 1047 0006 1046     		mov	r0, r2
+ 1048              	.LVL106:
+ 1049              		.loc 1 320 1 view .LVU275
+ 1050 0008 1946     		mov	r1, r3
+ 1051              	.LVL107:
+ 321:Core/Src/app_uart_handlers.c ****   (void)msgType;
+ 1052              		.loc 1 321 3 is_stmt 1 view .LVU276
+ 322:Core/Src/app_uart_handlers.c **** 
+ 323:Core/Src/app_uart_handlers.c ****   switch (cmd)
+ 1053              		.loc 1 323 3 view .LVU277
+ 1054 000a ACF1020C 		sub	ip, ip, #2
+ 1055 000e BCF1070F 		cmp	ip, #7
+ 1056 0012 0AD8     		bhi	.L113
+ 1057 0014 DFE80CF0 		tbb	[pc, ip]
+ 1058              	.LVL108:
+ 1059              	.L116:
+ 1060 0018 04       		.byte	(.L121-.L116)/2
+ARM GAS  /tmp/ccjJqYyO.s 			page 27
+
+
+ 1061 0019 09       		.byte	(.L113-.L116)/2
+ 1062 001a 09       		.byte	(.L113-.L116)/2
+ 1063 001b 0A       		.byte	(.L120-.L116)/2
+ 1064 001c 0D       		.byte	(.L119-.L116)/2
+ 1065 001d 10       		.byte	(.L118-.L116)/2
+ 1066 001e 13       		.byte	(.L117-.L116)/2
+ 1067 001f 16       		.byte	(.L115-.L116)/2
+ 1068              		.p2align 1
+ 1069              	.L121:
+ 324:Core/Src/app_uart_handlers.c ****   {
+ 325:Core/Src/app_uart_handlers.c ****     case 0x02u:
+ 326:Core/Src/app_uart_handlers.c ****       handle_cmd_0x02(msgType, payload, payloadLen);
+ 1070              		.loc 1 326 7 view .LVU278
+ 1071 0020 0A46     		mov	r2, r1
+ 1072              	.LVL109:
+ 1073              		.loc 1 326 7 is_stmt 0 view .LVU279
+ 1074 0022 0146     		mov	r1, r0
+ 1075 0024 7046     		mov	r0, lr
+ 1076              	.LVL110:
+ 1077              		.loc 1 326 7 view .LVU280
+ 1078 0026 FFF7FEFF 		bl	handle_cmd_0x02
+ 1079              	.LVL111:
+ 327:Core/Src/app_uart_handlers.c ****       break;
+ 1080              		.loc 1 327 7 is_stmt 1 view .LVU281
+ 1081              	.L113:
+ 328:Core/Src/app_uart_handlers.c **** 
+ 329:Core/Src/app_uart_handlers.c ****     case 0x05u:
+ 330:Core/Src/app_uart_handlers.c ****       handle_cmd_0x05(payload, payloadLen);
+ 331:Core/Src/app_uart_handlers.c ****       break;
+ 332:Core/Src/app_uart_handlers.c **** 
+ 333:Core/Src/app_uart_handlers.c ****     case 0x06u:
+ 334:Core/Src/app_uart_handlers.c ****       handle_cmd_0x06(payload, payloadLen);
+ 335:Core/Src/app_uart_handlers.c ****       break;
+ 336:Core/Src/app_uart_handlers.c **** 
+ 337:Core/Src/app_uart_handlers.c ****     case 0x07u:
+ 338:Core/Src/app_uart_handlers.c ****       handle_cmd_0x07(payload, payloadLen);
+ 339:Core/Src/app_uart_handlers.c ****       break;
+ 340:Core/Src/app_uart_handlers.c **** 
+ 341:Core/Src/app_uart_handlers.c ****     case 0x08u:
+ 342:Core/Src/app_uart_handlers.c ****       handle_cmd_0x08(payload, payloadLen);
+ 343:Core/Src/app_uart_handlers.c ****       break;
+ 344:Core/Src/app_uart_handlers.c **** 
+ 345:Core/Src/app_uart_handlers.c ****     case 0x09u:
+ 346:Core/Src/app_uart_handlers.c ****       handle_cmd_0x09(payload, payloadLen);
+ 347:Core/Src/app_uart_handlers.c ****       break;
+ 348:Core/Src/app_uart_handlers.c **** 
+ 349:Core/Src/app_uart_handlers.c ****     default:
+ 350:Core/Src/app_uart_handlers.c ****       /* 其他命令暂不处理，后续可按协议文档逐步扩展解析逻辑 */
+ 351:Core/Src/app_uart_handlers.c ****       break;
+ 352:Core/Src/app_uart_handlers.c ****   }
+ 353:Core/Src/app_uart_handlers.c **** }
+ 1082              		.loc 1 353 1 is_stmt 0 view .LVU282
+ 1083 002a 08BD     		pop	{r3, pc}
+ 1084              	.LVL112:
+ 1085              	.L120:
+ 330:Core/Src/app_uart_handlers.c ****       break;
+ 1086              		.loc 1 330 7 is_stmt 1 view .LVU283
+ARM GAS  /tmp/ccjJqYyO.s 			page 28
+
+
+ 1087 002c FFF7FEFF 		bl	handle_cmd_0x05
+ 1088              	.LVL113:
+ 331:Core/Src/app_uart_handlers.c **** 
+ 1089              		.loc 1 331 7 view .LVU284
+ 1090 0030 FBE7     		b	.L113
+ 1091              	.LVL114:
+ 1092              	.L119:
+ 334:Core/Src/app_uart_handlers.c ****       break;
+ 1093              		.loc 1 334 7 view .LVU285
+ 1094 0032 FFF7FEFF 		bl	handle_cmd_0x06
+ 1095              	.LVL115:
+ 335:Core/Src/app_uart_handlers.c **** 
+ 1096              		.loc 1 335 7 view .LVU286
+ 1097 0036 F8E7     		b	.L113
+ 1098              	.LVL116:
+ 1099              	.L118:
+ 338:Core/Src/app_uart_handlers.c ****       break;
+ 1100              		.loc 1 338 7 view .LVU287
+ 1101 0038 FFF7FEFF 		bl	handle_cmd_0x07
+ 1102              	.LVL117:
+ 339:Core/Src/app_uart_handlers.c **** 
+ 1103              		.loc 1 339 7 view .LVU288
+ 1104 003c F5E7     		b	.L113
+ 1105              	.LVL118:
+ 1106              	.L117:
+ 342:Core/Src/app_uart_handlers.c ****       break;
+ 1107              		.loc 1 342 7 view .LVU289
+ 1108 003e FFF7FEFF 		bl	handle_cmd_0x08
+ 1109              	.LVL119:
+ 343:Core/Src/app_uart_handlers.c **** 
+ 1110              		.loc 1 343 7 view .LVU290
+ 1111 0042 F2E7     		b	.L113
+ 1112              	.LVL120:
+ 1113              	.L115:
+ 346:Core/Src/app_uart_handlers.c ****       break;
+ 1114              		.loc 1 346 7 view .LVU291
+ 1115 0044 FFF7FEFF 		bl	handle_cmd_0x09
+ 1116              	.LVL121:
+ 347:Core/Src/app_uart_handlers.c **** 
+ 1117              		.loc 1 347 7 view .LVU292
+ 1118              		.loc 1 353 1 is_stmt 0 view .LVU293
+ 1119 0048 EFE7     		b	.L113
+ 1120              		.cfi_endproc
+ 1121              	.LFE13:
+ 1123              		.text
+ 1124              	.Letext0:
+ 1125              		.file 2 "/usr/lib/gcc/arm-none-eabi/10.3.1/include/stdint.h"
+ 1126              		.file 3 "Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.h"
+ 1127              		.file 4 "Core/Inc/app_param_dict.h"
+ 1128              		.file 5 "Core/Inc/app_menu.h"
+ARM GAS  /tmp/ccjJqYyO.s 			page 29
 
 
 DEFINED SYMBOLS
                             *ABS*:0000000000000000 app_uart_handlers.c
-     /tmp/ccSrUpcT.s:16     .text.read_be_u32:0000000000000000 $t
-     /tmp/ccSrUpcT.s:23     .text.read_be_u32:0000000000000000 read_be_u32
-     /tmp/ccSrUpcT.s:55     .text.read_be_i16:0000000000000000 $t
-     /tmp/ccSrUpcT.s:61     .text.read_be_i16:0000000000000000 read_be_i16
-     /tmp/ccSrUpcT.s:84     .text.read_be_i32:0000000000000000 $t
-     /tmp/ccSrUpcT.s:90     .text.read_be_i32:0000000000000000 read_be_i32
-     /tmp/ccSrUpcT.s:113    .text.handle_cmd_0x05:0000000000000000 $t
-     /tmp/ccSrUpcT.s:119    .text.handle_cmd_0x05:0000000000000000 handle_cmd_0x05
-     /tmp/ccSrUpcT.s:261    .text.handle_cmd_0x05:000000000000008c $d
-     /tmp/ccSrUpcT.s:266    .text.handle_cmd_0x06:0000000000000000 $t
-     /tmp/ccSrUpcT.s:272    .text.handle_cmd_0x06:0000000000000000 handle_cmd_0x06
-     /tmp/ccSrUpcT.s:375    .text.handle_cmd_0x06:0000000000000068 $d
-     /tmp/ccSrUpcT.s:380    .text.handle_cmd_0x07:0000000000000000 $t
-     /tmp/ccSrUpcT.s:386    .text.handle_cmd_0x07:0000000000000000 handle_cmd_0x07
-     /tmp/ccSrUpcT.s:503    .text.handle_cmd_0x07:0000000000000064 $d
-     /tmp/ccSrUpcT.s:508    .text.handle_cmd_0x08:0000000000000000 $t
-     /tmp/ccSrUpcT.s:514    .text.handle_cmd_0x08:0000000000000000 handle_cmd_0x08
-     /tmp/ccSrUpcT.s:584    .text.handle_cmd_0x08:0000000000000030 $d
-     /tmp/ccSrUpcT.s:589    .text.handle_cmd_0x09:0000000000000000 $t
-     /tmp/ccSrUpcT.s:595    .text.handle_cmd_0x09:0000000000000000 handle_cmd_0x09
-     /tmp/ccSrUpcT.s:682    .text.handle_cmd_0x09:0000000000000044 $d
-     /tmp/ccSrUpcT.s:687    .text.APP_UartRx_OnFrame:0000000000000000 $t
-     /tmp/ccSrUpcT.s:694    .text.APP_UartRx_OnFrame:0000000000000000 APP_UartRx_OnFrame
-     /tmp/ccSrUpcT.s:717    .text.APP_UartRx_OnFrame:0000000000000012 $d
-     /tmp/ccSrUpcT.s:722    .text.APP_UartRx_OnFrame:0000000000000017 $d
-     /tmp/ccSrUpcT.s:722    .text.APP_UartRx_OnFrame:0000000000000018 $t
+     /tmp/ccjJqYyO.s:16     .text.read_be_u32:0000000000000000 $t
+     /tmp/ccjJqYyO.s:23     .text.read_be_u32:0000000000000000 read_be_u32
+     /tmp/ccjJqYyO.s:55     .text.read_be_i16:0000000000000000 $t
+     /tmp/ccjJqYyO.s:61     .text.read_be_i16:0000000000000000 read_be_i16
+     /tmp/ccjJqYyO.s:84     .text.read_be_i32:0000000000000000 $t
+     /tmp/ccjJqYyO.s:90     .text.read_be_i32:0000000000000000 read_be_i32
+     /tmp/ccjJqYyO.s:113    .text.handle_cmd_0x02:0000000000000000 $t
+     /tmp/ccjJqYyO.s:119    .text.handle_cmd_0x02:0000000000000000 handle_cmd_0x02
+     /tmp/ccjJqYyO.s:225    .text.handle_cmd_0x02:0000000000000050 $d
+     /tmp/ccjJqYyO.s:230    .text.handle_cmd_0x05:0000000000000000 $t
+     /tmp/ccjJqYyO.s:236    .text.handle_cmd_0x05:0000000000000000 handle_cmd_0x05
+     /tmp/ccjJqYyO.s:378    .text.handle_cmd_0x05:000000000000008c $d
+     /tmp/ccjJqYyO.s:383    .text.handle_cmd_0x06:0000000000000000 $t
+     /tmp/ccjJqYyO.s:389    .text.handle_cmd_0x06:0000000000000000 handle_cmd_0x06
+     /tmp/ccjJqYyO.s:492    .text.handle_cmd_0x06:0000000000000068 $d
+     /tmp/ccjJqYyO.s:497    .text.handle_cmd_0x07:0000000000000000 $t
+     /tmp/ccjJqYyO.s:503    .text.handle_cmd_0x07:0000000000000000 handle_cmd_0x07
+     /tmp/ccjJqYyO.s:620    .text.handle_cmd_0x07:0000000000000064 $d
+     /tmp/ccjJqYyO.s:625    .text.handle_cmd_0x08:0000000000000000 $t
+     /tmp/ccjJqYyO.s:631    .text.handle_cmd_0x08:0000000000000000 handle_cmd_0x08
+     /tmp/ccjJqYyO.s:922    .text.handle_cmd_0x08:0000000000000130 $d
+     /tmp/ccjJqYyO.s:927    .text.handle_cmd_0x09:0000000000000000 $t
+     /tmp/ccjJqYyO.s:933    .text.handle_cmd_0x09:0000000000000000 handle_cmd_0x09
+     /tmp/ccjJqYyO.s:1020   .text.handle_cmd_0x09:0000000000000044 $d
+     /tmp/ccjJqYyO.s:1025   .text.APP_UartRx_OnFrame:0000000000000000 $t
+     /tmp/ccjJqYyO.s:1032   .text.APP_UartRx_OnFrame:0000000000000000 APP_UartRx_OnFrame
+     /tmp/ccjJqYyO.s:1060   .text.APP_UartRx_OnFrame:0000000000000018 $d
+     /tmp/ccjJqYyO.s:1068   .text.APP_UartRx_OnFrame:0000000000000020 $t
 
 UNDEFINED SYMBOLS
 osMutexAcquire

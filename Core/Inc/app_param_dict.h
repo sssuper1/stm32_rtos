@@ -139,9 +139,31 @@ bool APP_ParamDict_SetValueUnsafe(ParamId_t id, int32_t newVal);
   PARAM_ID_BATTERY_CAP     = 40, /**< 电池余量(%) */
   PARAM_ID_FAN_STATE       = 41, /**< 风机状态 */
 
+  /* 0x08 开机显示参数 */
+  PARAM_ID_TIME_HOUR       = 60,
+  PARAM_ID_TIME_MINUTE     = 61,
+  PARAM_ID_TIME_SECOND     = 62,
+  PARAM_ID_NET_JOIN_STATE  = 63,
+  PARAM_ID_WAVEFORM_GEAR   = 64,
+  PARAM_ID_SIGNAL_BANDWIDTH= 65,
+  PARAM_ID_FREQ_HOP_MODE   = 66,
+  PARAM_ID_FIXED_FREQ      = 67,
+  PARAM_ID_ADAPT_FREQ1     = 68,
+  PARAM_ID_ADAPT_FREQ2     = 69,
+  PARAM_ID_ADAPT_FREQ3     = 70,
+  PARAM_ID_ADAPT_FREQ4     = 71,
+  PARAM_ID_SPATIAL_FILTER  = 72,
+  PARAM_ID_SYNC_MODE       = 73,
+  PARAM_ID_TX_POWER        = 74,
+  PARAM_ID_TX_POWER_ATTEN  = 75,
+
   /* 0x09 邻居信息 */
-  PARAM_ID_NEIGHBOR_COUNT  = 50,
-  PARAM_ID_NEIGHBOR_RSSI   = 51  /**< 最近邻/首邻 RSSI */
+  PARAM_ID_NEIGHBOR_COUNT  = 80,
+  PARAM_ID_NEIGHBOR_RSSI   = 81, /**< 最近邻/首邻 RSSI */
+
+  /* UART 写参数应答状态 */
+  PARAM_ID_UART_ACK_STATE  = 90, /**< 0=idle,1=ok,2=fail,3=pending */
+  PARAM_ID_UART_ACK_CMD    = 91  /**< 最近 ACK 的命令字 */
  };
  
  #ifdef __cplusplus

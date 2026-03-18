@@ -34,7 +34,7 @@ static ParamDef_t s_paramDict[] =
     .min_value = 0x00000000,
     .max_value = 0xFFFFFFFF,
     .scale     = 0,
-    .value     = 0xC0A80001  /* 默认 192.168.0.1 */
+    .value     = 0xC0A80201  /* 默认 192.168.2.1 */
   },
 
   /* 串口波特率：
@@ -173,6 +173,152 @@ static ParamDef_t s_paramDict[] =
     .value     = 0
   },
 
+  /* 0x08 开机显示参数 */
+  {
+    .id        = PARAM_ID_TIME_HOUR,
+    .type      = PARAM_TYPE_UINT8,
+    .access    = PARAM_ACCESS_RO,
+    .min_value = 0,
+    .max_value = 23,
+    .scale     = 0,
+    .value     = 0
+  },
+  {
+    .id        = PARAM_ID_TIME_MINUTE,
+    .type      = PARAM_TYPE_UINT8,
+    .access    = PARAM_ACCESS_RO,
+    .min_value = 0,
+    .max_value = 59,
+    .scale     = 0,
+    .value     = 0
+  },
+  {
+    .id        = PARAM_ID_TIME_SECOND,
+    .type      = PARAM_TYPE_UINT8,
+    .access    = PARAM_ACCESS_RO,
+    .min_value = 0,
+    .max_value = 59,
+    .scale     = 0,
+    .value     = 0
+  },
+  {
+    .id        = PARAM_ID_NET_JOIN_STATE,
+    .type      = PARAM_TYPE_UINT8,
+    .access    = PARAM_ACCESS_RO,
+    .min_value = 0,
+    .max_value = 1,
+    .scale     = 0,
+    .value     = 0
+  },
+  {
+    .id        = PARAM_ID_WAVEFORM_GEAR,
+    .type      = PARAM_TYPE_UINT8,
+    .access    = PARAM_ACCESS_RW,
+    .min_value = 0,
+    .max_value = 7,
+    .scale     = 0,
+    .value     = 0
+  },
+  {
+    .id        = PARAM_ID_SIGNAL_BANDWIDTH,
+    .type      = PARAM_TYPE_UINT8,
+    .access    = PARAM_ACCESS_RW,
+    .min_value = 0,
+    .max_value = 4,
+    .scale     = 0,
+    .value     = 0
+  },
+  {
+    .id        = PARAM_ID_FREQ_HOP_MODE,
+    .type      = PARAM_TYPE_UINT8,
+    .access    = PARAM_ACCESS_RW,
+    .min_value = 0,
+    .max_value = 1,
+    .scale     = 0,
+    .value     = 0
+  },
+  {
+    .id        = PARAM_ID_FIXED_FREQ,
+    .type      = PARAM_TYPE_UINT32,
+    .access    = PARAM_ACCESS_RW,
+    .min_value = 225000,
+    .max_value = 2500000,
+    .scale     = 3,
+    .value     = 225000
+  },
+  {
+    .id        = PARAM_ID_ADAPT_FREQ1,
+    .type      = PARAM_TYPE_UINT32,
+    .access    = PARAM_ACCESS_RW,
+    .min_value = 225000,
+    .max_value = 2500000,
+    .scale     = 3,
+    .value     = 225000
+  },
+  {
+    .id        = PARAM_ID_ADAPT_FREQ2,
+    .type      = PARAM_TYPE_UINT32,
+    .access    = PARAM_ACCESS_RW,
+    .min_value = 225000,
+    .max_value = 2500000,
+    .scale     = 3,
+    .value     = 225000
+  },
+  {
+    .id        = PARAM_ID_ADAPT_FREQ3,
+    .type      = PARAM_TYPE_UINT32,
+    .access    = PARAM_ACCESS_RW,
+    .min_value = 225000,
+    .max_value = 2500000,
+    .scale     = 3,
+    .value     = 225000
+  },
+  {
+    .id        = PARAM_ID_ADAPT_FREQ4,
+    .type      = PARAM_TYPE_UINT32,
+    .access    = PARAM_ACCESS_RW,
+    .min_value = 225000,
+    .max_value = 2500000,
+    .scale     = 3,
+    .value     = 225000
+  },
+  {
+    .id        = PARAM_ID_SPATIAL_FILTER,
+    .type      = PARAM_TYPE_UINT8,
+    .access    = PARAM_ACCESS_RO,
+    .min_value = 0,
+    .max_value = 1,
+    .scale     = 0,
+    .value     = 0
+  },
+  {
+    .id        = PARAM_ID_SYNC_MODE,
+    .type      = PARAM_TYPE_UINT8,
+    .access    = PARAM_ACCESS_RW,
+    .min_value = 0,
+    .max_value = 1,
+    .scale     = 0,
+    .value     = 0
+  },
+  {
+    .id        = PARAM_ID_TX_POWER,
+    .type      = PARAM_TYPE_UINT8,
+    .access    = PARAM_ACCESS_RW,
+    .min_value = 0,
+    .max_value = 2,
+    .scale     = 0,
+    .value     = 0
+  },
+  {
+    .id        = PARAM_ID_TX_POWER_ATTEN,
+    .type      = PARAM_TYPE_UINT8,
+    .access    = PARAM_ACCESS_RW,
+    .min_value = 0,
+    .max_value = 90,
+    .scale     = 0,
+    .value     = 0
+  },
+
   /* 0x09 邻居信息 */
   {
     .id        = PARAM_ID_NEIGHBOR_COUNT,
@@ -189,6 +335,25 @@ static ParamDef_t s_paramDict[] =
     .access    = PARAM_ACCESS_RO,
     .min_value = -127,
     .max_value = 127,
+    .scale     = 0,
+    .value     = 0
+  },
+
+  {
+    .id        = PARAM_ID_UART_ACK_STATE,
+    .type      = PARAM_TYPE_UINT8,
+    .access    = PARAM_ACCESS_RO,
+    .min_value = 0,
+    .max_value = 3,
+    .scale     = 0,
+    .value     = 0
+  },
+  {
+    .id        = PARAM_ID_UART_ACK_CMD,
+    .type      = PARAM_TYPE_UINT8,
+    .access    = PARAM_ACCESS_RO,
+    .min_value = 0,
+    .max_value = 255,
     .scale     = 0,
     .value     = 0
   }

@@ -75,11 +75,14 @@ Core/Src/sysmem.c \
 Core/Src/syscalls.c \
 Core/Src/i2c.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_i2c.c \
+Core/Src/bsp_oled.c \
+Core/Src/bsp_keys.c \
 Core/Src/bsp_stm32.c \
 Core/Src/app_param_dict.c \
 Core/Src/app_menu.c \
 Core/Src/app_uart_proto.c \
 Core/Src/app_uart_rx.c \
+Core/Src/app_param_uart_map.c \
 Core/Src/app_uart_handlers.c
 
 # ASM sources
@@ -235,5 +238,12 @@ clean:
 # dependencies
 #######################################
 -include $(wildcard $(BUILD_DIR)/*.d)
+
+
+#######################################
+# flash the firmware
+#######################################
+flash:
+	openocd -f interface/stlink.cfg -f target/stm32f1x.cfg -c "program $(BUILD_DIR)/$(TARGET).hex verify reset exit"
 
 # *** EOF ***

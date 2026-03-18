@@ -1,4 +1,4 @@
-ARM GAS  /tmp/ccXdHsJP.s 			page 1
+ARM GAS  /tmp/ccgNImdV.s 			page 1
 
 
    1              		.cpu cortex-m3
@@ -58,7 +58,7 @@ ARM GAS  /tmp/ccXdHsJP.s 			page 1
   29:Core/Src/main.c **** /* USER CODE BEGIN Includes */
   30:Core/Src/main.c **** 
   31:Core/Src/main.c **** /* USER CODE END Includes */
-ARM GAS  /tmp/ccXdHsJP.s 			page 2
+ARM GAS  /tmp/ccgNImdV.s 			page 2
 
 
   32:Core/Src/main.c **** 
@@ -118,7 +118,7 @@ ARM GAS  /tmp/ccXdHsJP.s 			page 1
   86:Core/Src/main.c ****   /* Configure the system clock */
   87:Core/Src/main.c ****   SystemClock_Config();
   88:Core/Src/main.c **** 
-ARM GAS  /tmp/ccXdHsJP.s 			page 3
+ARM GAS  /tmp/ccgNImdV.s 			page 3
 
 
   89:Core/Src/main.c ****   /* USER CODE BEGIN SysInit */
@@ -129,7 +129,7 @@ ARM GAS  /tmp/ccXdHsJP.s 			page 1
   94:Core/Src/main.c ****   MX_GPIO_Init();
   95:Core/Src/main.c ****   MX_DMA_Init();
   96:Core/Src/main.c ****   MX_USART1_UART_Init();
-  97:Core/Src/main.c ****   MX_SPI1_Init();
+  97:Core/Src/main.c ****   //MX_SPI1_Init();
   98:Core/Src/main.c ****   MX_I2C2_Init();
   99:Core/Src/main.c ****   /* USER CODE BEGIN 2 */
  100:Core/Src/main.c **** 
@@ -178,7 +178,7 @@ ARM GAS  /tmp/ccXdHsJP.s 			page 1
  143:Core/Src/main.c ****   {
  144:Core/Src/main.c ****     Error_Handler();
  145:Core/Src/main.c ****   }
-ARM GAS  /tmp/ccXdHsJP.s 			page 4
+ARM GAS  /tmp/ccgNImdV.s 			page 4
 
 
  146:Core/Src/main.c **** 
@@ -238,7 +238,7 @@ ARM GAS  /tmp/ccXdHsJP.s 			page 1
  181:Core/Src/main.c ****     HAL_IncTick();
  182:Core/Src/main.c ****   }
  183:Core/Src/main.c ****   /* USER CODE BEGIN Callback 1 */
-ARM GAS  /tmp/ccXdHsJP.s 			page 5
+ARM GAS  /tmp/ccgNImdV.s 			page 5
 
 
  184:Core/Src/main.c **** 
@@ -298,7 +298,7 @@ ARM GAS  /tmp/ccXdHsJP.s 			page 1
    7:Drivers/CMSIS/Include/cmsis_gcc.h **** /*
    8:Drivers/CMSIS/Include/cmsis_gcc.h ****  * Copyright (c) 2009-2018 Arm Limited. All rights reserved.
    9:Drivers/CMSIS/Include/cmsis_gcc.h ****  *
-ARM GAS  /tmp/ccXdHsJP.s 			page 6
+ARM GAS  /tmp/ccgNImdV.s 			page 6
 
 
   10:Drivers/CMSIS/Include/cmsis_gcc.h ****  * SPDX-License-Identifier: Apache-2.0
@@ -358,7 +358,7 @@ ARM GAS  /tmp/ccXdHsJP.s 			page 1
   64:Drivers/CMSIS/Include/cmsis_gcc.h **** #ifndef   __PACKED_STRUCT
   65:Drivers/CMSIS/Include/cmsis_gcc.h ****   #define __PACKED_STRUCT                        struct __attribute__((packed, aligned(1)))
   66:Drivers/CMSIS/Include/cmsis_gcc.h **** #endif
-ARM GAS  /tmp/ccXdHsJP.s 			page 7
+ARM GAS  /tmp/ccgNImdV.s 			page 7
 
 
   67:Drivers/CMSIS/Include/cmsis_gcc.h **** #ifndef   __PACKED_UNION
@@ -418,7 +418,7 @@ ARM GAS  /tmp/ccXdHsJP.s 			page 1
  121:Drivers/CMSIS/Include/cmsis_gcc.h ****   @{
  122:Drivers/CMSIS/Include/cmsis_gcc.h ****  */
  123:Drivers/CMSIS/Include/cmsis_gcc.h **** 
-ARM GAS  /tmp/ccXdHsJP.s 			page 8
+ARM GAS  /tmp/ccgNImdV.s 			page 8
 
 
  124:Drivers/CMSIS/Include/cmsis_gcc.h **** /**
@@ -478,7 +478,7 @@ ARM GAS  /tmp/ccXdHsJP.s 			page 1
  115              		@ frame_needed = 0, uses_anonymous_args = 0
  116 0000 00B5     		push	{lr}
  117              	.LCFI1:
-ARM GAS  /tmp/ccXdHsJP.s 			page 9
+ARM GAS  /tmp/ccgNImdV.s 			page 9
 
 
  118              		.cfi_def_cfa_offset 4
@@ -538,7 +538,7 @@ ARM GAS  /tmp/ccXdHsJP.s 			page 1
  141:Core/Src/main.c ****   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
  157              		.loc 1 141 3 is_stmt 1 view .LVU31
  141:Core/Src/main.c ****   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
-ARM GAS  /tmp/ccXdHsJP.s 			page 10
+ARM GAS  /tmp/ccgNImdV.s 			page 10
 
 
  158              		.loc 1 141 32 is_stmt 0 view .LVU32
@@ -598,7 +598,7 @@ ARM GAS  /tmp/ccXdHsJP.s 			page 1
  195 0056 11B0     		add	sp, sp, #68
  196              	.LCFI3:
  197              		.cfi_remember_state
-ARM GAS  /tmp/ccXdHsJP.s 			page 11
+ARM GAS  /tmp/ccgNImdV.s 			page 11
 
 
  198              		.cfi_def_cfa_offset 4
@@ -654,74 +654,69 @@ ARM GAS  /tmp/ccXdHsJP.s 			page 1
  243              		.loc 1 95 3 view .LVU56
  244 000e FFF7FEFF 		bl	MX_DMA_Init
  245              	.LVL12:
-  96:Core/Src/main.c ****   MX_SPI1_Init();
+  96:Core/Src/main.c ****   //MX_SPI1_Init();
  246              		.loc 1 96 3 view .LVU57
  247 0012 FFF7FEFF 		bl	MX_USART1_UART_Init
  248              	.LVL13:
-ARM GAS  /tmp/ccXdHsJP.s 			page 12
+ARM GAS  /tmp/ccgNImdV.s 			page 12
 
 
-  97:Core/Src/main.c ****   MX_I2C2_Init();
- 249              		.loc 1 97 3 view .LVU58
- 250 0016 FFF7FEFF 		bl	MX_SPI1_Init
- 251              	.LVL14:
   98:Core/Src/main.c ****   /* USER CODE BEGIN 2 */
- 252              		.loc 1 98 3 view .LVU59
- 253 001a FFF7FEFF 		bl	MX_I2C2_Init
- 254              	.LVL15:
+ 249              		.loc 1 98 3 view .LVU58
+ 250 0016 FFF7FEFF 		bl	MX_I2C2_Init
+ 251              	.LVL14:
  104:Core/Src/main.c ****   MX_FREERTOS_Init();
- 255              		.loc 1 104 3 view .LVU60
- 256 001e FFF7FEFF 		bl	osKernelInitialize
- 257              	.LVL16:
+ 252              		.loc 1 104 3 view .LVU59
+ 253 001a FFF7FEFF 		bl	osKernelInitialize
+ 254              	.LVL15:
  105:Core/Src/main.c **** 
- 258              		.loc 1 105 3 view .LVU61
- 259 0022 FFF7FEFF 		bl	MX_FREERTOS_Init
- 260              	.LVL17:
+ 255              		.loc 1 105 3 view .LVU60
+ 256 001e FFF7FEFF 		bl	MX_FREERTOS_Init
+ 257              	.LVL16:
  108:Core/Src/main.c **** 
- 261              		.loc 1 108 3 view .LVU62
- 262 0026 FFF7FEFF 		bl	osKernelStart
- 263              	.LVL18:
- 264              	.L16:
+ 258              		.loc 1 108 3 view .LVU61
+ 259 0022 FFF7FEFF 		bl	osKernelStart
+ 260              	.LVL17:
+ 261              	.L16:
  114:Core/Src/main.c ****   {
- 265              		.loc 1 114 3 discriminator 1 view .LVU63
+ 262              		.loc 1 114 3 discriminator 1 view .LVU62
  119:Core/Src/main.c ****   /* USER CODE END 3 */
- 266              		.loc 1 119 3 discriminator 1 view .LVU64
+ 263              		.loc 1 119 3 discriminator 1 view .LVU63
  114:Core/Src/main.c ****   {
- 267              		.loc 1 114 9 discriminator 1 view .LVU65
- 268 002a FEE7     		b	.L16
- 269              		.cfi_endproc
- 270              	.LFE69:
- 272              		.text
- 273              	.Letext0:
- 274              		.file 3 "Drivers/CMSIS/Device/ST/STM32F1xx/Include/stm32f103xb.h"
- 275              		.file 4 "/usr/lib/gcc/arm-none-eabi/10.3.1/include/stdint.h"
- 276              		.file 5 "Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_def.h"
- 277              		.file 6 "Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_rcc.h"
- 278              		.file 7 "Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_rcc_ex.h"
- 279              		.file 8 "Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_dma.h"
- 280              		.file 9 "Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim.h"
- 281              		.file 10 "Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h"
- 282              		.file 11 "Core/Inc/gpio.h"
- 283              		.file 12 "Core/Inc/dma.h"
- 284              		.file 13 "Core/Inc/usart.h"
- 285              		.file 14 "Core/Inc/spi.h"
- 286              		.file 15 "Core/Inc/i2c.h"
- 287              		.file 16 "Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.h"
- 288              		.file 17 "<built-in>"
-ARM GAS  /tmp/ccXdHsJP.s 			page 13
+ 264              		.loc 1 114 9 discriminator 1 view .LVU64
+ 265 0026 FEE7     		b	.L16
+ 266              		.cfi_endproc
+ 267              	.LFE69:
+ 269              		.text
+ 270              	.Letext0:
+ 271              		.file 3 "Drivers/CMSIS/Device/ST/STM32F1xx/Include/stm32f103xb.h"
+ 272              		.file 4 "/usr/lib/gcc/arm-none-eabi/10.3.1/include/stdint.h"
+ 273              		.file 5 "Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_def.h"
+ 274              		.file 6 "Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_rcc.h"
+ 275              		.file 7 "Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_rcc_ex.h"
+ 276              		.file 8 "Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_dma.h"
+ 277              		.file 9 "Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim.h"
+ 278              		.file 10 "Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h"
+ 279              		.file 11 "Core/Inc/gpio.h"
+ 280              		.file 12 "Core/Inc/dma.h"
+ 281              		.file 13 "Core/Inc/usart.h"
+ 282              		.file 14 "Core/Inc/i2c.h"
+ 283              		.file 15 "Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.h"
+ 284              		.file 16 "<built-in>"
+ARM GAS  /tmp/ccgNImdV.s 			page 13
 
 
 DEFINED SYMBOLS
                             *ABS*:0000000000000000 main.c
-     /tmp/ccXdHsJP.s:16     .text.HAL_TIM_PeriodElapsedCallback:0000000000000000 $t
-     /tmp/ccXdHsJP.s:24     .text.HAL_TIM_PeriodElapsedCallback:0000000000000000 HAL_TIM_PeriodElapsedCallback
-     /tmp/ccXdHsJP.s:59     .text.HAL_TIM_PeriodElapsedCallback:0000000000000014 $d
-     /tmp/ccXdHsJP.s:64     .text.Error_Handler:0000000000000000 $t
-     /tmp/ccXdHsJP.s:71     .text.Error_Handler:0000000000000000 Error_Handler
-     /tmp/ccXdHsJP.s:103    .text.SystemClock_Config:0000000000000000 $t
-     /tmp/ccXdHsJP.s:110    .text.SystemClock_Config:0000000000000000 SystemClock_Config
-     /tmp/ccXdHsJP.s:215    .text.main:0000000000000000 $t
-     /tmp/ccXdHsJP.s:222    .text.main:0000000000000000 main
+     /tmp/ccgNImdV.s:16     .text.HAL_TIM_PeriodElapsedCallback:0000000000000000 $t
+     /tmp/ccgNImdV.s:24     .text.HAL_TIM_PeriodElapsedCallback:0000000000000000 HAL_TIM_PeriodElapsedCallback
+     /tmp/ccgNImdV.s:59     .text.HAL_TIM_PeriodElapsedCallback:0000000000000014 $d
+     /tmp/ccgNImdV.s:64     .text.Error_Handler:0000000000000000 $t
+     /tmp/ccgNImdV.s:71     .text.Error_Handler:0000000000000000 Error_Handler
+     /tmp/ccgNImdV.s:103    .text.SystemClock_Config:0000000000000000 $t
+     /tmp/ccgNImdV.s:110    .text.SystemClock_Config:0000000000000000 SystemClock_Config
+     /tmp/ccgNImdV.s:215    .text.main:0000000000000000 $t
+     /tmp/ccgNImdV.s:222    .text.main:0000000000000000 main
 
 UNDEFINED SYMBOLS
 HAL_IncTick
@@ -732,7 +727,6 @@ HAL_Init
 MX_GPIO_Init
 MX_DMA_Init
 MX_USART1_UART_Init
-MX_SPI1_Init
 MX_I2C2_Init
 osKernelInitialize
 MX_FREERTOS_Init

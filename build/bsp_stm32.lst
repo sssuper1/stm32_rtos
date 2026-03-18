@@ -1,4 +1,4 @@
-ARM GAS  /tmp/cc36Cegq.s 			page 1
+ARM GAS  /tmp/cchWBekZ.s 			page 1
 
 
    1              		.cpu cortex-m3
@@ -15,2156 +15,414 @@ ARM GAS  /tmp/cc36Cegq.s 			page 1
   12              		.text
   13              	.Ltext0:
   14              		.cfi_sections	.debug_frame
-  15              		.section	.text.oled_font6x8_get,"ax",%progbits
+  15              		.section	.text.BSP_Init,"ax",%progbits
   16              		.align	1
-  17              		.arch armv7-m
-  18              		.syntax unified
-  19              		.thumb
-  20              		.thumb_func
-  21              		.fpu softvfp
-  23              	oled_font6x8_get:
-  24              	.LVL0:
-  25              	.LFB78:
+  17              		.global	BSP_Init
+  18              		.arch armv7-m
+  19              		.syntax unified
+  20              		.thumb
+  21              		.thumb_func
+  22              		.fpu softvfp
+  24              	BSP_Init:
+  25              	.LFB65:
   26              		.file 1 "Core/Src/bsp_stm32.c"
    1:Core/Src/bsp_stm32.c **** #include "bsp.h"
    2:Core/Src/bsp_stm32.c **** 
    3:Core/Src/bsp_stm32.c **** #include "gpio.h"
    4:Core/Src/bsp_stm32.c **** #include "usart.h"
-   5:Core/Src/bsp_stm32.c **** #include "i2c.h"
-   6:Core/Src/bsp_stm32.c **** #include "dma.h"
+   5:Core/Src/bsp_stm32.c **** #include "bsp_oled.h"
+   6:Core/Src/bsp_stm32.c **** #include "bsp_keys.h"
    7:Core/Src/bsp_stm32.c **** #include "main.h"
-   8:Core/Src/bsp_stm32.c **** #include <string.h>
-   9:Core/Src/bsp_stm32.c **** #include <stdio.h>
-  10:Core/Src/bsp_stm32.c **** 
-  11:Core/Src/bsp_stm32.c **** /* ===== LED：使用板载心跳灯 ===== */
-  12:Core/Src/bsp_stm32.c **** 
-  13:Core/Src/bsp_stm32.c **** void BSP_Init(void) {
-  14:Core/Src/bsp_stm32.c ****   /* GPIO/USART/SPI 时钟和模式已经在 MX_GPIO_Init/MX_USART1_UART_Init 等里配置好了 */
-  15:Core/Src/bsp_stm32.c **** }
-  16:Core/Src/bsp_stm32.c **** 
-  17:Core/Src/bsp_stm32.c **** void BSP_Led_Set(BspLedId led, bool on) {
-  18:Core/Src/bsp_stm32.c ****   (void)led;
-  19:Core/Src/bsp_stm32.c ****   HAL_GPIO_WritePin(LED_HEARTBEAT_GPIO_Port, LED_HEARTBEAT_Pin,
-  20:Core/Src/bsp_stm32.c ****                     on ? GPIO_PIN_RESET : GPIO_PIN_SET);
-  21:Core/Src/bsp_stm32.c **** }
-  22:Core/Src/bsp_stm32.c **** 
-  23:Core/Src/bsp_stm32.c **** /* ===== OLED(0.96")：I2C/SSD1306 + 6x8 字库渲染 ===== */
-  24:Core/Src/bsp_stm32.c **** 
-  25:Core/Src/bsp_stm32.c **** #define OLED_I2C_ADDR   (0x3Cu << 1)
-  26:Core/Src/bsp_stm32.c **** #define OLED_CTRL_CMD   0x00u
-  27:Core/Src/bsp_stm32.c **** #define OLED_CTRL_DATA  0x40u
-  28:Core/Src/bsp_stm32.c **** 
-  29:Core/Src/bsp_stm32.c **** #define OLED_WIDTH      128u
-  30:Core/Src/bsp_stm32.c **** #define OLED_PAGES      8u
-  31:Core/Src/bsp_stm32.c **** #define OLED_CHUNK_SIZE 16u
-  32:Core/Src/bsp_stm32.c **** 
-ARM GAS  /tmp/cc36Cegq.s 			page 2
-
-
-  33:Core/Src/bsp_stm32.c **** static uint8_t s_oledFront[OLED_PAGES][OLED_WIDTH];
-  34:Core/Src/bsp_stm32.c **** static uint8_t s_oledBack[OLED_PAGES][OLED_WIDTH];
-  35:Core/Src/bsp_stm32.c **** static uint8_t s_oledDirtyMask = 0u;
-  36:Core/Src/bsp_stm32.c **** 
-  37:Core/Src/bsp_stm32.c **** typedef struct
-  38:Core/Src/bsp_stm32.c **** {
-  39:Core/Src/bsp_stm32.c ****   char ch;
-  40:Core/Src/bsp_stm32.c ****   uint8_t col[6];
-  41:Core/Src/bsp_stm32.c **** } OledFont6x8_t;
-  42:Core/Src/bsp_stm32.c **** 
-  43:Core/Src/bsp_stm32.c **** static const OledFont6x8_t s_font6x8[] =
-  44:Core/Src/bsp_stm32.c **** {
-  45:Core/Src/bsp_stm32.c ****   {' ', {0x00,0x00,0x00,0x00,0x00,0x00}},
-  46:Core/Src/bsp_stm32.c ****   {'-', {0x08,0x08,0x08,0x08,0x08,0x00}},
-  47:Core/Src/bsp_stm32.c ****   {'_', {0x40,0x40,0x40,0x40,0x40,0x00}},
-  48:Core/Src/bsp_stm32.c ****   {':', {0x00,0x36,0x36,0x00,0x00,0x00}},
-  49:Core/Src/bsp_stm32.c ****   {'.', {0x00,0x60,0x60,0x00,0x00,0x00}},
-  50:Core/Src/bsp_stm32.c ****   {'/', {0x20,0x10,0x08,0x04,0x02,0x00}},
-  51:Core/Src/bsp_stm32.c ****   {'?', {0x02,0x01,0x51,0x09,0x06,0x00}},
-  52:Core/Src/bsp_stm32.c ****   {'0', {0x3E,0x51,0x49,0x45,0x3E,0x00}},
-  53:Core/Src/bsp_stm32.c ****   {'1', {0x00,0x42,0x7F,0x40,0x00,0x00}},
-  54:Core/Src/bsp_stm32.c ****   {'2', {0x42,0x61,0x51,0x49,0x46,0x00}},
-  55:Core/Src/bsp_stm32.c ****   {'3', {0x21,0x41,0x45,0x4B,0x31,0x00}},
-  56:Core/Src/bsp_stm32.c ****   {'4', {0x18,0x14,0x12,0x7F,0x10,0x00}},
-  57:Core/Src/bsp_stm32.c ****   {'5', {0x27,0x45,0x45,0x45,0x39,0x00}},
-  58:Core/Src/bsp_stm32.c ****   {'6', {0x3C,0x4A,0x49,0x49,0x30,0x00}},
-  59:Core/Src/bsp_stm32.c ****   {'7', {0x01,0x71,0x09,0x05,0x03,0x00}},
-  60:Core/Src/bsp_stm32.c ****   {'8', {0x36,0x49,0x49,0x49,0x36,0x00}},
-  61:Core/Src/bsp_stm32.c ****   {'9', {0x06,0x49,0x49,0x29,0x1E,0x00}},
-  62:Core/Src/bsp_stm32.c ****   {'A', {0x7E,0x11,0x11,0x11,0x7E,0x00}},
-  63:Core/Src/bsp_stm32.c ****   {'B', {0x7F,0x49,0x49,0x49,0x36,0x00}},
-  64:Core/Src/bsp_stm32.c ****   {'C', {0x3E,0x41,0x41,0x41,0x22,0x00}},
-  65:Core/Src/bsp_stm32.c ****   {'D', {0x7F,0x41,0x41,0x22,0x1C,0x00}},
-  66:Core/Src/bsp_stm32.c ****   {'E', {0x7F,0x49,0x49,0x49,0x41,0x00}},
-  67:Core/Src/bsp_stm32.c ****   {'F', {0x7F,0x09,0x09,0x09,0x01,0x00}},
-  68:Core/Src/bsp_stm32.c ****   {'G', {0x3E,0x41,0x49,0x49,0x7A,0x00}},
-  69:Core/Src/bsp_stm32.c ****   {'H', {0x7F,0x08,0x08,0x08,0x7F,0x00}},
-  70:Core/Src/bsp_stm32.c ****   {'I', {0x00,0x41,0x7F,0x41,0x00,0x00}},
-  71:Core/Src/bsp_stm32.c ****   {'J', {0x20,0x40,0x41,0x3F,0x01,0x00}},
-  72:Core/Src/bsp_stm32.c ****   {'K', {0x7F,0x08,0x14,0x22,0x41,0x00}},
-  73:Core/Src/bsp_stm32.c ****   {'L', {0x7F,0x40,0x40,0x40,0x40,0x00}},
-  74:Core/Src/bsp_stm32.c ****   {'M', {0x7F,0x02,0x0C,0x02,0x7F,0x00}},
-  75:Core/Src/bsp_stm32.c ****   {'N', {0x7F,0x04,0x08,0x10,0x7F,0x00}},
-  76:Core/Src/bsp_stm32.c ****   {'O', {0x3E,0x41,0x41,0x41,0x3E,0x00}},
-  77:Core/Src/bsp_stm32.c ****   {'P', {0x7F,0x09,0x09,0x09,0x06,0x00}},
-  78:Core/Src/bsp_stm32.c ****   {'Q', {0x3E,0x41,0x51,0x21,0x5E,0x00}},
-  79:Core/Src/bsp_stm32.c ****   {'R', {0x7F,0x09,0x19,0x29,0x46,0x00}},
-  80:Core/Src/bsp_stm32.c ****   {'S', {0x46,0x49,0x49,0x49,0x31,0x00}},
-  81:Core/Src/bsp_stm32.c ****   {'T', {0x01,0x01,0x7F,0x01,0x01,0x00}},
-  82:Core/Src/bsp_stm32.c ****   {'U', {0x3F,0x40,0x40,0x40,0x3F,0x00}},
-  83:Core/Src/bsp_stm32.c ****   {'V', {0x1F,0x20,0x40,0x20,0x1F,0x00}},
-  84:Core/Src/bsp_stm32.c ****   {'W', {0x3F,0x40,0x38,0x40,0x3F,0x00}},
-  85:Core/Src/bsp_stm32.c ****   {'X', {0x63,0x14,0x08,0x14,0x63,0x00}},
-  86:Core/Src/bsp_stm32.c ****   {'Y', {0x07,0x08,0x70,0x08,0x07,0x00}},
-  87:Core/Src/bsp_stm32.c ****   {'Z', {0x61,0x51,0x49,0x45,0x43,0x00}}
-  88:Core/Src/bsp_stm32.c **** };
-  89:Core/Src/bsp_stm32.c **** 
-ARM GAS  /tmp/cc36Cegq.s 			page 3
-
-
-  90:Core/Src/bsp_stm32.c **** static void oled_write_cmd(uint8_t cmd)
-  91:Core/Src/bsp_stm32.c **** {
-  92:Core/Src/bsp_stm32.c ****   uint8_t tx[2] = {OLED_CTRL_CMD, cmd};
-  93:Core/Src/bsp_stm32.c ****   (void)HAL_I2C_Master_Transmit(&hi2c2, OLED_I2C_ADDR, tx, 2U, 20U);
-  94:Core/Src/bsp_stm32.c **** }
-  95:Core/Src/bsp_stm32.c **** 
-  96:Core/Src/bsp_stm32.c **** static void oled_set_cursor(uint8_t page, uint8_t column)
-  97:Core/Src/bsp_stm32.c **** {
-  98:Core/Src/bsp_stm32.c ****   oled_write_cmd((uint8_t)(0xB0u + (page & 0x07u)));
-  99:Core/Src/bsp_stm32.c ****   oled_write_cmd((uint8_t)(0x00u + (column & 0x0Fu)));
- 100:Core/Src/bsp_stm32.c ****   oled_write_cmd((uint8_t)(0x10u + ((column >> 4) & 0x0Fu)));
- 101:Core/Src/bsp_stm32.c **** }
- 102:Core/Src/bsp_stm32.c **** 
- 103:Core/Src/bsp_stm32.c **** static void oled_write_data(const uint8_t *data, uint16_t len)
- 104:Core/Src/bsp_stm32.c **** {
- 105:Core/Src/bsp_stm32.c ****   uint8_t tx[1U + OLED_CHUNK_SIZE];
- 106:Core/Src/bsp_stm32.c ****   tx[0] = OLED_CTRL_DATA;
- 107:Core/Src/bsp_stm32.c **** 
- 108:Core/Src/bsp_stm32.c ****   while (len > 0u)
- 109:Core/Src/bsp_stm32.c ****   {
- 110:Core/Src/bsp_stm32.c ****     uint16_t chunk = (len > OLED_CHUNK_SIZE) ? OLED_CHUNK_SIZE : len;
- 111:Core/Src/bsp_stm32.c ****     memcpy(&tx[1], data, chunk);
- 112:Core/Src/bsp_stm32.c ****     (void)HAL_I2C_Master_Transmit(&hi2c2, OLED_I2C_ADDR, tx, (uint16_t)(chunk + 1u), 20U);
- 113:Core/Src/bsp_stm32.c **** 
- 114:Core/Src/bsp_stm32.c ****     data += chunk;
- 115:Core/Src/bsp_stm32.c ****     len = (uint16_t)(len - chunk);
- 116:Core/Src/bsp_stm32.c ****   }
- 117:Core/Src/bsp_stm32.c **** }
- 118:Core/Src/bsp_stm32.c **** 
- 119:Core/Src/bsp_stm32.c **** static void oled_flush_page(uint8_t page)
- 120:Core/Src/bsp_stm32.c **** {
- 121:Core/Src/bsp_stm32.c ****   if (page >= OLED_PAGES)
- 122:Core/Src/bsp_stm32.c ****   {
- 123:Core/Src/bsp_stm32.c ****     return;
- 124:Core/Src/bsp_stm32.c ****   }
- 125:Core/Src/bsp_stm32.c **** 
- 126:Core/Src/bsp_stm32.c ****   oled_set_cursor(page, 0u);
- 127:Core/Src/bsp_stm32.c ****   oled_write_data(s_oledBack[page], OLED_WIDTH);
- 128:Core/Src/bsp_stm32.c ****   memcpy(s_oledFront[page], s_oledBack[page], OLED_WIDTH);
- 129:Core/Src/bsp_stm32.c ****   s_oledDirtyMask = (uint8_t)(s_oledDirtyMask & (uint8_t)~(1u << page));
- 130:Core/Src/bsp_stm32.c **** }
- 131:Core/Src/bsp_stm32.c **** 
- 132:Core/Src/bsp_stm32.c **** static void oled_clear_page(uint8_t page)
- 133:Core/Src/bsp_stm32.c **** {
- 134:Core/Src/bsp_stm32.c ****   if (page >= OLED_PAGES)
- 135:Core/Src/bsp_stm32.c ****   {
- 136:Core/Src/bsp_stm32.c ****     return;
- 137:Core/Src/bsp_stm32.c ****   }
- 138:Core/Src/bsp_stm32.c ****   memset(s_oledBack[page], 0, OLED_WIDTH);
- 139:Core/Src/bsp_stm32.c **** }
- 140:Core/Src/bsp_stm32.c **** 
- 141:Core/Src/bsp_stm32.c **** static void oled_flush_all(void)
- 142:Core/Src/bsp_stm32.c **** {
- 143:Core/Src/bsp_stm32.c ****   for (uint8_t p = 0u; p < OLED_PAGES; ++p)
- 144:Core/Src/bsp_stm32.c ****   {
- 145:Core/Src/bsp_stm32.c ****     oled_flush_page(p);
- 146:Core/Src/bsp_stm32.c ****   }
-ARM GAS  /tmp/cc36Cegq.s 			page 4
-
-
- 147:Core/Src/bsp_stm32.c **** }
- 148:Core/Src/bsp_stm32.c **** 
- 149:Core/Src/bsp_stm32.c **** static void oled_mark_dirty_if_changed(uint8_t page)
- 150:Core/Src/bsp_stm32.c **** {
- 151:Core/Src/bsp_stm32.c ****   if (page >= OLED_PAGES)
- 152:Core/Src/bsp_stm32.c ****   {
- 153:Core/Src/bsp_stm32.c ****     return;
- 154:Core/Src/bsp_stm32.c ****   }
- 155:Core/Src/bsp_stm32.c **** 
- 156:Core/Src/bsp_stm32.c ****   if (memcmp(s_oledBack[page], s_oledFront[page], OLED_WIDTH) != 0)
- 157:Core/Src/bsp_stm32.c ****   {
- 158:Core/Src/bsp_stm32.c ****     s_oledDirtyMask = (uint8_t)(s_oledDirtyMask | (uint8_t)(1u << page));
- 159:Core/Src/bsp_stm32.c ****   }
- 160:Core/Src/bsp_stm32.c **** }
- 161:Core/Src/bsp_stm32.c **** 
- 162:Core/Src/bsp_stm32.c **** static void oled_flush_dirty_pages(void)
- 163:Core/Src/bsp_stm32.c **** {
- 164:Core/Src/bsp_stm32.c ****   for (uint8_t p = 0u; p < OLED_PAGES; ++p)
- 165:Core/Src/bsp_stm32.c ****   {
- 166:Core/Src/bsp_stm32.c ****     if ((s_oledDirtyMask & (uint8_t)(1u << p)) != 0u)
- 167:Core/Src/bsp_stm32.c ****     {
- 168:Core/Src/bsp_stm32.c ****       oled_flush_page(p);
- 169:Core/Src/bsp_stm32.c ****     }
- 170:Core/Src/bsp_stm32.c ****   }
- 171:Core/Src/bsp_stm32.c **** }
- 172:Core/Src/bsp_stm32.c **** 
- 173:Core/Src/bsp_stm32.c **** static const uint8_t *oled_font6x8_get(char ch)
- 174:Core/Src/bsp_stm32.c **** {
-  27              		.loc 1 174 1 view -0
+   8:Core/Src/bsp_stm32.c **** 
+   9:Core/Src/bsp_stm32.c **** void BSP_Init(void)
+  10:Core/Src/bsp_stm32.c **** {
+  27              		.loc 1 10 1 view -0
   28              		.cfi_startproc
   29              		@ args = 0, pretend = 0, frame = 0
   30              		@ frame_needed = 0, uses_anonymous_args = 0
   31              		@ link register save eliminated.
- 175:Core/Src/bsp_stm32.c ****   if ((ch >= 'a') && (ch <= 'z'))
-  32              		.loc 1 175 3 view .LVU1
-  33              		.loc 1 175 19 is_stmt 0 view .LVU2
-  34 0000 A0F16103 		sub	r3, r0, #97
-  35 0004 DBB2     		uxtb	r3, r3
-  36              		.loc 1 175 6 view .LVU3
-  37 0006 192B     		cmp	r3, #25
-  38 0008 01D8     		bhi	.L2
- 176:Core/Src/bsp_stm32.c ****   {
- 177:Core/Src/bsp_stm32.c ****     ch = (char)(ch - 'a' + 'A');
-  39              		.loc 1 177 5 is_stmt 1 view .LVU4
-  40              		.loc 1 177 8 is_stmt 0 view .LVU5
-  41 000a 2038     		subs	r0, r0, #32
-  42              	.LVL1:
-  43              		.loc 1 177 8 view .LVU6
-  44 000c C0B2     		uxtb	r0, r0
-  45              	.LVL2:
-  46              	.L2:
- 178:Core/Src/bsp_stm32.c ****   }
- 179:Core/Src/bsp_stm32.c **** 
- 180:Core/Src/bsp_stm32.c ****   for (uint32_t i = 0u; i < (sizeof(s_font6x8) / sizeof(s_font6x8[0])); ++i)
-  47              		.loc 1 180 3 is_stmt 1 view .LVU7
-  48              	.LBB2:
-  49              		.loc 1 180 8 view .LVU8
-ARM GAS  /tmp/cc36Cegq.s 			page 5
+  11:Core/Src/bsp_stm32.c ****   /* GPIO/USART clocks and modes are configured by CubeMX init functions. */
+  12:Core/Src/bsp_stm32.c **** }
+  32              		.loc 1 12 1 view .LVU1
+  33 0000 7047     		bx	lr
+  34              		.cfi_endproc
+  35              	.LFE65:
+  37              		.section	.text.BSP_Led_Set,"ax",%progbits
+  38              		.align	1
+  39              		.global	BSP_Led_Set
+  40              		.syntax unified
+  41              		.thumb
+  42              		.thumb_func
+  43              		.fpu softvfp
+  45              	BSP_Led_Set:
+  46              	.LVL0:
+  47              	.LFB66:
+  13:Core/Src/bsp_stm32.c **** 
+ARM GAS  /tmp/cchWBekZ.s 			page 2
 
 
-  50              		.loc 1 180 17 is_stmt 0 view .LVU9
-  51 000e 0023     		movs	r3, #0
-  52              	.LVL3:
-  53              	.L3:
-  54              		.loc 1 180 25 is_stmt 1 discriminator 1 view .LVU10
-  55              		.loc 1 180 3 is_stmt 0 discriminator 1 view .LVU11
-  56 0010 2A2B     		cmp	r3, #42
-  57 0012 0CD8     		bhi	.L7
- 181:Core/Src/bsp_stm32.c ****   {
- 182:Core/Src/bsp_stm32.c ****     if (s_font6x8[i].ch == ch)
-  58              		.loc 1 182 5 is_stmt 1 view .LVU12
-  59              		.loc 1 182 21 is_stmt 0 view .LVU13
-  60 0014 C3EBC302 		rsb	r2, r3, r3, lsl #3
-  61 0018 0649     		ldr	r1, .L9
-  62 001a 8A5C     		ldrb	r2, [r1, r2]	@ zero_extendqisi2
-  63              		.loc 1 182 8 view .LVU14
-  64 001c 8242     		cmp	r2, r0
-  65 001e 01D0     		beq	.L8
- 180:Core/Src/bsp_stm32.c ****   {
-  66              		.loc 1 180 73 is_stmt 1 discriminator 2 view .LVU15
-  67 0020 0133     		adds	r3, r3, #1
-  68              	.LVL4:
- 180:Core/Src/bsp_stm32.c ****   {
-  69              		.loc 1 180 73 is_stmt 0 discriminator 2 view .LVU16
-  70 0022 F5E7     		b	.L3
-  71              	.L8:
- 183:Core/Src/bsp_stm32.c ****     {
- 184:Core/Src/bsp_stm32.c ****       return s_font6x8[i].col;
-  72              		.loc 1 184 7 is_stmt 1 view .LVU17
-  73              		.loc 1 184 14 is_stmt 0 view .LVU18
-  74 0024 C3EBC303 		rsb	r3, r3, r3, lsl #3
-  75              	.LVL5:
-  76              		.loc 1 184 14 view .LVU19
-  77 0028 0B44     		add	r3, r3, r1
-  78 002a 581C     		adds	r0, r3, #1
-  79              	.LVL6:
-  80              		.loc 1 184 14 view .LVU20
-  81 002c 7047     		bx	lr
-  82              	.LVL7:
-  83              	.L7:
-  84              		.loc 1 184 14 view .LVU21
-  85              	.LBE2:
- 185:Core/Src/bsp_stm32.c ****     }
- 186:Core/Src/bsp_stm32.c ****   }
- 187:Core/Src/bsp_stm32.c **** 
- 188:Core/Src/bsp_stm32.c ****   return s_font6x8[6].col; /* '?' */
-  86              		.loc 1 188 10 view .LVU22
-  87 002e 0248     		ldr	r0, .L9+4
-  88              	.LVL8:
- 189:Core/Src/bsp_stm32.c **** }
-  89              		.loc 1 189 1 view .LVU23
-  90 0030 7047     		bx	lr
-  91              	.L10:
-  92 0032 00BF     		.align	2
-  93              	.L9:
-  94 0034 00000000 		.word	.LANCHOR0
-  95 0038 2B000000 		.word	.LANCHOR0+43
-ARM GAS  /tmp/cc36Cegq.s 			page 6
+  14:Core/Src/bsp_stm32.c **** void BSP_Led_Set(BspLedId led, bool on)
+  15:Core/Src/bsp_stm32.c **** {
+  48              		.loc 1 15 1 view -0
+  49              		.cfi_startproc
+  50              		@ args = 0, pretend = 0, frame = 0
+  51              		@ frame_needed = 0, uses_anonymous_args = 0
+  52              		.loc 1 15 1 is_stmt 0 view .LVU3
+  53 0000 08B5     		push	{r3, lr}
+  54              	.LCFI0:
+  55              		.cfi_def_cfa_offset 8
+  56              		.cfi_offset 3, -8
+  57              		.cfi_offset 14, -4
+  16:Core/Src/bsp_stm32.c ****   (void)led;
+  58              		.loc 1 16 3 is_stmt 1 view .LVU4
+  17:Core/Src/bsp_stm32.c ****   HAL_GPIO_WritePin(LED_HEARTBEAT_GPIO_Port, LED_HEARTBEAT_Pin,
+  59              		.loc 1 17 3 view .LVU5
+  60 0002 81F00102 		eor	r2, r1, #1
+  61 0006 4FF40051 		mov	r1, #8192
+  62              	.LVL1:
+  63              		.loc 1 17 3 is_stmt 0 view .LVU6
+  64 000a 0248     		ldr	r0, .L4
+  65              	.LVL2:
+  66              		.loc 1 17 3 view .LVU7
+  67 000c FFF7FEFF 		bl	HAL_GPIO_WritePin
+  68              	.LVL3:
+  18:Core/Src/bsp_stm32.c ****                     on ? GPIO_PIN_RESET : GPIO_PIN_SET);
+  19:Core/Src/bsp_stm32.c **** }
+  69              		.loc 1 19 1 view .LVU8
+  70 0010 08BD     		pop	{r3, pc}
+  71              	.L5:
+  72 0012 00BF     		.align	2
+  73              	.L4:
+  74 0014 00100140 		.word	1073811456
+  75              		.cfi_endproc
+  76              	.LFE66:
+  78              		.section	.text.BSP_Lcd_Init,"ax",%progbits
+  79              		.align	1
+  80              		.global	BSP_Lcd_Init
+  81              		.syntax unified
+  82              		.thumb
+  83              		.thumb_func
+  84              		.fpu softvfp
+  86              	BSP_Lcd_Init:
+  87              	.LFB67:
+  20:Core/Src/bsp_stm32.c **** 
+  21:Core/Src/bsp_stm32.c **** void BSP_Lcd_Init(void)
+  22:Core/Src/bsp_stm32.c **** {
+  88              		.loc 1 22 1 is_stmt 1 view -0
+  89              		.cfi_startproc
+  90              		@ args = 0, pretend = 0, frame = 0
+  91              		@ frame_needed = 0, uses_anonymous_args = 0
+  92 0000 08B5     		push	{r3, lr}
+  93              	.LCFI1:
+  94              		.cfi_def_cfa_offset 8
+  95              		.cfi_offset 3, -8
+  96              		.cfi_offset 14, -4
+  23:Core/Src/bsp_stm32.c ****   BSP_Oled_Init();
+ARM GAS  /tmp/cchWBekZ.s 			page 3
 
 
-  96              		.cfi_endproc
-  97              	.LFE78:
-  99              		.section	.text.idx_to_keycode,"ax",%progbits
- 100              		.align	1
- 101              		.syntax unified
- 102              		.thumb
- 103              		.thumb_func
- 104              		.fpu softvfp
- 106              	idx_to_keycode:
- 107              	.LVL9:
- 108              	.LFB82:
- 190:Core/Src/bsp_stm32.c **** 
- 191:Core/Src/bsp_stm32.c **** static void oled_basic_init(void)
- 192:Core/Src/bsp_stm32.c **** {
- 193:Core/Src/bsp_stm32.c ****   /* SSD1306 常用初始化序列（128x64） */
- 194:Core/Src/bsp_stm32.c ****   oled_write_cmd(0xAE); /* Display OFF */
- 195:Core/Src/bsp_stm32.c ****   oled_write_cmd(0x20); /* Memory Addressing Mode */
- 196:Core/Src/bsp_stm32.c ****   oled_write_cmd(0x00); /* Horizontal Addressing Mode */
- 197:Core/Src/bsp_stm32.c ****   oled_write_cmd(0xB0); /* Page Start Address */
- 198:Core/Src/bsp_stm32.c ****   oled_write_cmd(0xC8); /* COM Output Scan Direction remapped */
- 199:Core/Src/bsp_stm32.c ****   oled_write_cmd(0x00); /* low column */
- 200:Core/Src/bsp_stm32.c ****   oled_write_cmd(0x10); /* high column */
- 201:Core/Src/bsp_stm32.c ****   oled_write_cmd(0x40); /* start line */
- 202:Core/Src/bsp_stm32.c ****   oled_write_cmd(0x81); /* contrast */
- 203:Core/Src/bsp_stm32.c ****   oled_write_cmd(0x7F);
- 204:Core/Src/bsp_stm32.c ****   oled_write_cmd(0xA1); /* segment remap */
- 205:Core/Src/bsp_stm32.c ****   oled_write_cmd(0xA6); /* normal display */
- 206:Core/Src/bsp_stm32.c ****   oled_write_cmd(0xA8); /* multiplex */
- 207:Core/Src/bsp_stm32.c ****   oled_write_cmd(0x3F);
- 208:Core/Src/bsp_stm32.c ****   oled_write_cmd(0xA4); /* display follows RAM */
- 209:Core/Src/bsp_stm32.c ****   oled_write_cmd(0xD3); /* display offset */
- 210:Core/Src/bsp_stm32.c ****   oled_write_cmd(0x00);
- 211:Core/Src/bsp_stm32.c ****   oled_write_cmd(0xD5); /* osc freq */
- 212:Core/Src/bsp_stm32.c ****   oled_write_cmd(0x80);
- 213:Core/Src/bsp_stm32.c ****   oled_write_cmd(0xD9); /* pre-charge */
- 214:Core/Src/bsp_stm32.c ****   oled_write_cmd(0xF1);
- 215:Core/Src/bsp_stm32.c ****   oled_write_cmd(0xDA); /* com pins */
- 216:Core/Src/bsp_stm32.c ****   oled_write_cmd(0x12);
- 217:Core/Src/bsp_stm32.c ****   oled_write_cmd(0xDB); /* vcomh */
- 218:Core/Src/bsp_stm32.c ****   oled_write_cmd(0x40);
- 219:Core/Src/bsp_stm32.c ****   oled_write_cmd(0x8D); /* charge pump */
- 220:Core/Src/bsp_stm32.c ****   oled_write_cmd(0x14);
- 221:Core/Src/bsp_stm32.c ****   oled_write_cmd(0xAF); /* Display ON */
- 222:Core/Src/bsp_stm32.c **** }
- 223:Core/Src/bsp_stm32.c **** 
- 224:Core/Src/bsp_stm32.c **** void BSP_Lcd_Init(void) {
- 225:Core/Src/bsp_stm32.c ****   oled_basic_init();
- 226:Core/Src/bsp_stm32.c ****   memset(s_oledFront, 0, sizeof(s_oledFront));
- 227:Core/Src/bsp_stm32.c ****   memset(s_oledBack, 0, sizeof(s_oledBack));
- 228:Core/Src/bsp_stm32.c ****   s_oledDirtyMask = 0xFFu;
- 229:Core/Src/bsp_stm32.c ****   oled_flush_all();
- 230:Core/Src/bsp_stm32.c **** }
- 231:Core/Src/bsp_stm32.c **** 
- 232:Core/Src/bsp_stm32.c **** void BSP_Lcd_PrintLine(uint8_t row, const char* text) {
- 233:Core/Src/bsp_stm32.c ****   if (row >= OLED_PAGES)
- 234:Core/Src/bsp_stm32.c ****   {
- 235:Core/Src/bsp_stm32.c ****     return;
-ARM GAS  /tmp/cc36Cegq.s 			page 7
+  97              		.loc 1 23 3 view .LVU10
+  98 0002 FFF7FEFF 		bl	BSP_Oled_Init
+  99              	.LVL4:
+  24:Core/Src/bsp_stm32.c **** }
+ 100              		.loc 1 24 1 is_stmt 0 view .LVU11
+ 101 0006 08BD     		pop	{r3, pc}
+ 102              		.cfi_endproc
+ 103              	.LFE67:
+ 105              		.section	.text.BSP_Lcd_PrintLine,"ax",%progbits
+ 106              		.align	1
+ 107              		.global	BSP_Lcd_PrintLine
+ 108              		.syntax unified
+ 109              		.thumb
+ 110              		.thumb_func
+ 111              		.fpu softvfp
+ 113              	BSP_Lcd_PrintLine:
+ 114              	.LVL5:
+ 115              	.LFB68:
+  25:Core/Src/bsp_stm32.c **** 
+  26:Core/Src/bsp_stm32.c **** void BSP_Lcd_PrintLine(uint8_t row, const char *text)
+  27:Core/Src/bsp_stm32.c **** {
+ 116              		.loc 1 27 1 is_stmt 1 view -0
+ 117              		.cfi_startproc
+ 118              		@ args = 0, pretend = 0, frame = 0
+ 119              		@ frame_needed = 0, uses_anonymous_args = 0
+ 120              		.loc 1 27 1 is_stmt 0 view .LVU13
+ 121 0000 08B5     		push	{r3, lr}
+ 122              	.LCFI2:
+ 123              		.cfi_def_cfa_offset 8
+ 124              		.cfi_offset 3, -8
+ 125              		.cfi_offset 14, -4
+  28:Core/Src/bsp_stm32.c ****   BSP_Oled_PrintLine(row, text);
+ 126              		.loc 1 28 3 is_stmt 1 view .LVU14
+ 127 0002 FFF7FEFF 		bl	BSP_Oled_PrintLine
+ 128              	.LVL6:
+  29:Core/Src/bsp_stm32.c **** }
+ 129              		.loc 1 29 1 is_stmt 0 view .LVU15
+ 130 0006 08BD     		pop	{r3, pc}
+ 131              		.cfi_endproc
+ 132              	.LFE68:
+ 134              		.section	.text.BSP_Keys_Init,"ax",%progbits
+ 135              		.align	1
+ 136              		.global	BSP_Keys_Init
+ 137              		.syntax unified
+ 138              		.thumb
+ 139              		.thumb_func
+ 140              		.fpu softvfp
+ 142              	BSP_Keys_Init:
+ 143              	.LFB69:
+  30:Core/Src/bsp_stm32.c **** 
+  31:Core/Src/bsp_stm32.c **** void BSP_Keys_Init(void)
+  32:Core/Src/bsp_stm32.c **** {
+ 144              		.loc 1 32 1 is_stmt 1 view -0
+ 145              		.cfi_startproc
+ 146              		@ args = 0, pretend = 0, frame = 0
+ 147              		@ frame_needed = 0, uses_anonymous_args = 0
+ 148 0000 08B5     		push	{r3, lr}
+ARM GAS  /tmp/cchWBekZ.s 			page 4
 
 
- 236:Core/Src/bsp_stm32.c ****   }
- 237:Core/Src/bsp_stm32.c **** 
- 238:Core/Src/bsp_stm32.c ****   if (text == NULL)
- 239:Core/Src/bsp_stm32.c ****   {
- 240:Core/Src/bsp_stm32.c ****     text = "";
- 241:Core/Src/bsp_stm32.c ****   }
- 242:Core/Src/bsp_stm32.c **** 
- 243:Core/Src/bsp_stm32.c ****   oled_clear_page(row);
- 244:Core/Src/bsp_stm32.c **** 
- 245:Core/Src/bsp_stm32.c ****   uint8_t col = 0u;
- 246:Core/Src/bsp_stm32.c ****   while ((*text != '\0') && (col <= (OLED_WIDTH - 6u)))
- 247:Core/Src/bsp_stm32.c ****   {
- 248:Core/Src/bsp_stm32.c ****     const uint8_t *glyph = oled_font6x8_get(*text);
- 249:Core/Src/bsp_stm32.c ****     memcpy(&s_oledBack[row][col], glyph, 6u);
- 250:Core/Src/bsp_stm32.c ****     col = (uint8_t)(col + 6u);
- 251:Core/Src/bsp_stm32.c ****     text++;
- 252:Core/Src/bsp_stm32.c ****   }
- 253:Core/Src/bsp_stm32.c **** 
- 254:Core/Src/bsp_stm32.c ****   oled_mark_dirty_if_changed(row);
- 255:Core/Src/bsp_stm32.c ****   oled_flush_dirty_pages();
- 256:Core/Src/bsp_stm32.c **** }
- 257:Core/Src/bsp_stm32.c **** 
- 258:Core/Src/bsp_stm32.c **** /* ===== 键盘：利用 KEY_Rx / KEY_Cx 引脚做 4x4 矩阵扫描示例 ===== */
- 259:Core/Src/bsp_stm32.c **** 
- 260:Core/Src/bsp_stm32.c **** static bool s_last_pressed[4] = {false, false, false, false};
- 261:Core/Src/bsp_stm32.c **** 
- 262:Core/Src/bsp_stm32.c **** static KeyCode idx_to_keycode(int idx) {
- 109              		.loc 1 262 40 is_stmt 1 view -0
- 110              		.cfi_startproc
- 111              		@ args = 0, pretend = 0, frame = 0
- 112              		@ frame_needed = 0, uses_anonymous_args = 0
- 113              		@ link register save eliminated.
- 263:Core/Src/bsp_stm32.c ****   switch (idx) {
- 114              		.loc 1 263 3 view .LVU25
- 115 0000 0328     		cmp	r0, #3
- 116 0002 09D8     		bhi	.L12
- 117 0004 DFE800F0 		tbb	[pc, r0]
- 118              	.L14:
- 119 0008 02       		.byte	(.L17-.L14)/2
- 120 0009 0A       		.byte	(.L18-.L14)/2
- 121 000a 04       		.byte	(.L15-.L14)/2
- 122 000b 06       		.byte	(.L13-.L14)/2
- 123              		.p2align 1
- 124              	.L17:
- 125 000c 0120     		movs	r0, #1
- 126              	.LVL10:
- 127              		.loc 1 263 3 is_stmt 0 view .LVU26
- 128 000e 7047     		bx	lr
- 129              	.LVL11:
- 130              	.L15:
- 264:Core/Src/bsp_stm32.c ****     case 0: return KEY_UP;
- 265:Core/Src/bsp_stm32.c ****     case 1: return KEY_DOWN;
- 266:Core/Src/bsp_stm32.c ****     case 2: return KEY_OK;
- 131              		.loc 1 266 13 is_stmt 1 view .LVU27
- 132              		.loc 1 266 20 is_stmt 0 view .LVU28
- 133 0010 0320     		movs	r0, #3
- 134              	.LVL12:
-ARM GAS  /tmp/cc36Cegq.s 			page 8
+ 149              	.LCFI3:
+ 150              		.cfi_def_cfa_offset 8
+ 151              		.cfi_offset 3, -8
+ 152              		.cfi_offset 14, -4
+  33:Core/Src/bsp_stm32.c ****   BSP_KeysDrv_Init();
+ 153              		.loc 1 33 3 view .LVU17
+ 154 0002 FFF7FEFF 		bl	BSP_KeysDrv_Init
+ 155              	.LVL7:
+  34:Core/Src/bsp_stm32.c **** }
+ 156              		.loc 1 34 1 is_stmt 0 view .LVU18
+ 157 0006 08BD     		pop	{r3, pc}
+ 158              		.cfi_endproc
+ 159              	.LFE69:
+ 161              		.section	.text.BSP_Keys_GetEvent,"ax",%progbits
+ 162              		.align	1
+ 163              		.global	BSP_Keys_GetEvent
+ 164              		.syntax unified
+ 165              		.thumb
+ 166              		.thumb_func
+ 167              		.fpu softvfp
+ 169              	BSP_Keys_GetEvent:
+ 170              	.LVL8:
+ 171              	.LFB70:
+  35:Core/Src/bsp_stm32.c **** 
+  36:Core/Src/bsp_stm32.c **** bool BSP_Keys_GetEvent(KeyEvent *out_event)
+  37:Core/Src/bsp_stm32.c **** {
+ 172              		.loc 1 37 1 is_stmt 1 view -0
+ 173              		.cfi_startproc
+ 174              		@ args = 0, pretend = 0, frame = 0
+ 175              		@ frame_needed = 0, uses_anonymous_args = 0
+ 176              		.loc 1 37 1 is_stmt 0 view .LVU20
+ 177 0000 08B5     		push	{r3, lr}
+ 178              	.LCFI4:
+ 179              		.cfi_def_cfa_offset 8
+ 180              		.cfi_offset 3, -8
+ 181              		.cfi_offset 14, -4
+  38:Core/Src/bsp_stm32.c ****   return BSP_KeysDrv_GetEvent(out_event);
+ 182              		.loc 1 38 3 is_stmt 1 view .LVU21
+ 183              		.loc 1 38 10 is_stmt 0 view .LVU22
+ 184 0002 FFF7FEFF 		bl	BSP_KeysDrv_GetEvent
+ 185              	.LVL9:
+  39:Core/Src/bsp_stm32.c **** }
+ 186              		.loc 1 39 1 view .LVU23
+ 187 0006 08BD     		pop	{r3, pc}
+ 188              		.cfi_endproc
+ 189              	.LFE70:
+ 191              		.section	.text.BSP_Uart_Init,"ax",%progbits
+ 192              		.align	1
+ 193              		.global	BSP_Uart_Init
+ 194              		.syntax unified
+ 195              		.thumb
+ 196              		.thumb_func
+ 197              		.fpu softvfp
+ 199              	BSP_Uart_Init:
+ 200              	.LVL10:
+ 201              	.LFB71:
+  40:Core/Src/bsp_stm32.c **** 
+ARM GAS  /tmp/cchWBekZ.s 			page 5
 
 
- 135              		.loc 1 266 20 view .LVU29
- 136 0012 7047     		bx	lr
- 137              	.LVL13:
- 138              	.L13:
- 267:Core/Src/bsp_stm32.c ****     case 3: return KEY_BACK;
- 139              		.loc 1 267 13 is_stmt 1 view .LVU30
- 140              		.loc 1 267 20 is_stmt 0 view .LVU31
- 141 0014 0420     		movs	r0, #4
- 142              	.LVL14:
- 143              		.loc 1 267 20 view .LVU32
- 144 0016 7047     		bx	lr
- 145              	.LVL15:
- 146              	.L12:
- 268:Core/Src/bsp_stm32.c ****     default: return KEY_NONE;
- 147              		.loc 1 268 14 is_stmt 1 view .LVU33
- 148              		.loc 1 268 21 is_stmt 0 view .LVU34
- 149 0018 0020     		movs	r0, #0
- 150              	.LVL16:
- 151              		.loc 1 268 21 view .LVU35
- 152 001a 7047     		bx	lr
- 153              	.LVL17:
- 154              	.L18:
- 265:Core/Src/bsp_stm32.c ****     case 2: return KEY_OK;
- 155              		.loc 1 265 20 view .LVU36
- 156 001c 0220     		movs	r0, #2
- 157              	.LVL18:
- 269:Core/Src/bsp_stm32.c ****   }
- 270:Core/Src/bsp_stm32.c **** }
- 158              		.loc 1 270 1 view .LVU37
- 159 001e 7047     		bx	lr
- 160              		.cfi_endproc
- 161              	.LFE82:
- 163              		.section	.text.oled_clear_page,"ax",%progbits
- 164              		.align	1
- 165              		.syntax unified
- 166              		.thumb
- 167              		.thumb_func
- 168              		.fpu softvfp
- 170              	oled_clear_page:
- 171              	.LVL19:
- 172              	.LFB74:
- 133:Core/Src/bsp_stm32.c ****   if (page >= OLED_PAGES)
- 173              		.loc 1 133 1 is_stmt 1 view -0
- 174              		.cfi_startproc
- 175              		@ args = 0, pretend = 0, frame = 0
- 176              		@ frame_needed = 0, uses_anonymous_args = 0
- 134:Core/Src/bsp_stm32.c ****   {
- 177              		.loc 1 134 3 view .LVU39
- 134:Core/Src/bsp_stm32.c ****   {
- 178              		.loc 1 134 6 is_stmt 0 view .LVU40
- 179 0000 0728     		cmp	r0, #7
- 180 0002 00D9     		bls	.L25
- 181 0004 7047     		bx	lr
- 182              	.L25:
- 133:Core/Src/bsp_stm32.c ****   if (page >= OLED_PAGES)
- 183              		.loc 1 133 1 view .LVU41
- 184 0006 08B5     		push	{r3, lr}
-ARM GAS  /tmp/cc36Cegq.s 			page 9
+  41:Core/Src/bsp_stm32.c **** void BSP_Uart_Init(uint32_t baudrate)
+  42:Core/Src/bsp_stm32.c **** {
+ 202              		.loc 1 42 1 is_stmt 1 view -0
+ 203              		.cfi_startproc
+ 204              		@ args = 0, pretend = 0, frame = 0
+ 205              		@ frame_needed = 0, uses_anonymous_args = 0
+  43:Core/Src/bsp_stm32.c ****   if (huart1.Init.BaudRate != baudrate)
+ 206              		.loc 1 43 3 view .LVU25
+ 207              		.loc 1 43 18 is_stmt 0 view .LVU26
+ 208 0000 054A     		ldr	r2, .L21
+ 209 0002 5268     		ldr	r2, [r2, #4]
+ 210              		.loc 1 43 6 view .LVU27
+ 211 0004 8242     		cmp	r2, r0
+ 212 0006 00D1     		bne	.L20
+ 213 0008 7047     		bx	lr
+ 214              	.L20:
+  42:Core/Src/bsp_stm32.c ****   if (huart1.Init.BaudRate != baudrate)
+ 215              		.loc 1 42 1 view .LVU28
+ 216 000a 08B5     		push	{r3, lr}
+ 217              	.LCFI5:
+ 218              		.cfi_def_cfa_offset 8
+ 219              		.cfi_offset 3, -8
+ 220              		.cfi_offset 14, -4
+ 221 000c 0346     		mov	r3, r0
+  44:Core/Src/bsp_stm32.c ****   {
+  45:Core/Src/bsp_stm32.c ****     huart1.Init.BaudRate = baudrate;
+ 222              		.loc 1 45 5 is_stmt 1 view .LVU29
+ 223              		.loc 1 45 26 is_stmt 0 view .LVU30
+ 224 000e 0248     		ldr	r0, .L21
+ 225              	.LVL11:
+ 226              		.loc 1 45 26 view .LVU31
+ 227 0010 4360     		str	r3, [r0, #4]
+  46:Core/Src/bsp_stm32.c ****     (void)HAL_UART_Init(&huart1);
+ 228              		.loc 1 46 5 is_stmt 1 view .LVU32
+ 229              		.loc 1 46 11 is_stmt 0 view .LVU33
+ 230 0012 FFF7FEFF 		bl	HAL_UART_Init
+ 231              	.LVL12:
+  47:Core/Src/bsp_stm32.c ****   }
+  48:Core/Src/bsp_stm32.c **** }
+ 232              		.loc 1 48 1 view .LVU34
+ 233 0016 08BD     		pop	{r3, pc}
+ 234              	.L22:
+ 235              		.align	2
+ 236              	.L21:
+ 237 0018 00000000 		.word	huart1
+ 238              		.cfi_endproc
+ 239              	.LFE71:
+ 241              		.section	.text.BSP_Uart_Send,"ax",%progbits
+ 242              		.align	1
+ 243              		.global	BSP_Uart_Send
+ 244              		.syntax unified
+ 245              		.thumb
+ 246              		.thumb_func
+ 247              		.fpu softvfp
+ 249              	BSP_Uart_Send:
+ 250              	.LVL13:
+ 251              	.LFB72:
+ARM GAS  /tmp/cchWBekZ.s 			page 6
 
 
- 185              	.LCFI0:
- 186              		.cfi_def_cfa_offset 8
- 187              		.cfi_offset 3, -8
- 188              		.cfi_offset 14, -4
- 138:Core/Src/bsp_stm32.c **** }
- 189              		.loc 1 138 3 is_stmt 1 view .LVU42
- 190 0008 8022     		movs	r2, #128
- 191 000a 0021     		movs	r1, #0
- 192 000c 024B     		ldr	r3, .L26
- 193 000e 03EBC010 		add	r0, r3, r0, lsl #7
- 194              	.LVL20:
- 138:Core/Src/bsp_stm32.c **** }
- 195              		.loc 1 138 3 is_stmt 0 view .LVU43
- 196 0012 FFF7FEFF 		bl	memset
- 197              	.LVL21:
- 139:Core/Src/bsp_stm32.c **** 
- 198              		.loc 1 139 1 view .LVU44
- 199 0016 08BD     		pop	{r3, pc}
- 200              	.L27:
- 201              		.align	2
- 202              	.L26:
- 203 0018 00000000 		.word	.LANCHOR1
- 204              		.cfi_endproc
- 205              	.LFE74:
- 207              		.section	.text.oled_write_cmd,"ax",%progbits
- 208              		.align	1
- 209              		.syntax unified
- 210              		.thumb
- 211              		.thumb_func
- 212              		.fpu softvfp
- 214              	oled_write_cmd:
- 215              	.LVL22:
- 216              	.LFB70:
-  91:Core/Src/bsp_stm32.c ****   uint8_t tx[2] = {OLED_CTRL_CMD, cmd};
- 217              		.loc 1 91 1 is_stmt 1 view -0
- 218              		.cfi_startproc
- 219              		@ args = 0, pretend = 0, frame = 8
- 220              		@ frame_needed = 0, uses_anonymous_args = 0
-  91:Core/Src/bsp_stm32.c ****   uint8_t tx[2] = {OLED_CTRL_CMD, cmd};
- 221              		.loc 1 91 1 is_stmt 0 view .LVU46
- 222 0000 00B5     		push	{lr}
- 223              	.LCFI1:
- 224              		.cfi_def_cfa_offset 4
- 225              		.cfi_offset 14, -4
- 226 0002 85B0     		sub	sp, sp, #20
- 227              	.LCFI2:
- 228              		.cfi_def_cfa_offset 24
-  92:Core/Src/bsp_stm32.c ****   (void)HAL_I2C_Master_Transmit(&hi2c2, OLED_I2C_ADDR, tx, 2U, 20U);
- 229              		.loc 1 92 3 is_stmt 1 view .LVU47
-  92:Core/Src/bsp_stm32.c ****   (void)HAL_I2C_Master_Transmit(&hi2c2, OLED_I2C_ADDR, tx, 2U, 20U);
- 230              		.loc 1 92 11 is_stmt 0 view .LVU48
- 231 0004 0023     		movs	r3, #0
- 232 0006 8DF80C30 		strb	r3, [sp, #12]
- 233 000a 8DF80D00 		strb	r0, [sp, #13]
-  93:Core/Src/bsp_stm32.c **** }
- 234              		.loc 1 93 3 is_stmt 1 view .LVU49
-  93:Core/Src/bsp_stm32.c **** }
-ARM GAS  /tmp/cc36Cegq.s 			page 10
+  49:Core/Src/bsp_stm32.c **** 
+  50:Core/Src/bsp_stm32.c **** size_t BSP_Uart_Send(const uint8_t *data, size_t len)
+  51:Core/Src/bsp_stm32.c **** {
+ 252              		.loc 1 51 1 is_stmt 1 view -0
+ 253              		.cfi_startproc
+ 254              		@ args = 0, pretend = 0, frame = 0
+ 255              		@ frame_needed = 0, uses_anonymous_args = 0
+ 256              		.loc 1 51 1 is_stmt 0 view .LVU36
+ 257 0000 10B5     		push	{r4, lr}
+ 258              	.LCFI6:
+ 259              		.cfi_def_cfa_offset 8
+ 260              		.cfi_offset 4, -8
+ 261              		.cfi_offset 14, -4
+  52:Core/Src/bsp_stm32.c ****   if ((data == NULL) || (len == 0u))
+ 262              		.loc 1 52 3 is_stmt 1 view .LVU37
+ 263              		.loc 1 52 6 is_stmt 0 view .LVU38
+ 264 0002 68B1     		cbz	r0, .L25
+ 265 0004 0C46     		mov	r4, r1
+ 266 0006 0146     		mov	r1, r0
+ 267              	.LVL14:
+ 268              		.loc 1 52 22 discriminator 1 view .LVU39
+ 269 0008 0CB9     		cbnz	r4, .L27
+ 270              	.LVL15:
+ 271              	.L24:
+  53:Core/Src/bsp_stm32.c ****   {
+  54:Core/Src/bsp_stm32.c ****     return 0u;
+  55:Core/Src/bsp_stm32.c ****   }
+  56:Core/Src/bsp_stm32.c **** 
+  57:Core/Src/bsp_stm32.c ****   if (HAL_UART_Transmit(&huart1, (uint8_t *)data, (uint16_t)len, 100u) == HAL_OK)
+  58:Core/Src/bsp_stm32.c ****   {
+  59:Core/Src/bsp_stm32.c ****     return len;
+  60:Core/Src/bsp_stm32.c ****   }
+  61:Core/Src/bsp_stm32.c **** 
+  62:Core/Src/bsp_stm32.c ****   return 0u;
+  63:Core/Src/bsp_stm32.c **** }
+ 272              		.loc 1 63 1 view .LVU40
+ 273 000a 2046     		mov	r0, r4
+ 274 000c 10BD     		pop	{r4, pc}
+ 275              	.LVL16:
+ 276              	.L27:
+  57:Core/Src/bsp_stm32.c ****   {
+ 277              		.loc 1 57 3 is_stmt 1 view .LVU41
+  57:Core/Src/bsp_stm32.c ****   {
+ 278              		.loc 1 57 7 is_stmt 0 view .LVU42
+ 279 000e 6423     		movs	r3, #100
+ 280 0010 A2B2     		uxth	r2, r4
+ 281 0012 0448     		ldr	r0, .L28
+ 282              	.LVL17:
+  57:Core/Src/bsp_stm32.c ****   {
+ 283              		.loc 1 57 7 view .LVU43
+ 284 0014 FFF7FEFF 		bl	HAL_UART_Transmit
+ 285              	.LVL18:
+  57:Core/Src/bsp_stm32.c ****   {
+ 286              		.loc 1 57 6 view .LVU44
+ 287 0018 0028     		cmp	r0, #0
+ 288 001a F6D0     		beq	.L24
+  62:Core/Src/bsp_stm32.c **** }
+ARM GAS  /tmp/cchWBekZ.s 			page 7
 
 
- 235              		.loc 1 93 9 is_stmt 0 view .LVU50
- 236 000e 1423     		movs	r3, #20
- 237 0010 0093     		str	r3, [sp]
- 238 0012 0223     		movs	r3, #2
- 239 0014 03AA     		add	r2, sp, #12
- 240 0016 7821     		movs	r1, #120
- 241 0018 0248     		ldr	r0, .L30
- 242              	.LVL23:
-  93:Core/Src/bsp_stm32.c **** }
- 243              		.loc 1 93 9 view .LVU51
- 244 001a FFF7FEFF 		bl	HAL_I2C_Master_Transmit
- 245              	.LVL24:
-  94:Core/Src/bsp_stm32.c **** 
- 246              		.loc 1 94 1 view .LVU52
- 247 001e 05B0     		add	sp, sp, #20
- 248              	.LCFI3:
- 249              		.cfi_def_cfa_offset 4
- 250              		@ sp needed
- 251 0020 5DF804FB 		ldr	pc, [sp], #4
- 252              	.L31:
- 253              		.align	2
- 254              	.L30:
- 255 0024 00000000 		.word	hi2c2
- 256              		.cfi_endproc
- 257              	.LFE70:
- 259              		.section	.text.oled_basic_init,"ax",%progbits
- 260              		.align	1
- 261              		.syntax unified
- 262              		.thumb
- 263              		.thumb_func
- 264              		.fpu softvfp
- 266              	oled_basic_init:
- 267              	.LFB79:
- 192:Core/Src/bsp_stm32.c ****   /* SSD1306 常用初始化序列（128x64） */
- 268              		.loc 1 192 1 is_stmt 1 view -0
- 269              		.cfi_startproc
- 270              		@ args = 0, pretend = 0, frame = 0
- 271              		@ frame_needed = 0, uses_anonymous_args = 0
- 272 0000 08B5     		push	{r3, lr}
- 273              	.LCFI4:
- 274              		.cfi_def_cfa_offset 8
- 275              		.cfi_offset 3, -8
- 276              		.cfi_offset 14, -4
- 194:Core/Src/bsp_stm32.c ****   oled_write_cmd(0x20); /* Memory Addressing Mode */
- 277              		.loc 1 194 3 view .LVU54
- 278 0002 AE20     		movs	r0, #174
- 279 0004 FFF7FEFF 		bl	oled_write_cmd
- 280              	.LVL25:
- 195:Core/Src/bsp_stm32.c ****   oled_write_cmd(0x00); /* Horizontal Addressing Mode */
- 281              		.loc 1 195 3 view .LVU55
- 282 0008 2020     		movs	r0, #32
- 283 000a FFF7FEFF 		bl	oled_write_cmd
- 284              	.LVL26:
- 196:Core/Src/bsp_stm32.c ****   oled_write_cmd(0xB0); /* Page Start Address */
- 285              		.loc 1 196 3 view .LVU56
- 286 000e 0020     		movs	r0, #0
- 287 0010 FFF7FEFF 		bl	oled_write_cmd
-ARM GAS  /tmp/cc36Cegq.s 			page 11
-
-
- 288              	.LVL27:
- 197:Core/Src/bsp_stm32.c ****   oled_write_cmd(0xC8); /* COM Output Scan Direction remapped */
- 289              		.loc 1 197 3 view .LVU57
- 290 0014 B020     		movs	r0, #176
- 291 0016 FFF7FEFF 		bl	oled_write_cmd
- 292              	.LVL28:
- 198:Core/Src/bsp_stm32.c ****   oled_write_cmd(0x00); /* low column */
- 293              		.loc 1 198 3 view .LVU58
- 294 001a C820     		movs	r0, #200
- 295 001c FFF7FEFF 		bl	oled_write_cmd
- 296              	.LVL29:
- 199:Core/Src/bsp_stm32.c ****   oled_write_cmd(0x10); /* high column */
- 297              		.loc 1 199 3 view .LVU59
- 298 0020 0020     		movs	r0, #0
- 299 0022 FFF7FEFF 		bl	oled_write_cmd
- 300              	.LVL30:
- 200:Core/Src/bsp_stm32.c ****   oled_write_cmd(0x40); /* start line */
- 301              		.loc 1 200 3 view .LVU60
- 302 0026 1020     		movs	r0, #16
- 303 0028 FFF7FEFF 		bl	oled_write_cmd
- 304              	.LVL31:
- 201:Core/Src/bsp_stm32.c ****   oled_write_cmd(0x81); /* contrast */
- 305              		.loc 1 201 3 view .LVU61
- 306 002c 4020     		movs	r0, #64
- 307 002e FFF7FEFF 		bl	oled_write_cmd
- 308              	.LVL32:
- 202:Core/Src/bsp_stm32.c ****   oled_write_cmd(0x7F);
- 309              		.loc 1 202 3 view .LVU62
- 310 0032 8120     		movs	r0, #129
- 311 0034 FFF7FEFF 		bl	oled_write_cmd
- 312              	.LVL33:
- 203:Core/Src/bsp_stm32.c ****   oled_write_cmd(0xA1); /* segment remap */
- 313              		.loc 1 203 3 view .LVU63
- 314 0038 7F20     		movs	r0, #127
- 315 003a FFF7FEFF 		bl	oled_write_cmd
- 316              	.LVL34:
- 204:Core/Src/bsp_stm32.c ****   oled_write_cmd(0xA6); /* normal display */
- 317              		.loc 1 204 3 view .LVU64
- 318 003e A120     		movs	r0, #161
- 319 0040 FFF7FEFF 		bl	oled_write_cmd
- 320              	.LVL35:
- 205:Core/Src/bsp_stm32.c ****   oled_write_cmd(0xA8); /* multiplex */
- 321              		.loc 1 205 3 view .LVU65
- 322 0044 A620     		movs	r0, #166
- 323 0046 FFF7FEFF 		bl	oled_write_cmd
- 324              	.LVL36:
- 206:Core/Src/bsp_stm32.c ****   oled_write_cmd(0x3F);
- 325              		.loc 1 206 3 view .LVU66
- 326 004a A820     		movs	r0, #168
- 327 004c FFF7FEFF 		bl	oled_write_cmd
- 328              	.LVL37:
- 207:Core/Src/bsp_stm32.c ****   oled_write_cmd(0xA4); /* display follows RAM */
- 329              		.loc 1 207 3 view .LVU67
- 330 0050 3F20     		movs	r0, #63
- 331 0052 FFF7FEFF 		bl	oled_write_cmd
- 332              	.LVL38:
- 208:Core/Src/bsp_stm32.c ****   oled_write_cmd(0xD3); /* display offset */
-ARM GAS  /tmp/cc36Cegq.s 			page 12
-
-
- 333              		.loc 1 208 3 view .LVU68
- 334 0056 A420     		movs	r0, #164
- 335 0058 FFF7FEFF 		bl	oled_write_cmd
- 336              	.LVL39:
- 209:Core/Src/bsp_stm32.c ****   oled_write_cmd(0x00);
- 337              		.loc 1 209 3 view .LVU69
- 338 005c D320     		movs	r0, #211
- 339 005e FFF7FEFF 		bl	oled_write_cmd
- 340              	.LVL40:
- 210:Core/Src/bsp_stm32.c ****   oled_write_cmd(0xD5); /* osc freq */
- 341              		.loc 1 210 3 view .LVU70
- 342 0062 0020     		movs	r0, #0
- 343 0064 FFF7FEFF 		bl	oled_write_cmd
- 344              	.LVL41:
- 211:Core/Src/bsp_stm32.c ****   oled_write_cmd(0x80);
- 345              		.loc 1 211 3 view .LVU71
- 346 0068 D520     		movs	r0, #213
- 347 006a FFF7FEFF 		bl	oled_write_cmd
- 348              	.LVL42:
- 212:Core/Src/bsp_stm32.c ****   oled_write_cmd(0xD9); /* pre-charge */
- 349              		.loc 1 212 3 view .LVU72
- 350 006e 8020     		movs	r0, #128
- 351 0070 FFF7FEFF 		bl	oled_write_cmd
- 352              	.LVL43:
- 213:Core/Src/bsp_stm32.c ****   oled_write_cmd(0xF1);
- 353              		.loc 1 213 3 view .LVU73
- 354 0074 D920     		movs	r0, #217
- 355 0076 FFF7FEFF 		bl	oled_write_cmd
- 356              	.LVL44:
- 214:Core/Src/bsp_stm32.c ****   oled_write_cmd(0xDA); /* com pins */
- 357              		.loc 1 214 3 view .LVU74
- 358 007a F120     		movs	r0, #241
- 359 007c FFF7FEFF 		bl	oled_write_cmd
- 360              	.LVL45:
- 215:Core/Src/bsp_stm32.c ****   oled_write_cmd(0x12);
- 361              		.loc 1 215 3 view .LVU75
- 362 0080 DA20     		movs	r0, #218
- 363 0082 FFF7FEFF 		bl	oled_write_cmd
- 364              	.LVL46:
- 216:Core/Src/bsp_stm32.c ****   oled_write_cmd(0xDB); /* vcomh */
- 365              		.loc 1 216 3 view .LVU76
- 366 0086 1220     		movs	r0, #18
- 367 0088 FFF7FEFF 		bl	oled_write_cmd
- 368              	.LVL47:
- 217:Core/Src/bsp_stm32.c ****   oled_write_cmd(0x40);
- 369              		.loc 1 217 3 view .LVU77
- 370 008c DB20     		movs	r0, #219
- 371 008e FFF7FEFF 		bl	oled_write_cmd
- 372              	.LVL48:
- 218:Core/Src/bsp_stm32.c ****   oled_write_cmd(0x8D); /* charge pump */
- 373              		.loc 1 218 3 view .LVU78
- 374 0092 4020     		movs	r0, #64
- 375 0094 FFF7FEFF 		bl	oled_write_cmd
- 376              	.LVL49:
- 219:Core/Src/bsp_stm32.c ****   oled_write_cmd(0x14);
- 377              		.loc 1 219 3 view .LVU79
- 378 0098 8D20     		movs	r0, #141
-ARM GAS  /tmp/cc36Cegq.s 			page 13
-
-
- 379 009a FFF7FEFF 		bl	oled_write_cmd
- 380              	.LVL50:
- 220:Core/Src/bsp_stm32.c ****   oled_write_cmd(0xAF); /* Display ON */
- 381              		.loc 1 220 3 view .LVU80
- 382 009e 1420     		movs	r0, #20
- 383 00a0 FFF7FEFF 		bl	oled_write_cmd
- 384              	.LVL51:
- 221:Core/Src/bsp_stm32.c **** }
- 385              		.loc 1 221 3 view .LVU81
- 386 00a4 AF20     		movs	r0, #175
- 387 00a6 FFF7FEFF 		bl	oled_write_cmd
- 388              	.LVL52:
- 222:Core/Src/bsp_stm32.c **** 
- 389              		.loc 1 222 1 is_stmt 0 view .LVU82
- 390 00aa 08BD     		pop	{r3, pc}
- 391              		.cfi_endproc
- 392              	.LFE79:
- 394              		.section	.text.oled_set_cursor,"ax",%progbits
- 395              		.align	1
- 396              		.syntax unified
- 397              		.thumb
- 398              		.thumb_func
- 399              		.fpu softvfp
- 401              	oled_set_cursor:
- 402              	.LVL53:
- 403              	.LFB71:
-  97:Core/Src/bsp_stm32.c ****   oled_write_cmd((uint8_t)(0xB0u + (page & 0x07u)));
- 404              		.loc 1 97 1 is_stmt 1 view -0
- 405              		.cfi_startproc
- 406              		@ args = 0, pretend = 0, frame = 0
- 407              		@ frame_needed = 0, uses_anonymous_args = 0
-  97:Core/Src/bsp_stm32.c ****   oled_write_cmd((uint8_t)(0xB0u + (page & 0x07u)));
- 408              		.loc 1 97 1 is_stmt 0 view .LVU84
- 409 0000 10B5     		push	{r4, lr}
- 410              	.LCFI5:
- 411              		.cfi_def_cfa_offset 8
- 412              		.cfi_offset 4, -8
- 413              		.cfi_offset 14, -4
- 414 0002 0C46     		mov	r4, r1
-  98:Core/Src/bsp_stm32.c ****   oled_write_cmd((uint8_t)(0x00u + (column & 0x0Fu)));
- 415              		.loc 1 98 3 is_stmt 1 view .LVU85
-  98:Core/Src/bsp_stm32.c ****   oled_write_cmd((uint8_t)(0x00u + (column & 0x0Fu)));
- 416              		.loc 1 98 42 is_stmt 0 view .LVU86
- 417 0004 00F00700 		and	r0, r0, #7
- 418              	.LVL54:
-  98:Core/Src/bsp_stm32.c ****   oled_write_cmd((uint8_t)(0x00u + (column & 0x0Fu)));
- 419              		.loc 1 98 3 view .LVU87
- 420 0008 5038     		subs	r0, r0, #80
- 421 000a C0B2     		uxtb	r0, r0
- 422 000c FFF7FEFF 		bl	oled_write_cmd
- 423              	.LVL55:
-  99:Core/Src/bsp_stm32.c ****   oled_write_cmd((uint8_t)(0x10u + ((column >> 4) & 0x0Fu)));
- 424              		.loc 1 99 3 is_stmt 1 view .LVU88
- 425 0010 04F00F00 		and	r0, r4, #15
- 426 0014 FFF7FEFF 		bl	oled_write_cmd
- 427              	.LVL56:
- 100:Core/Src/bsp_stm32.c **** }
-ARM GAS  /tmp/cc36Cegq.s 			page 14
-
-
- 428              		.loc 1 100 3 view .LVU89
- 429 0018 2009     		lsrs	r0, r4, #4
- 430 001a 1030     		adds	r0, r0, #16
- 431 001c FFF7FEFF 		bl	oled_write_cmd
- 432              	.LVL57:
- 101:Core/Src/bsp_stm32.c **** 
- 433              		.loc 1 101 1 is_stmt 0 view .LVU90
- 434 0020 10BD     		pop	{r4, pc}
- 435              		.cfi_endproc
- 436              	.LFE71:
- 438              		.section	.text.oled_write_data,"ax",%progbits
- 439              		.align	1
- 440              		.syntax unified
- 441              		.thumb
- 442              		.thumb_func
- 443              		.fpu softvfp
- 445              	oled_write_data:
- 446              	.LVL58:
- 447              	.LFB72:
- 104:Core/Src/bsp_stm32.c ****   uint8_t tx[1U + OLED_CHUNK_SIZE];
- 448              		.loc 1 104 1 is_stmt 1 view -0
- 449              		.cfi_startproc
- 450              		@ args = 0, pretend = 0, frame = 24
- 451              		@ frame_needed = 0, uses_anonymous_args = 0
- 104:Core/Src/bsp_stm32.c ****   uint8_t tx[1U + OLED_CHUNK_SIZE];
- 452              		.loc 1 104 1 is_stmt 0 view .LVU92
- 453 0000 70B5     		push	{r4, r5, r6, lr}
- 454              	.LCFI6:
- 455              		.cfi_def_cfa_offset 16
- 456              		.cfi_offset 4, -16
- 457              		.cfi_offset 5, -12
- 458              		.cfi_offset 6, -8
- 459              		.cfi_offset 14, -4
- 460 0002 88B0     		sub	sp, sp, #32
- 461              	.LCFI7:
- 462              		.cfi_def_cfa_offset 48
- 463 0004 0646     		mov	r6, r0
- 464 0006 0C46     		mov	r4, r1
- 105:Core/Src/bsp_stm32.c ****   tx[0] = OLED_CTRL_DATA;
- 465              		.loc 1 105 3 is_stmt 1 view .LVU93
- 106:Core/Src/bsp_stm32.c **** 
- 466              		.loc 1 106 3 view .LVU94
- 106:Core/Src/bsp_stm32.c **** 
- 467              		.loc 1 106 9 is_stmt 0 view .LVU95
- 468 0008 4023     		movs	r3, #64
- 469 000a 8DF80C30 		strb	r3, [sp, #12]
- 108:Core/Src/bsp_stm32.c ****   {
- 470              		.loc 1 108 3 is_stmt 1 view .LVU96
- 108:Core/Src/bsp_stm32.c ****   {
- 471              		.loc 1 108 9 is_stmt 0 view .LVU97
- 472 000e 15E0     		b	.L37
- 473              	.LVL59:
- 474              	.L38:
- 475              	.LBB3:
- 110:Core/Src/bsp_stm32.c ****     memcpy(&tx[1], data, chunk);
- 476              		.loc 1 110 5 is_stmt 1 view .LVU98
- 110:Core/Src/bsp_stm32.c ****     memcpy(&tx[1], data, chunk);
-ARM GAS  /tmp/cc36Cegq.s 			page 15
-
-
- 477              		.loc 1 110 14 is_stmt 0 view .LVU99
- 478 0010 2546     		mov	r5, r4
- 479 0012 102C     		cmp	r4, #16
- 480 0014 28BF     		it	cs
- 481 0016 1025     		movcs	r5, #16
- 482              	.LVL60:
- 111:Core/Src/bsp_stm32.c ****     (void)HAL_I2C_Master_Transmit(&hi2c2, OLED_I2C_ADDR, tx, (uint16_t)(chunk + 1u), 20U);
- 483              		.loc 1 111 5 is_stmt 1 view .LVU100
- 484 0018 2A46     		mov	r2, r5
- 485 001a 3146     		mov	r1, r6
- 486 001c 0DF10D00 		add	r0, sp, #13
- 487 0020 FFF7FEFF 		bl	memcpy
- 488              	.LVL61:
- 112:Core/Src/bsp_stm32.c **** 
- 489              		.loc 1 112 5 view .LVU101
- 112:Core/Src/bsp_stm32.c **** 
- 490              		.loc 1 112 11 is_stmt 0 view .LVU102
- 491 0024 6B1C     		adds	r3, r5, #1
- 492 0026 1422     		movs	r2, #20
- 493 0028 0092     		str	r2, [sp]
- 494 002a 9BB2     		uxth	r3, r3
- 495 002c 03AA     		add	r2, sp, #12
- 496 002e 7821     		movs	r1, #120
- 497 0030 0448     		ldr	r0, .L40
- 498 0032 FFF7FEFF 		bl	HAL_I2C_Master_Transmit
- 499              	.LVL62:
- 114:Core/Src/bsp_stm32.c ****     len = (uint16_t)(len - chunk);
- 500              		.loc 1 114 5 is_stmt 1 view .LVU103
- 114:Core/Src/bsp_stm32.c ****     len = (uint16_t)(len - chunk);
- 501              		.loc 1 114 10 is_stmt 0 view .LVU104
- 502 0036 2E44     		add	r6, r6, r5
- 503              	.LVL63:
- 115:Core/Src/bsp_stm32.c ****   }
- 504              		.loc 1 115 5 is_stmt 1 view .LVU105
- 115:Core/Src/bsp_stm32.c ****   }
- 505              		.loc 1 115 9 is_stmt 0 view .LVU106
- 506 0038 641B     		subs	r4, r4, r5
- 507              	.LVL64:
- 115:Core/Src/bsp_stm32.c ****   }
- 508              		.loc 1 115 9 view .LVU107
- 509 003a A4B2     		uxth	r4, r4
- 510              	.LVL65:
- 511              	.L37:
- 115:Core/Src/bsp_stm32.c ****   }
- 512              		.loc 1 115 9 view .LVU108
- 513              	.LBE3:
- 108:Core/Src/bsp_stm32.c ****   {
- 514              		.loc 1 108 9 is_stmt 1 view .LVU109
- 515 003c 002C     		cmp	r4, #0
- 516 003e E7D1     		bne	.L38
- 117:Core/Src/bsp_stm32.c **** 
- 517              		.loc 1 117 1 is_stmt 0 view .LVU110
- 518 0040 08B0     		add	sp, sp, #32
- 519              	.LCFI8:
- 520              		.cfi_def_cfa_offset 16
- 521              		@ sp needed
- 522 0042 70BD     		pop	{r4, r5, r6, pc}
-ARM GAS  /tmp/cc36Cegq.s 			page 16
-
-
- 523              	.LVL66:
- 524              	.L41:
- 117:Core/Src/bsp_stm32.c **** 
- 525              		.loc 1 117 1 view .LVU111
- 526              		.align	2
- 527              	.L40:
- 528 0044 00000000 		.word	hi2c2
- 529              		.cfi_endproc
- 530              	.LFE72:
- 532              		.section	.text.oled_flush_page,"ax",%progbits
- 533              		.align	1
- 534              		.syntax unified
- 535              		.thumb
- 536              		.thumb_func
- 537              		.fpu softvfp
- 539              	oled_flush_page:
- 540              	.LVL67:
- 541              	.LFB73:
- 120:Core/Src/bsp_stm32.c ****   if (page >= OLED_PAGES)
- 542              		.loc 1 120 1 is_stmt 1 view -0
- 543              		.cfi_startproc
- 544              		@ args = 0, pretend = 0, frame = 0
- 545              		@ frame_needed = 0, uses_anonymous_args = 0
- 121:Core/Src/bsp_stm32.c ****   {
- 546              		.loc 1 121 3 view .LVU113
- 121:Core/Src/bsp_stm32.c ****   {
- 547              		.loc 1 121 6 is_stmt 0 view .LVU114
- 548 0000 0728     		cmp	r0, #7
- 549 0002 00D9     		bls	.L48
- 550 0004 7047     		bx	lr
- 551              	.L48:
- 120:Core/Src/bsp_stm32.c ****   if (page >= OLED_PAGES)
- 552              		.loc 1 120 1 view .LVU115
- 553 0006 70B5     		push	{r4, r5, r6, lr}
- 554              	.LCFI9:
- 555              		.cfi_def_cfa_offset 16
- 556              		.cfi_offset 4, -16
- 557              		.cfi_offset 5, -12
- 558              		.cfi_offset 6, -8
- 559              		.cfi_offset 14, -4
- 560 0008 0446     		mov	r4, r0
- 126:Core/Src/bsp_stm32.c ****   oled_write_data(s_oledBack[page], OLED_WIDTH);
- 561              		.loc 1 126 3 is_stmt 1 view .LVU116
- 562 000a 0021     		movs	r1, #0
- 563 000c FFF7FEFF 		bl	oled_set_cursor
- 564              	.LVL68:
- 127:Core/Src/bsp_stm32.c ****   memcpy(s_oledFront[page], s_oledBack[page], OLED_WIDTH);
- 565              		.loc 1 127 3 view .LVU117
- 127:Core/Src/bsp_stm32.c ****   memcpy(s_oledFront[page], s_oledBack[page], OLED_WIDTH);
- 566              		.loc 1 127 29 is_stmt 0 view .LVU118
- 567 0010 E601     		lsls	r6, r4, #7
- 568 0012 0A4D     		ldr	r5, .L49
- 569 0014 05EBC415 		add	r5, r5, r4, lsl #7
- 127:Core/Src/bsp_stm32.c ****   memcpy(s_oledFront[page], s_oledBack[page], OLED_WIDTH);
- 570              		.loc 1 127 3 view .LVU119
- 571 0018 8021     		movs	r1, #128
- 572 001a 2846     		mov	r0, r5
-ARM GAS  /tmp/cc36Cegq.s 			page 17
-
-
- 573 001c FFF7FEFF 		bl	oled_write_data
- 574              	.LVL69:
- 128:Core/Src/bsp_stm32.c ****   s_oledDirtyMask = (uint8_t)(s_oledDirtyMask & (uint8_t)~(1u << page));
- 575              		.loc 1 128 3 is_stmt 1 view .LVU120
- 576 0020 8022     		movs	r2, #128
- 577 0022 2946     		mov	r1, r5
- 578 0024 0648     		ldr	r0, .L49+4
- 579 0026 3044     		add	r0, r0, r6
- 580 0028 FFF7FEFF 		bl	memcpy
- 581              	.LVL70:
- 129:Core/Src/bsp_stm32.c **** }
- 582              		.loc 1 129 3 view .LVU121
- 129:Core/Src/bsp_stm32.c **** }
- 583              		.loc 1 129 63 is_stmt 0 view .LVU122
- 584 002c 0120     		movs	r0, #1
- 585 002e A040     		lsls	r0, r0, r4
- 129:Core/Src/bsp_stm32.c **** }
- 586              		.loc 1 129 21 view .LVU123
- 587 0030 044B     		ldr	r3, .L49+8
- 588 0032 1C78     		ldrb	r4, [r3]	@ zero_extendqisi2
- 589 0034 24EA0004 		bic	r4, r4, r0
- 129:Core/Src/bsp_stm32.c **** }
- 590              		.loc 1 129 19 view .LVU124
- 591 0038 1C70     		strb	r4, [r3]
- 130:Core/Src/bsp_stm32.c **** 
- 592              		.loc 1 130 1 view .LVU125
- 593 003a 70BD     		pop	{r4, r5, r6, pc}
- 594              	.L50:
- 595              		.align	2
- 596              	.L49:
- 597 003c 00000000 		.word	.LANCHOR1
- 598 0040 00000000 		.word	.LANCHOR2
- 599 0044 00000000 		.word	.LANCHOR3
- 600              		.cfi_endproc
- 601              	.LFE73:
- 603              		.section	.text.oled_flush_all,"ax",%progbits
- 604              		.align	1
- 605              		.syntax unified
- 606              		.thumb
- 607              		.thumb_func
- 608              		.fpu softvfp
- 610              	oled_flush_all:
- 611              	.LFB75:
- 142:Core/Src/bsp_stm32.c ****   for (uint8_t p = 0u; p < OLED_PAGES; ++p)
- 612              		.loc 1 142 1 is_stmt 1 view -0
- 613              		.cfi_startproc
- 614              		@ args = 0, pretend = 0, frame = 0
- 615              		@ frame_needed = 0, uses_anonymous_args = 0
- 616 0000 10B5     		push	{r4, lr}
- 617              	.LCFI10:
- 618              		.cfi_def_cfa_offset 8
- 619              		.cfi_offset 4, -8
- 620              		.cfi_offset 14, -4
- 143:Core/Src/bsp_stm32.c ****   {
- 621              		.loc 1 143 3 view .LVU127
- 622              	.LBB4:
- 143:Core/Src/bsp_stm32.c ****   {
-ARM GAS  /tmp/cc36Cegq.s 			page 18
-
-
- 623              		.loc 1 143 8 view .LVU128
- 624              	.LVL71:
- 143:Core/Src/bsp_stm32.c ****   {
- 625              		.loc 1 143 16 is_stmt 0 view .LVU129
- 626 0002 0024     		movs	r4, #0
- 143:Core/Src/bsp_stm32.c ****   {
- 627              		.loc 1 143 3 view .LVU130
- 628 0004 04E0     		b	.L52
- 629              	.LVL72:
- 630              	.L53:
- 145:Core/Src/bsp_stm32.c ****   }
- 631              		.loc 1 145 5 is_stmt 1 discriminator 3 view .LVU131
- 632 0006 2046     		mov	r0, r4
- 633 0008 FFF7FEFF 		bl	oled_flush_page
- 634              	.LVL73:
- 143:Core/Src/bsp_stm32.c ****   {
- 635              		.loc 1 143 40 discriminator 3 view .LVU132
- 636 000c 0134     		adds	r4, r4, #1
- 637              	.LVL74:
- 143:Core/Src/bsp_stm32.c ****   {
- 638              		.loc 1 143 40 is_stmt 0 discriminator 3 view .LVU133
- 639 000e E4B2     		uxtb	r4, r4
- 640              	.LVL75:
- 641              	.L52:
- 143:Core/Src/bsp_stm32.c ****   {
- 642              		.loc 1 143 24 is_stmt 1 discriminator 1 view .LVU134
- 143:Core/Src/bsp_stm32.c ****   {
- 643              		.loc 1 143 3 is_stmt 0 discriminator 1 view .LVU135
- 644 0010 072C     		cmp	r4, #7
- 645 0012 F8D9     		bls	.L53
- 646              	.LBE4:
- 147:Core/Src/bsp_stm32.c **** 
- 647              		.loc 1 147 1 view .LVU136
- 648 0014 10BD     		pop	{r4, pc}
- 147:Core/Src/bsp_stm32.c **** 
- 649              		.loc 1 147 1 view .LVU137
- 650              		.cfi_endproc
- 651              	.LFE75:
- 653              		.section	.text.oled_flush_dirty_pages,"ax",%progbits
- 654              		.align	1
- 655              		.syntax unified
- 656              		.thumb
- 657              		.thumb_func
- 658              		.fpu softvfp
- 660              	oled_flush_dirty_pages:
- 661              	.LFB77:
- 163:Core/Src/bsp_stm32.c ****   for (uint8_t p = 0u; p < OLED_PAGES; ++p)
- 662              		.loc 1 163 1 is_stmt 1 view -0
- 663              		.cfi_startproc
- 664              		@ args = 0, pretend = 0, frame = 0
- 665              		@ frame_needed = 0, uses_anonymous_args = 0
- 666 0000 10B5     		push	{r4, lr}
- 667              	.LCFI11:
- 668              		.cfi_def_cfa_offset 8
- 669              		.cfi_offset 4, -8
- 670              		.cfi_offset 14, -4
- 164:Core/Src/bsp_stm32.c ****   {
-ARM GAS  /tmp/cc36Cegq.s 			page 19
-
-
- 671              		.loc 1 164 3 view .LVU139
- 672              	.LBB5:
- 164:Core/Src/bsp_stm32.c ****   {
- 673              		.loc 1 164 8 view .LVU140
- 674              	.LVL76:
- 164:Core/Src/bsp_stm32.c ****   {
- 675              		.loc 1 164 16 is_stmt 0 view .LVU141
- 676 0002 0024     		movs	r4, #0
- 164:Core/Src/bsp_stm32.c ****   {
- 677              		.loc 1 164 3 view .LVU142
- 678 0004 01E0     		b	.L56
- 679              	.LVL77:
- 680              	.L57:
- 164:Core/Src/bsp_stm32.c ****   {
- 681              		.loc 1 164 40 is_stmt 1 discriminator 2 view .LVU143
- 682 0006 0134     		adds	r4, r4, #1
- 683              	.LVL78:
- 164:Core/Src/bsp_stm32.c ****   {
- 684              		.loc 1 164 40 is_stmt 0 discriminator 2 view .LVU144
- 685 0008 E4B2     		uxtb	r4, r4
- 686              	.LVL79:
- 687              	.L56:
- 164:Core/Src/bsp_stm32.c ****   {
- 688              		.loc 1 164 24 is_stmt 1 discriminator 1 view .LVU145
- 164:Core/Src/bsp_stm32.c ****   {
- 689              		.loc 1 164 3 is_stmt 0 discriminator 1 view .LVU146
- 690 000a 072C     		cmp	r4, #7
- 691 000c 09D8     		bhi	.L60
- 166:Core/Src/bsp_stm32.c ****     {
- 692              		.loc 1 166 5 is_stmt 1 view .LVU147
- 166:Core/Src/bsp_stm32.c ****     {
- 693              		.loc 1 166 41 is_stmt 0 view .LVU148
- 694 000e 0123     		movs	r3, #1
- 695 0010 A340     		lsls	r3, r3, r4
- 166:Core/Src/bsp_stm32.c ****     {
- 696              		.loc 1 166 48 view .LVU149
- 697 0012 044A     		ldr	r2, .L61
- 698 0014 1278     		ldrb	r2, [r2]	@ zero_extendqisi2
- 166:Core/Src/bsp_stm32.c ****     {
- 699              		.loc 1 166 8 view .LVU150
- 700 0016 1342     		tst	r3, r2
- 701 0018 F5D0     		beq	.L57
- 168:Core/Src/bsp_stm32.c ****     }
- 702              		.loc 1 168 7 is_stmt 1 view .LVU151
- 703 001a 2046     		mov	r0, r4
- 704 001c FFF7FEFF 		bl	oled_flush_page
- 705              	.LVL80:
- 706 0020 F1E7     		b	.L57
- 707              	.L60:
- 708              	.LBE5:
- 171:Core/Src/bsp_stm32.c **** 
- 709              		.loc 1 171 1 is_stmt 0 view .LVU152
- 710 0022 10BD     		pop	{r4, pc}
- 711              	.LVL81:
- 712              	.L62:
- 171:Core/Src/bsp_stm32.c **** 
- 713              		.loc 1 171 1 view .LVU153
-ARM GAS  /tmp/cc36Cegq.s 			page 20
-
-
- 714              		.align	2
- 715              	.L61:
- 716 0024 00000000 		.word	.LANCHOR3
- 717              		.cfi_endproc
- 718              	.LFE77:
- 720              		.section	.text.oled_mark_dirty_if_changed,"ax",%progbits
- 721              		.align	1
- 722              		.syntax unified
- 723              		.thumb
- 724              		.thumb_func
- 725              		.fpu softvfp
- 727              	oled_mark_dirty_if_changed:
- 728              	.LVL82:
- 729              	.LFB76:
- 150:Core/Src/bsp_stm32.c ****   if (page >= OLED_PAGES)
- 730              		.loc 1 150 1 is_stmt 1 view -0
- 731              		.cfi_startproc
- 732              		@ args = 0, pretend = 0, frame = 0
- 733              		@ frame_needed = 0, uses_anonymous_args = 0
- 151:Core/Src/bsp_stm32.c ****   {
- 734              		.loc 1 151 3 view .LVU155
- 151:Core/Src/bsp_stm32.c ****   {
- 735              		.loc 1 151 6 is_stmt 0 view .LVU156
- 736 0000 0728     		cmp	r0, #7
- 737 0002 14D8     		bhi	.L66
- 150:Core/Src/bsp_stm32.c ****   if (page >= OLED_PAGES)
- 738              		.loc 1 150 1 view .LVU157
- 739 0004 10B5     		push	{r4, lr}
- 740              	.LCFI12:
- 741              		.cfi_def_cfa_offset 8
- 742              		.cfi_offset 4, -8
- 743              		.cfi_offset 14, -4
- 744 0006 0446     		mov	r4, r0
- 156:Core/Src/bsp_stm32.c ****   {
- 745              		.loc 1 156 3 is_stmt 1 view .LVU158
- 156:Core/Src/bsp_stm32.c ****   {
- 746              		.loc 1 156 7 is_stmt 0 view .LVU159
- 747 0008 8022     		movs	r2, #128
- 748 000a 0949     		ldr	r1, .L69
- 749 000c 01EBC011 		add	r1, r1, r0, lsl #7
- 750 0010 0848     		ldr	r0, .L69+4
- 751              	.LVL83:
- 156:Core/Src/bsp_stm32.c ****   {
- 752              		.loc 1 156 7 view .LVU160
- 753 0012 00EBC410 		add	r0, r0, r4, lsl #7
- 754 0016 FFF7FEFF 		bl	memcmp
- 755              	.LVL84:
- 156:Core/Src/bsp_stm32.c ****   {
- 756              		.loc 1 156 6 view .LVU161
- 757 001a 38B1     		cbz	r0, .L63
- 158:Core/Src/bsp_stm32.c ****   }
- 758              		.loc 1 158 5 is_stmt 1 view .LVU162
- 158:Core/Src/bsp_stm32.c ****   }
- 759              		.loc 1 158 64 is_stmt 0 view .LVU163
- 760 001c 0120     		movs	r0, #1
- 761 001e 00FA04F4 		lsl	r4, r0, r4
- 158:Core/Src/bsp_stm32.c ****   }
-ARM GAS  /tmp/cc36Cegq.s 			page 21
-
-
- 762              		.loc 1 158 51 view .LVU164
- 763 0022 E4B2     		uxtb	r4, r4
- 158:Core/Src/bsp_stm32.c ****   }
- 764              		.loc 1 158 23 view .LVU165
- 765 0024 044B     		ldr	r3, .L69+8
- 766 0026 1A78     		ldrb	r2, [r3]	@ zero_extendqisi2
- 767 0028 1443     		orrs	r4, r4, r2
- 158:Core/Src/bsp_stm32.c ****   }
- 768              		.loc 1 158 21 view .LVU166
- 769 002a 1C70     		strb	r4, [r3]
- 770              	.L63:
- 160:Core/Src/bsp_stm32.c **** 
- 771              		.loc 1 160 1 view .LVU167
- 772 002c 10BD     		pop	{r4, pc}
- 773              	.LVL85:
- 774              	.L66:
- 775              	.LCFI13:
- 776              		.cfi_def_cfa_offset 0
- 777              		.cfi_restore 4
- 778              		.cfi_restore 14
- 160:Core/Src/bsp_stm32.c **** 
- 779              		.loc 1 160 1 view .LVU168
- 780 002e 7047     		bx	lr
- 781              	.L70:
- 782              		.align	2
- 783              	.L69:
- 784 0030 00000000 		.word	.LANCHOR2
- 785 0034 00000000 		.word	.LANCHOR1
- 786 0038 00000000 		.word	.LANCHOR3
- 787              		.cfi_endproc
- 788              	.LFE76:
- 790              		.section	.text.BSP_Init,"ax",%progbits
- 791              		.align	1
- 792              		.global	BSP_Init
- 793              		.syntax unified
- 794              		.thumb
- 795              		.thumb_func
- 796              		.fpu softvfp
- 798              	BSP_Init:
- 799              	.LFB68:
-  13:Core/Src/bsp_stm32.c ****   /* GPIO/USART/SPI 时钟和模式已经在 MX_GPIO_Init/MX_USART1_UART_Init 等里配置好了 */
- 800              		.loc 1 13 21 is_stmt 1 view -0
- 801              		.cfi_startproc
- 802              		@ args = 0, pretend = 0, frame = 0
- 803              		@ frame_needed = 0, uses_anonymous_args = 0
- 804              		@ link register save eliminated.
-  15:Core/Src/bsp_stm32.c **** 
- 805              		.loc 1 15 1 view .LVU170
- 806 0000 7047     		bx	lr
- 807              		.cfi_endproc
- 808              	.LFE68:
- 810              		.section	.text.BSP_Led_Set,"ax",%progbits
- 811              		.align	1
- 812              		.global	BSP_Led_Set
- 813              		.syntax unified
- 814              		.thumb
- 815              		.thumb_func
-ARM GAS  /tmp/cc36Cegq.s 			page 22
-
-
- 816              		.fpu softvfp
- 818              	BSP_Led_Set:
- 819              	.LVL86:
- 820              	.LFB69:
-  17:Core/Src/bsp_stm32.c ****   (void)led;
- 821              		.loc 1 17 41 view -0
- 822              		.cfi_startproc
- 823              		@ args = 0, pretend = 0, frame = 0
- 824              		@ frame_needed = 0, uses_anonymous_args = 0
-  17:Core/Src/bsp_stm32.c ****   (void)led;
- 825              		.loc 1 17 41 is_stmt 0 view .LVU172
- 826 0000 08B5     		push	{r3, lr}
- 827              	.LCFI14:
- 828              		.cfi_def_cfa_offset 8
- 829              		.cfi_offset 3, -8
- 830              		.cfi_offset 14, -4
-  18:Core/Src/bsp_stm32.c ****   HAL_GPIO_WritePin(LED_HEARTBEAT_GPIO_Port, LED_HEARTBEAT_Pin,
- 831              		.loc 1 18 3 is_stmt 1 view .LVU173
-  19:Core/Src/bsp_stm32.c ****                     on ? GPIO_PIN_RESET : GPIO_PIN_SET);
- 832              		.loc 1 19 3 view .LVU174
- 833 0002 81F00102 		eor	r2, r1, #1
- 834 0006 4FF40051 		mov	r1, #8192
- 835              	.LVL87:
-  19:Core/Src/bsp_stm32.c ****                     on ? GPIO_PIN_RESET : GPIO_PIN_SET);
- 836              		.loc 1 19 3 is_stmt 0 view .LVU175
- 837 000a 0248     		ldr	r0, .L74
- 838              	.LVL88:
-  19:Core/Src/bsp_stm32.c ****                     on ? GPIO_PIN_RESET : GPIO_PIN_SET);
- 839              		.loc 1 19 3 view .LVU176
- 840 000c FFF7FEFF 		bl	HAL_GPIO_WritePin
- 841              	.LVL89:
-  21:Core/Src/bsp_stm32.c **** 
- 842              		.loc 1 21 1 view .LVU177
- 843 0010 08BD     		pop	{r3, pc}
- 844              	.L75:
- 845 0012 00BF     		.align	2
- 846              	.L74:
- 847 0014 00100140 		.word	1073811456
- 848              		.cfi_endproc
- 849              	.LFE69:
- 851              		.section	.text.BSP_Lcd_Init,"ax",%progbits
- 852              		.align	1
- 853              		.global	BSP_Lcd_Init
- 854              		.syntax unified
- 855              		.thumb
- 856              		.thumb_func
- 857              		.fpu softvfp
- 859              	BSP_Lcd_Init:
- 860              	.LFB80:
- 224:Core/Src/bsp_stm32.c ****   oled_basic_init();
- 861              		.loc 1 224 25 is_stmt 1 view -0
- 862              		.cfi_startproc
- 863              		@ args = 0, pretend = 0, frame = 0
- 864              		@ frame_needed = 0, uses_anonymous_args = 0
- 865 0000 10B5     		push	{r4, lr}
- 866              	.LCFI15:
- 867              		.cfi_def_cfa_offset 8
-ARM GAS  /tmp/cc36Cegq.s 			page 23
-
-
- 868              		.cfi_offset 4, -8
- 869              		.cfi_offset 14, -4
- 225:Core/Src/bsp_stm32.c ****   memset(s_oledFront, 0, sizeof(s_oledFront));
- 870              		.loc 1 225 3 view .LVU179
- 871 0002 FFF7FEFF 		bl	oled_basic_init
- 872              	.LVL90:
- 226:Core/Src/bsp_stm32.c ****   memset(s_oledBack, 0, sizeof(s_oledBack));
- 873              		.loc 1 226 3 view .LVU180
- 874 0006 4FF48064 		mov	r4, #1024
- 875 000a 2246     		mov	r2, r4
- 876 000c 0021     		movs	r1, #0
- 877 000e 0748     		ldr	r0, .L78
- 878 0010 FFF7FEFF 		bl	memset
- 879              	.LVL91:
- 227:Core/Src/bsp_stm32.c ****   s_oledDirtyMask = 0xFFu;
- 880              		.loc 1 227 3 view .LVU181
- 881 0014 2246     		mov	r2, r4
- 882 0016 0021     		movs	r1, #0
- 883 0018 0548     		ldr	r0, .L78+4
- 884 001a FFF7FEFF 		bl	memset
- 885              	.LVL92:
- 228:Core/Src/bsp_stm32.c ****   oled_flush_all();
- 886              		.loc 1 228 3 view .LVU182
- 228:Core/Src/bsp_stm32.c ****   oled_flush_all();
- 887              		.loc 1 228 19 is_stmt 0 view .LVU183
- 888 001e 054B     		ldr	r3, .L78+8
- 889 0020 FF22     		movs	r2, #255
- 890 0022 1A70     		strb	r2, [r3]
- 229:Core/Src/bsp_stm32.c **** }
- 891              		.loc 1 229 3 is_stmt 1 view .LVU184
- 892 0024 FFF7FEFF 		bl	oled_flush_all
- 893              	.LVL93:
- 230:Core/Src/bsp_stm32.c **** 
- 894              		.loc 1 230 1 is_stmt 0 view .LVU185
- 895 0028 10BD     		pop	{r4, pc}
- 896              	.L79:
- 897 002a 00BF     		.align	2
- 898              	.L78:
- 899 002c 00000000 		.word	.LANCHOR2
- 900 0030 00000000 		.word	.LANCHOR1
- 901 0034 00000000 		.word	.LANCHOR3
- 902              		.cfi_endproc
- 903              	.LFE80:
- 905              		.section	.rodata.BSP_Lcd_PrintLine.str1.4,"aMS",%progbits,1
- 906              		.align	2
- 907              	.LC0:
- 908 0000 00       		.ascii	"\000"
- 909              		.section	.text.BSP_Lcd_PrintLine,"ax",%progbits
- 910              		.align	1
- 911              		.global	BSP_Lcd_PrintLine
- 912              		.syntax unified
- 913              		.thumb
- 914              		.thumb_func
- 915              		.fpu softvfp
- 917              	BSP_Lcd_PrintLine:
- 918              	.LVL94:
- 919              	.LFB81:
-ARM GAS  /tmp/cc36Cegq.s 			page 24
-
-
- 232:Core/Src/bsp_stm32.c ****   if (row >= OLED_PAGES)
- 920              		.loc 1 232 55 is_stmt 1 view -0
- 921              		.cfi_startproc
- 922              		@ args = 0, pretend = 0, frame = 0
- 923              		@ frame_needed = 0, uses_anonymous_args = 0
- 233:Core/Src/bsp_stm32.c ****   {
- 924              		.loc 1 233 3 view .LVU187
- 233:Core/Src/bsp_stm32.c ****   {
- 925              		.loc 1 233 6 is_stmt 0 view .LVU188
- 926 0000 0728     		cmp	r0, #7
- 927 0002 23D8     		bhi	.L88
- 232:Core/Src/bsp_stm32.c ****   if (row >= OLED_PAGES)
- 928              		.loc 1 232 55 view .LVU189
- 929 0004 70B5     		push	{r4, r5, r6, lr}
- 930              	.LCFI16:
- 931              		.cfi_def_cfa_offset 16
- 932              		.cfi_offset 4, -16
- 933              		.cfi_offset 5, -12
- 934              		.cfi_offset 6, -8
- 935              		.cfi_offset 14, -4
- 936 0006 0646     		mov	r6, r0
- 937 0008 0D46     		mov	r5, r1
- 238:Core/Src/bsp_stm32.c ****   {
- 938              		.loc 1 238 3 is_stmt 1 view .LVU190
- 238:Core/Src/bsp_stm32.c ****   {
- 939              		.loc 1 238 6 is_stmt 0 view .LVU191
- 940 000a B9B1     		cbz	r1, .L91
- 941              	.L82:
- 942              	.LVL95:
- 243:Core/Src/bsp_stm32.c **** 
- 943              		.loc 1 243 3 is_stmt 1 view .LVU192
- 944 000c 3046     		mov	r0, r6
- 945              	.LVL96:
- 243:Core/Src/bsp_stm32.c **** 
- 946              		.loc 1 243 3 is_stmt 0 view .LVU193
- 947 000e FFF7FEFF 		bl	oled_clear_page
- 948              	.LVL97:
- 245:Core/Src/bsp_stm32.c ****   while ((*text != '\0') && (col <= (OLED_WIDTH - 6u)))
- 949              		.loc 1 245 3 is_stmt 1 view .LVU194
- 246:Core/Src/bsp_stm32.c ****   {
- 950              		.loc 1 246 3 view .LVU195
- 245:Core/Src/bsp_stm32.c ****   while ((*text != '\0') && (col <= (OLED_WIDTH - 6u)))
- 951              		.loc 1 245 11 is_stmt 0 view .LVU196
- 952 0012 0024     		movs	r4, #0
- 953              	.LVL98:
- 954              	.L83:
- 246:Core/Src/bsp_stm32.c ****   {
- 955              		.loc 1 246 9 is_stmt 1 view .LVU197
- 246:Core/Src/bsp_stm32.c ****   {
- 956              		.loc 1 246 11 is_stmt 0 view .LVU198
- 957 0014 2878     		ldrb	r0, [r5]	@ zero_extendqisi2
- 246:Core/Src/bsp_stm32.c ****   {
- 958              		.loc 1 246 9 view .LVU199
- 959 0016 98B1     		cbz	r0, .L84
- 246:Core/Src/bsp_stm32.c ****   {
- 960              		.loc 1 246 26 discriminator 1 view .LVU200
- 961 0018 7A2C     		cmp	r4, #122
-ARM GAS  /tmp/cc36Cegq.s 			page 25
-
-
- 962 001a 11D8     		bhi	.L84
- 963              	.LBB6:
- 248:Core/Src/bsp_stm32.c ****     memcpy(&s_oledBack[row][col], glyph, 6u);
- 964              		.loc 1 248 5 is_stmt 1 view .LVU201
- 248:Core/Src/bsp_stm32.c ****     memcpy(&s_oledBack[row][col], glyph, 6u);
- 965              		.loc 1 248 28 is_stmt 0 view .LVU202
- 966 001c FFF7FEFF 		bl	oled_font6x8_get
- 967              	.LVL99:
- 249:Core/Src/bsp_stm32.c ****     col = (uint8_t)(col + 6u);
- 968              		.loc 1 249 5 is_stmt 1 view .LVU203
- 249:Core/Src/bsp_stm32.c ****     col = (uint8_t)(col + 6u);
- 969              		.loc 1 249 12 is_stmt 0 view .LVU204
- 970 0020 0B4A     		ldr	r2, .L92
- 971 0022 04EBC613 		add	r3, r4, r6, lsl #7
- 972 0026 D118     		adds	r1, r2, r3
- 249:Core/Src/bsp_stm32.c ****     col = (uint8_t)(col + 6u);
- 973              		.loc 1 249 5 view .LVU205
- 974 0028 D0F800C0 		ldr	ip, [r0]	@ unaligned
- 975 002c 42F803C0 		str	ip, [r2, r3]	@ unaligned
- 976 0030 8388     		ldrh	r3, [r0, #4]	@ unaligned
- 977 0032 8B80     		strh	r3, [r1, #4]	@ unaligned
- 250:Core/Src/bsp_stm32.c ****     text++;
- 978              		.loc 1 250 5 is_stmt 1 view .LVU206
- 250:Core/Src/bsp_stm32.c ****     text++;
- 979              		.loc 1 250 9 is_stmt 0 view .LVU207
- 980 0034 0634     		adds	r4, r4, #6
- 981              	.LVL100:
- 250:Core/Src/bsp_stm32.c ****     text++;
- 982              		.loc 1 250 9 view .LVU208
- 983 0036 E4B2     		uxtb	r4, r4
- 984              	.LVL101:
- 251:Core/Src/bsp_stm32.c ****   }
- 985              		.loc 1 251 5 is_stmt 1 view .LVU209
- 251:Core/Src/bsp_stm32.c ****   }
- 986              		.loc 1 251 9 is_stmt 0 view .LVU210
- 987 0038 0135     		adds	r5, r5, #1
- 988              	.LVL102:
- 251:Core/Src/bsp_stm32.c ****   }
- 989              		.loc 1 251 9 view .LVU211
- 990 003a EBE7     		b	.L83
- 991              	.LVL103:
- 992              	.L91:
- 251:Core/Src/bsp_stm32.c ****   }
- 993              		.loc 1 251 9 view .LVU212
- 994              	.LBE6:
- 240:Core/Src/bsp_stm32.c ****   }
- 995              		.loc 1 240 10 view .LVU213
- 996 003c 054D     		ldr	r5, .L92+4
- 997 003e E5E7     		b	.L82
- 998              	.LVL104:
- 999              	.L84:
- 254:Core/Src/bsp_stm32.c ****   oled_flush_dirty_pages();
- 1000              		.loc 1 254 3 is_stmt 1 view .LVU214
- 1001 0040 3046     		mov	r0, r6
- 1002 0042 FFF7FEFF 		bl	oled_mark_dirty_if_changed
- 1003              	.LVL105:
- 255:Core/Src/bsp_stm32.c **** }
-ARM GAS  /tmp/cc36Cegq.s 			page 26
-
-
- 1004              		.loc 1 255 3 view .LVU215
- 1005 0046 FFF7FEFF 		bl	oled_flush_dirty_pages
- 1006              	.LVL106:
- 256:Core/Src/bsp_stm32.c **** 
- 1007              		.loc 1 256 1 is_stmt 0 view .LVU216
- 1008 004a 70BD     		pop	{r4, r5, r6, pc}
- 1009              	.LVL107:
- 1010              	.L88:
- 1011              	.LCFI17:
- 1012              		.cfi_def_cfa_offset 0
- 1013              		.cfi_restore 4
- 1014              		.cfi_restore 5
- 1015              		.cfi_restore 6
- 1016              		.cfi_restore 14
- 256:Core/Src/bsp_stm32.c **** 
- 1017              		.loc 1 256 1 view .LVU217
- 1018 004c 7047     		bx	lr
- 1019              	.L93:
- 1020 004e 00BF     		.align	2
- 1021              	.L92:
- 1022 0050 00000000 		.word	.LANCHOR1
- 1023 0054 00000000 		.word	.LC0
- 1024              		.cfi_endproc
- 1025              	.LFE81:
- 1027              		.section	.text.BSP_Keys_Init,"ax",%progbits
- 1028              		.align	1
- 1029              		.global	BSP_Keys_Init
- 1030              		.syntax unified
- 1031              		.thumb
- 1032              		.thumb_func
- 1033              		.fpu softvfp
- 1035              	BSP_Keys_Init:
- 1036              	.LFB83:
- 271:Core/Src/bsp_stm32.c **** 
- 272:Core/Src/bsp_stm32.c **** void BSP_Keys_Init(void) {
- 1037              		.loc 1 272 26 is_stmt 1 view -0
- 1038              		.cfi_startproc
- 1039              		@ args = 0, pretend = 0, frame = 0
- 1040              		@ frame_needed = 0, uses_anonymous_args = 0
- 1041              		@ link register save eliminated.
- 273:Core/Src/bsp_stm32.c ****   memset(s_last_pressed, 0, sizeof(s_last_pressed));
- 1042              		.loc 1 273 3 view .LVU219
- 1043 0000 014B     		ldr	r3, .L95
- 1044 0002 0022     		movs	r2, #0
- 1045 0004 1A60     		str	r2, [r3]
- 274:Core/Src/bsp_stm32.c **** }
- 1046              		.loc 1 274 1 is_stmt 0 view .LVU220
- 1047 0006 7047     		bx	lr
- 1048              	.L96:
- 1049              		.align	2
- 1050              	.L95:
- 1051 0008 00000000 		.word	.LANCHOR4
- 1052              		.cfi_endproc
- 1053              	.LFE83:
- 1055              		.section	.text.BSP_Keys_GetEvent,"ax",%progbits
- 1056              		.align	1
- 1057              		.global	BSP_Keys_GetEvent
-ARM GAS  /tmp/cc36Cegq.s 			page 27
-
-
- 1058              		.syntax unified
- 1059              		.thumb
- 1060              		.thumb_func
- 1061              		.fpu softvfp
- 1063              	BSP_Keys_GetEvent:
- 1064              	.LVL108:
- 1065              	.LFB84:
- 275:Core/Src/bsp_stm32.c **** 
- 276:Core/Src/bsp_stm32.c **** /* 非严格消抖，仅示意：每次调用最多返回一个按/松事件 */
- 277:Core/Src/bsp_stm32.c **** bool BSP_Keys_GetEvent(KeyEvent* out_event) {
- 1066              		.loc 1 277 45 is_stmt 1 view -0
- 1067              		.cfi_startproc
- 1068              		@ args = 0, pretend = 0, frame = 8
- 1069              		@ frame_needed = 0, uses_anonymous_args = 0
- 278:Core/Src/bsp_stm32.c ****   if (!out_event) return false;
- 1070              		.loc 1 278 3 view .LVU222
- 1071              		.loc 1 278 6 is_stmt 0 view .LVU223
- 1072 0000 0028     		cmp	r0, #0
- 1073 0002 3FD0     		beq	.L102
- 277:Core/Src/bsp_stm32.c ****   if (!out_event) return false;
- 1074              		.loc 1 277 45 view .LVU224
- 1075 0004 30B5     		push	{r4, r5, lr}
- 1076              	.LCFI18:
- 1077              		.cfi_def_cfa_offset 12
- 1078              		.cfi_offset 4, -12
- 1079              		.cfi_offset 5, -8
- 1080              		.cfi_offset 14, -4
- 1081 0006 83B0     		sub	sp, sp, #12
- 1082              	.LCFI19:
- 1083              		.cfi_def_cfa_offset 24
- 1084 0008 0546     		mov	r5, r0
- 279:Core/Src/bsp_stm32.c **** 
- 280:Core/Src/bsp_stm32.c ****   /* 例：简单使用 4 行（KEY_R1~R4）代表 4 个按键，列全部拉低 */
- 281:Core/Src/bsp_stm32.c ****   HAL_GPIO_WritePin(GPIOB, KEY_C1_Pin | KEY_C2_Pin | KEY_C3_Pin | KEY_C4_Pin, GPIO_PIN_RESET);
- 1085              		.loc 1 281 3 is_stmt 1 view .LVU225
- 1086 000a 1F4C     		ldr	r4, .L109
- 1087 000c 0022     		movs	r2, #0
- 1088 000e 4FF4E441 		mov	r1, #29184
- 1089 0012 2046     		mov	r0, r4
- 1090              	.LVL109:
- 1091              		.loc 1 281 3 is_stmt 0 view .LVU226
- 1092 0014 FFF7FEFF 		bl	HAL_GPIO_WritePin
- 1093              	.LVL110:
- 282:Core/Src/bsp_stm32.c **** 
- 283:Core/Src/bsp_stm32.c ****   GPIO_PinState row_state[4];
- 1094              		.loc 1 283 3 is_stmt 1 view .LVU227
- 284:Core/Src/bsp_stm32.c ****   row_state[0] = HAL_GPIO_ReadPin(GPIOB, KEY_R1_Pin);
- 1095              		.loc 1 284 3 view .LVU228
- 1096              		.loc 1 284 18 is_stmt 0 view .LVU229
- 1097 0018 2021     		movs	r1, #32
- 1098 001a 2046     		mov	r0, r4
- 1099 001c FFF7FEFF 		bl	HAL_GPIO_ReadPin
- 1100              	.LVL111:
- 1101              		.loc 1 284 16 view .LVU230
- 1102 0020 8DF80400 		strb	r0, [sp, #4]
- 285:Core/Src/bsp_stm32.c ****   row_state[1] = HAL_GPIO_ReadPin(GPIOB, KEY_R2_Pin);
- 1103              		.loc 1 285 3 is_stmt 1 view .LVU231
-ARM GAS  /tmp/cc36Cegq.s 			page 28
-
-
- 1104              		.loc 1 285 18 is_stmt 0 view .LVU232
- 1105 0024 4021     		movs	r1, #64
- 1106 0026 2046     		mov	r0, r4
- 1107 0028 FFF7FEFF 		bl	HAL_GPIO_ReadPin
- 1108              	.LVL112:
- 1109              		.loc 1 285 16 view .LVU233
- 1110 002c 8DF80500 		strb	r0, [sp, #5]
- 286:Core/Src/bsp_stm32.c ****   row_state[2] = HAL_GPIO_ReadPin(GPIOB, KEY_R3_Pin);
- 1111              		.loc 1 286 3 is_stmt 1 view .LVU234
- 1112              		.loc 1 286 18 is_stmt 0 view .LVU235
- 1113 0030 8021     		movs	r1, #128
- 1114 0032 2046     		mov	r0, r4
- 1115 0034 FFF7FEFF 		bl	HAL_GPIO_ReadPin
- 1116              	.LVL113:
- 1117              		.loc 1 286 16 view .LVU236
- 1118 0038 8DF80600 		strb	r0, [sp, #6]
- 287:Core/Src/bsp_stm32.c ****   row_state[3] = HAL_GPIO_ReadPin(GPIOB, KEY_R4_Pin);
- 1119              		.loc 1 287 3 is_stmt 1 view .LVU237
- 1120              		.loc 1 287 18 is_stmt 0 view .LVU238
- 1121 003c 4FF48071 		mov	r1, #256
- 1122 0040 2046     		mov	r0, r4
- 1123 0042 FFF7FEFF 		bl	HAL_GPIO_ReadPin
- 1124              	.LVL114:
- 1125              		.loc 1 287 16 view .LVU239
- 1126 0046 8DF80700 		strb	r0, [sp, #7]
- 288:Core/Src/bsp_stm32.c **** 
- 289:Core/Src/bsp_stm32.c ****   for (int i = 0; i < 4; ++i) {
- 1127              		.loc 1 289 3 is_stmt 1 view .LVU240
- 1128              	.LBB7:
- 1129              		.loc 1 289 8 view .LVU241
- 1130              	.LVL115:
- 1131              		.loc 1 289 12 is_stmt 0 view .LVU242
- 1132 004a 0020     		movs	r0, #0
- 1133              	.LVL116:
- 1134              	.L99:
- 1135              		.loc 1 289 19 is_stmt 1 discriminator 1 view .LVU243
- 1136              		.loc 1 289 3 is_stmt 0 discriminator 1 view .LVU244
- 1137 004c 0328     		cmp	r0, #3
- 1138 004e 16DC     		bgt	.L107
- 1139              	.LBB8:
- 290:Core/Src/bsp_stm32.c ****     bool pressed = (row_state[i] == GPIO_PIN_SET);  // 这里假设高电平为按下
- 1140              		.loc 1 290 5 is_stmt 1 view .LVU245
- 1141              		.loc 1 290 30 is_stmt 0 view .LVU246
- 1142 0050 00F10803 		add	r3, r0, #8
- 1143 0054 6B44     		add	r3, sp, r3
- 1144 0056 13F8044C 		ldrb	r4, [r3, #-4]	@ zero_extendqisi2
- 1145              		.loc 1 290 10 view .LVU247
- 1146 005a 012C     		cmp	r4, #1
- 1147 005c 14BF     		ite	ne
- 1148 005e 0024     		movne	r4, #0
- 1149 0060 0124     		moveq	r4, #1
- 1150              	.LVL117:
- 291:Core/Src/bsp_stm32.c ****     if (pressed != s_last_pressed[i]) {
- 1151              		.loc 1 291 5 is_stmt 1 view .LVU248
- 1152              		.loc 1 291 34 is_stmt 0 view .LVU249
- 1153 0062 0A4B     		ldr	r3, .L109+4
- 1154 0064 1B5C     		ldrb	r3, [r3, r0]	@ zero_extendqisi2
-ARM GAS  /tmp/cc36Cegq.s 			page 29
-
-
- 1155              		.loc 1 291 8 view .LVU250
- 1156 0066 A342     		cmp	r3, r4
- 1157 0068 01D1     		bne	.L108
- 1158              	.LBE8:
- 289:Core/Src/bsp_stm32.c ****     bool pressed = (row_state[i] == GPIO_PIN_SET);  // 这里假设高电平为按下
- 1159              		.loc 1 289 26 is_stmt 1 discriminator 2 view .LVU251
- 1160 006a 0130     		adds	r0, r0, #1
- 1161              	.LVL118:
- 289:Core/Src/bsp_stm32.c ****     bool pressed = (row_state[i] == GPIO_PIN_SET);  // 这里假设高电平为按下
- 1162              		.loc 1 289 26 is_stmt 0 discriminator 2 view .LVU252
- 1163 006c EEE7     		b	.L99
- 1164              	.L108:
- 1165              	.LBB9:
- 292:Core/Src/bsp_stm32.c ****       s_last_pressed[i] = pressed;
- 1166              		.loc 1 292 7 is_stmt 1 view .LVU253
- 1167              		.loc 1 292 25 is_stmt 0 view .LVU254
- 1168 006e 074B     		ldr	r3, .L109+4
- 1169 0070 1C54     		strb	r4, [r3, r0]
- 293:Core/Src/bsp_stm32.c ****       out_event->code = idx_to_keycode(i);
- 1170              		.loc 1 293 7 is_stmt 1 view .LVU255
- 1171              		.loc 1 293 25 is_stmt 0 view .LVU256
- 1172 0072 FFF7FEFF 		bl	idx_to_keycode
- 1173              	.LVL119:
- 1174              		.loc 1 293 23 view .LVU257
- 1175 0076 2870     		strb	r0, [r5]
- 294:Core/Src/bsp_stm32.c ****       out_event->pressed = pressed;
- 1176              		.loc 1 294 7 is_stmt 1 view .LVU258
- 1177              		.loc 1 294 26 is_stmt 0 view .LVU259
- 1178 0078 6C70     		strb	r4, [r5, #1]
- 295:Core/Src/bsp_stm32.c ****       return true;
- 1179              		.loc 1 295 7 is_stmt 1 view .LVU260
- 1180              		.loc 1 295 14 is_stmt 0 view .LVU261
- 1181 007a 0120     		movs	r0, #1
- 1182 007c 00E0     		b	.L98
- 1183              	.LVL120:
- 1184              	.L107:
- 1185              		.loc 1 295 14 view .LVU262
- 1186              	.LBE9:
- 1187              	.LBE7:
- 296:Core/Src/bsp_stm32.c ****     }
- 297:Core/Src/bsp_stm32.c ****   }
- 298:Core/Src/bsp_stm32.c ****   return false;
- 1188              		.loc 1 298 10 view .LVU263
- 1189 007e 0020     		movs	r0, #0
- 1190              	.LVL121:
- 1191              	.L98:
- 299:Core/Src/bsp_stm32.c **** }
- 1192              		.loc 1 299 1 view .LVU264
- 1193 0080 03B0     		add	sp, sp, #12
- 1194              	.LCFI20:
- 1195              		.cfi_def_cfa_offset 12
- 1196              		@ sp needed
- 1197 0082 30BD     		pop	{r4, r5, pc}
- 1198              	.LVL122:
- 1199              	.L102:
- 1200              	.LCFI21:
- 1201              		.cfi_def_cfa_offset 0
-ARM GAS  /tmp/cc36Cegq.s 			page 30
-
-
- 1202              		.cfi_restore 4
- 1203              		.cfi_restore 5
- 1204              		.cfi_restore 14
- 278:Core/Src/bsp_stm32.c **** 
- 1205              		.loc 1 278 26 view .LVU265
- 1206 0084 0020     		movs	r0, #0
- 1207              	.LVL123:
- 1208              		.loc 1 299 1 view .LVU266
- 1209 0086 7047     		bx	lr
- 1210              	.L110:
- 1211              		.align	2
- 1212              	.L109:
- 1213 0088 000C0140 		.word	1073810432
- 1214 008c 00000000 		.word	.LANCHOR4
- 1215              		.cfi_endproc
- 1216              	.LFE84:
- 1218              		.section	.text.BSP_Uart_Init,"ax",%progbits
- 1219              		.align	1
- 1220              		.global	BSP_Uart_Init
- 1221              		.syntax unified
- 1222              		.thumb
- 1223              		.thumb_func
- 1224              		.fpu softvfp
- 1226              	BSP_Uart_Init:
- 1227              	.LVL124:
- 1228              	.LFB85:
- 300:Core/Src/bsp_stm32.c **** 
- 301:Core/Src/bsp_stm32.c **** /* ===== UART1：用 CubeMX 已生成的 huart1 ===== */
- 302:Core/Src/bsp_stm32.c **** 
- 303:Core/Src/bsp_stm32.c **** void BSP_Uart_Init(uint32_t baudrate) {
- 1229              		.loc 1 303 39 is_stmt 1 view -0
- 1230              		.cfi_startproc
- 1231              		@ args = 0, pretend = 0, frame = 0
- 1232              		@ frame_needed = 0, uses_anonymous_args = 0
- 304:Core/Src/bsp_stm32.c ****   if (huart1.Init.BaudRate != baudrate) {
- 1233              		.loc 1 304 3 view .LVU268
- 1234              		.loc 1 304 18 is_stmt 0 view .LVU269
- 1235 0000 054A     		ldr	r2, .L118
- 1236 0002 5268     		ldr	r2, [r2, #4]
- 1237              		.loc 1 304 6 view .LVU270
- 1238 0004 8242     		cmp	r2, r0
- 1239 0006 00D1     		bne	.L117
- 1240 0008 7047     		bx	lr
- 1241              	.L117:
- 303:Core/Src/bsp_stm32.c ****   if (huart1.Init.BaudRate != baudrate) {
- 1242              		.loc 1 303 39 view .LVU271
- 1243 000a 08B5     		push	{r3, lr}
- 1244              	.LCFI22:
- 1245              		.cfi_def_cfa_offset 8
- 1246              		.cfi_offset 3, -8
- 1247              		.cfi_offset 14, -4
- 1248 000c 0346     		mov	r3, r0
- 305:Core/Src/bsp_stm32.c ****     huart1.Init.BaudRate = baudrate;
- 1249              		.loc 1 305 5 is_stmt 1 view .LVU272
- 1250              		.loc 1 305 26 is_stmt 0 view .LVU273
- 1251 000e 0248     		ldr	r0, .L118
- 1252              	.LVL125:
-ARM GAS  /tmp/cc36Cegq.s 			page 31
-
-
- 1253              		.loc 1 305 26 view .LVU274
- 1254 0010 4360     		str	r3, [r0, #4]
- 306:Core/Src/bsp_stm32.c ****     (void)HAL_UART_Init(&huart1);
- 1255              		.loc 1 306 5 is_stmt 1 view .LVU275
- 1256              		.loc 1 306 11 is_stmt 0 view .LVU276
- 1257 0012 FFF7FEFF 		bl	HAL_UART_Init
- 1258              	.LVL126:
- 307:Core/Src/bsp_stm32.c ****   }
- 308:Core/Src/bsp_stm32.c **** }
- 1259              		.loc 1 308 1 view .LVU277
- 1260 0016 08BD     		pop	{r3, pc}
- 1261              	.L119:
- 1262              		.align	2
- 1263              	.L118:
- 1264 0018 00000000 		.word	huart1
- 1265              		.cfi_endproc
- 1266              	.LFE85:
- 1268              		.section	.text.BSP_Uart_Send,"ax",%progbits
- 1269              		.align	1
- 1270              		.global	BSP_Uart_Send
- 1271              		.syntax unified
- 1272              		.thumb
- 1273              		.thumb_func
- 1274              		.fpu softvfp
- 1276              	BSP_Uart_Send:
- 1277              	.LVL127:
- 1278              	.LFB86:
- 309:Core/Src/bsp_stm32.c **** 
- 310:Core/Src/bsp_stm32.c **** size_t BSP_Uart_Send(const uint8_t* data, size_t len) {
- 1279              		.loc 1 310 55 is_stmt 1 view -0
- 1280              		.cfi_startproc
- 1281              		@ args = 0, pretend = 0, frame = 0
- 1282              		@ frame_needed = 0, uses_anonymous_args = 0
- 1283              		.loc 1 310 55 is_stmt 0 view .LVU279
- 1284 0000 10B5     		push	{r4, lr}
- 1285              	.LCFI23:
- 1286              		.cfi_def_cfa_offset 8
- 1287              		.cfi_offset 4, -8
- 1288              		.cfi_offset 14, -4
- 311:Core/Src/bsp_stm32.c ****   if (!data || !len) return 0;
- 1289              		.loc 1 311 3 is_stmt 1 view .LVU280
- 1290              		.loc 1 311 6 is_stmt 0 view .LVU281
- 1291 0002 68B1     		cbz	r0, .L122
- 1292 0004 0C46     		mov	r4, r1
- 1293 0006 0146     		mov	r1, r0
- 1294              	.LVL128:
- 1295              		.loc 1 311 13 discriminator 2 view .LVU282
- 1296 0008 0CB9     		cbnz	r4, .L124
- 1297              	.LVL129:
- 1298              	.L121:
- 312:Core/Src/bsp_stm32.c ****   if (HAL_UART_Transmit(&huart1, (uint8_t*)data, (uint16_t)len, 100) == HAL_OK) {
- 313:Core/Src/bsp_stm32.c ****     return len;
- 314:Core/Src/bsp_stm32.c ****   }
- 315:Core/Src/bsp_stm32.c ****   return 0;
- 316:Core/Src/bsp_stm32.c **** }
- 1299              		.loc 1 316 1 view .LVU283
- 1300 000a 2046     		mov	r0, r4
-ARM GAS  /tmp/cc36Cegq.s 			page 32
-
-
- 1301 000c 10BD     		pop	{r4, pc}
- 1302              	.LVL130:
- 1303              	.L124:
- 312:Core/Src/bsp_stm32.c ****   if (HAL_UART_Transmit(&huart1, (uint8_t*)data, (uint16_t)len, 100) == HAL_OK) {
- 1304              		.loc 1 312 3 is_stmt 1 view .LVU284
- 312:Core/Src/bsp_stm32.c ****   if (HAL_UART_Transmit(&huart1, (uint8_t*)data, (uint16_t)len, 100) == HAL_OK) {
- 1305              		.loc 1 312 7 is_stmt 0 view .LVU285
- 1306 000e 6423     		movs	r3, #100
- 1307 0010 A2B2     		uxth	r2, r4
- 1308 0012 0448     		ldr	r0, .L125
- 1309              	.LVL131:
- 312:Core/Src/bsp_stm32.c ****   if (HAL_UART_Transmit(&huart1, (uint8_t*)data, (uint16_t)len, 100) == HAL_OK) {
- 1310              		.loc 1 312 7 view .LVU286
- 1311 0014 FFF7FEFF 		bl	HAL_UART_Transmit
- 1312              	.LVL132:
- 312:Core/Src/bsp_stm32.c ****   if (HAL_UART_Transmit(&huart1, (uint8_t*)data, (uint16_t)len, 100) == HAL_OK) {
- 1313              		.loc 1 312 6 view .LVU287
- 1314 0018 0028     		cmp	r0, #0
- 1315 001a F6D0     		beq	.L121
- 315:Core/Src/bsp_stm32.c **** }
- 1316              		.loc 1 315 10 view .LVU288
- 1317 001c 0024     		movs	r4, #0
- 1318              	.LVL133:
- 315:Core/Src/bsp_stm32.c **** }
- 1319              		.loc 1 315 10 view .LVU289
- 1320 001e F4E7     		b	.L121
- 1321              	.LVL134:
- 1322              	.L122:
- 311:Core/Src/bsp_stm32.c ****   if (!data || !len) return 0;
- 1323              		.loc 1 311 29 view .LVU290
- 1324 0020 0024     		movs	r4, #0
- 1325 0022 F2E7     		b	.L121
- 1326              	.L126:
- 1327              		.align	2
- 1328              	.L125:
- 1329 0024 00000000 		.word	huart1
- 1330              		.cfi_endproc
- 1331              	.LFE86:
- 1333              		.section	.bss.s_last_pressed,"aw",%nobits
- 1334              		.align	2
- 1335              		.set	.LANCHOR4,. + 0
- 1338              	s_last_pressed:
- 1339 0000 00000000 		.space	4
- 1340              		.section	.bss.s_oledBack,"aw",%nobits
- 1341              		.align	2
- 1342              		.set	.LANCHOR1,. + 0
- 1345              	s_oledBack:
- 1346 0000 00000000 		.space	1024
- 1346      00000000 
- 1346      00000000 
- 1346      00000000 
- 1346      00000000 
- 1347              		.section	.bss.s_oledDirtyMask,"aw",%nobits
- 1348              		.set	.LANCHOR3,. + 0
- 1351              	s_oledDirtyMask:
- 1352 0000 00       		.space	1
- 1353              		.section	.bss.s_oledFront,"aw",%nobits
-ARM GAS  /tmp/cc36Cegq.s 			page 33
-
-
- 1354              		.align	2
- 1355              		.set	.LANCHOR2,. + 0
- 1358              	s_oledFront:
- 1359 0000 00000000 		.space	1024
- 1359      00000000 
- 1359      00000000 
- 1359      00000000 
- 1359      00000000 
- 1360              		.section	.rodata.s_font6x8,"a"
- 1361              		.align	2
- 1362              		.set	.LANCHOR0,. + 0
- 1365              	s_font6x8:
- 1366 0000 20       		.byte	32
- 1367 0001 00000000 		.ascii	"\000\000\000\000\000\000"
- 1367      0000
- 1368 0007 2D       		.byte	45
- 1369 0008 08080808 		.ascii	"\010\010\010\010\010\000"
- 1369      0800
- 1370 000e 5F       		.byte	95
- 1371 000f 40404040 		.ascii	"@@@@@\000"
- 1371      4000
- 1372 0015 3A       		.byte	58
- 1373 0016 00363600 		.ascii	"\00066\000\000\000"
- 1373      0000
- 1374 001c 2E       		.byte	46
- 1375 001d 00606000 		.ascii	"\000``\000\000\000"
- 1375      0000
- 1376 0023 2F       		.byte	47
- 1377 0024 20100804 		.ascii	" \020\010\004\002\000"
- 1377      0200
- 1378 002a 3F       		.byte	63
- 1379 002b 02015109 		.ascii	"\002\001Q\011\006\000"
- 1379      0600
- 1380 0031 30       		.byte	48
- 1381 0032 3E514945 		.ascii	">QIE>\000"
- 1381      3E00
- 1382 0038 31       		.byte	49
- 1383 0039 00427F40 		.ascii	"\000B\177@\000\000"
- 1383      0000
- 1384 003f 32       		.byte	50
- 1385 0040 42615149 		.ascii	"BaQIF\000"
- 1385      4600
- 1386 0046 33       		.byte	51
- 1387 0047 2141454B 		.ascii	"!AEK1\000"
- 1387      3100
- 1388 004d 34       		.byte	52
- 1389 004e 1814127F 		.ascii	"\030\024\022\177\020\000"
- 1389      1000
- 1390 0054 35       		.byte	53
- 1391 0055 27454545 		.ascii	"'EEE9\000"
- 1391      3900
- 1392 005b 36       		.byte	54
- 1393 005c 3C4A4949 		.ascii	"<JII0\000"
- 1393      3000
- 1394 0062 37       		.byte	55
- 1395 0063 01710905 		.ascii	"\001q\011\005\003\000"
- 1395      0300
-ARM GAS  /tmp/cc36Cegq.s 			page 34
-
-
- 1396 0069 38       		.byte	56
- 1397 006a 36494949 		.ascii	"6III6\000"
- 1397      3600
- 1398 0070 39       		.byte	57
- 1399 0071 06494929 		.ascii	"\006II)\036\000"
- 1399      1E00
- 1400 0077 41       		.byte	65
- 1401 0078 7E111111 		.ascii	"~\021\021\021~\000"
- 1401      7E00
- 1402 007e 42       		.byte	66
- 1403 007f 7F494949 		.ascii	"\177III6\000"
- 1403      3600
- 1404 0085 43       		.byte	67
- 1405 0086 3E414141 		.ascii	">AAA\"\000"
- 1405      2200
- 1406 008c 44       		.byte	68
- 1407 008d 7F414122 		.ascii	"\177AA\"\034\000"
- 1407      1C00
- 1408 0093 45       		.byte	69
- 1409 0094 7F494949 		.ascii	"\177IIIA\000"
- 1409      4100
- 1410 009a 46       		.byte	70
- 1411 009b 7F090909 		.ascii	"\177\011\011\011\001\000"
- 1411      0100
- 1412 00a1 47       		.byte	71
- 1413 00a2 3E414949 		.ascii	">AIIz\000"
- 1413      7A00
- 1414 00a8 48       		.byte	72
- 1415 00a9 7F080808 		.ascii	"\177\010\010\010\177\000"
- 1415      7F00
- 1416 00af 49       		.byte	73
- 1417 00b0 00417F41 		.ascii	"\000A\177A\000\000"
- 1417      0000
- 1418 00b6 4A       		.byte	74
- 1419 00b7 2040413F 		.ascii	" @A?\001\000"
- 1419      0100
- 1420 00bd 4B       		.byte	75
- 1421 00be 7F081422 		.ascii	"\177\010\024\"A\000"
- 1421      4100
- 1422 00c4 4C       		.byte	76
- 1423 00c5 7F404040 		.ascii	"\177@@@@\000"
- 1423      4000
- 1424 00cb 4D       		.byte	77
- 1425 00cc 7F020C02 		.ascii	"\177\002\014\002\177\000"
- 1425      7F00
- 1426 00d2 4E       		.byte	78
- 1427 00d3 7F040810 		.ascii	"\177\004\010\020\177\000"
- 1427      7F00
- 1428 00d9 4F       		.byte	79
- 1429 00da 3E414141 		.ascii	">AAA>\000"
- 1429      3E00
- 1430 00e0 50       		.byte	80
- 1431 00e1 7F090909 		.ascii	"\177\011\011\011\006\000"
- 1431      0600
- 1432 00e7 51       		.byte	81
- 1433 00e8 3E415121 		.ascii	">AQ!^\000"
- 1433      5E00
-ARM GAS  /tmp/cc36Cegq.s 			page 35
-
-
- 1434 00ee 52       		.byte	82
- 1435 00ef 7F091929 		.ascii	"\177\011\031)F\000"
- 1435      4600
- 1436 00f5 53       		.byte	83
- 1437 00f6 46494949 		.ascii	"FIII1\000"
- 1437      3100
- 1438 00fc 54       		.byte	84
- 1439 00fd 01017F01 		.ascii	"\001\001\177\001\001\000"
- 1439      0100
- 1440 0103 55       		.byte	85
- 1441 0104 3F404040 		.ascii	"?@@@?\000"
- 1441      3F00
- 1442 010a 56       		.byte	86
- 1443 010b 1F204020 		.ascii	"\037 @ \037\000"
- 1443      1F00
- 1444 0111 57       		.byte	87
- 1445 0112 3F403840 		.ascii	"?@8@?\000"
- 1445      3F00
- 1446 0118 58       		.byte	88
- 1447 0119 63140814 		.ascii	"c\024\010\024c\000"
- 1447      6300
- 1448 011f 59       		.byte	89
- 1449 0120 07087008 		.ascii	"\007\010p\010\007\000"
- 1449      0700
- 1450 0126 5A       		.byte	90
- 1451 0127 61514945 		.ascii	"aQIEC\000"
- 1451      4300
- 1452              		.text
- 1453              	.Letext0:
- 1454              		.file 2 "/usr/lib/gcc/arm-none-eabi/10.3.1/include/stddef.h"
- 1455              		.file 3 "/usr/lib/gcc/arm-none-eabi/10.3.1/include/stdint.h"
- 1456              		.file 4 "Core/Inc/bsp.h"
- 1457              		.file 5 "Drivers/CMSIS/Device/ST/STM32F1xx/Include/stm32f103xb.h"
- 1458              		.file 6 "Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_def.h"
- 1459              		.file 7 "Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_gpio.h"
- 1460              		.file 8 "Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_dma.h"
- 1461              		.file 9 "Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_i2c.h"
- 1462              		.file 10 "Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h"
- 1463              		.file 11 "Core/Inc/usart.h"
- 1464              		.file 12 "Core/Inc/i2c.h"
- 1465              		.file 13 "/usr/include/newlib/string.h"
- 1466              		.file 14 "<built-in>"
-ARM GAS  /tmp/cc36Cegq.s 			page 36
+ 289              		.loc 1 62 10 view .LVU45
+ 290 001c 0024     		movs	r4, #0
+ 291              	.LVL19:
+  62:Core/Src/bsp_stm32.c **** }
+ 292              		.loc 1 62 10 view .LVU46
+ 293 001e F4E7     		b	.L24
+ 294              	.LVL20:
+ 295              	.L25:
+  54:Core/Src/bsp_stm32.c ****   }
+ 296              		.loc 1 54 12 view .LVU47
+ 297 0020 0024     		movs	r4, #0
+ 298 0022 F2E7     		b	.L24
+ 299              	.L29:
+ 300              		.align	2
+ 301              	.L28:
+ 302 0024 00000000 		.word	huart1
+ 303              		.cfi_endproc
+ 304              	.LFE72:
+ 306              		.text
+ 307              	.Letext0:
+ 308              		.file 2 "/usr/lib/gcc/arm-none-eabi/10.3.1/include/stddef.h"
+ 309              		.file 3 "/usr/lib/gcc/arm-none-eabi/10.3.1/include/stdint.h"
+ 310              		.file 4 "Core/Inc/bsp.h"
+ 311              		.file 5 "Drivers/CMSIS/Device/ST/STM32F1xx/Include/stm32f103xb.h"
+ 312              		.file 6 "Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_def.h"
+ 313              		.file 7 "Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_gpio.h"
+ 314              		.file 8 "Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_dma.h"
+ 315              		.file 9 "Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h"
+ 316              		.file 10 "Core/Inc/bsp_keys.h"
+ 317              		.file 11 "Core/Inc/bsp_oled.h"
+ 318              		.file 12 "Core/Inc/usart.h"
+ARM GAS  /tmp/cchWBekZ.s 			page 8
 
 
 DEFINED SYMBOLS
                             *ABS*:0000000000000000 bsp_stm32.c
-     /tmp/cc36Cegq.s:16     .text.oled_font6x8_get:0000000000000000 $t
-     /tmp/cc36Cegq.s:23     .text.oled_font6x8_get:0000000000000000 oled_font6x8_get
-     /tmp/cc36Cegq.s:94     .text.oled_font6x8_get:0000000000000034 $d
-     /tmp/cc36Cegq.s:100    .text.idx_to_keycode:0000000000000000 $t
-     /tmp/cc36Cegq.s:106    .text.idx_to_keycode:0000000000000000 idx_to_keycode
-     /tmp/cc36Cegq.s:119    .text.idx_to_keycode:0000000000000008 $d
-     /tmp/cc36Cegq.s:123    .text.idx_to_keycode:000000000000000c $t
-     /tmp/cc36Cegq.s:164    .text.oled_clear_page:0000000000000000 $t
-     /tmp/cc36Cegq.s:170    .text.oled_clear_page:0000000000000000 oled_clear_page
-     /tmp/cc36Cegq.s:203    .text.oled_clear_page:0000000000000018 $d
-     /tmp/cc36Cegq.s:208    .text.oled_write_cmd:0000000000000000 $t
-     /tmp/cc36Cegq.s:214    .text.oled_write_cmd:0000000000000000 oled_write_cmd
-     /tmp/cc36Cegq.s:255    .text.oled_write_cmd:0000000000000024 $d
-     /tmp/cc36Cegq.s:260    .text.oled_basic_init:0000000000000000 $t
-     /tmp/cc36Cegq.s:266    .text.oled_basic_init:0000000000000000 oled_basic_init
-     /tmp/cc36Cegq.s:395    .text.oled_set_cursor:0000000000000000 $t
-     /tmp/cc36Cegq.s:401    .text.oled_set_cursor:0000000000000000 oled_set_cursor
-     /tmp/cc36Cegq.s:439    .text.oled_write_data:0000000000000000 $t
-     /tmp/cc36Cegq.s:445    .text.oled_write_data:0000000000000000 oled_write_data
-     /tmp/cc36Cegq.s:528    .text.oled_write_data:0000000000000044 $d
-     /tmp/cc36Cegq.s:533    .text.oled_flush_page:0000000000000000 $t
-     /tmp/cc36Cegq.s:539    .text.oled_flush_page:0000000000000000 oled_flush_page
-     /tmp/cc36Cegq.s:597    .text.oled_flush_page:000000000000003c $d
-     /tmp/cc36Cegq.s:604    .text.oled_flush_all:0000000000000000 $t
-     /tmp/cc36Cegq.s:610    .text.oled_flush_all:0000000000000000 oled_flush_all
-     /tmp/cc36Cegq.s:654    .text.oled_flush_dirty_pages:0000000000000000 $t
-     /tmp/cc36Cegq.s:660    .text.oled_flush_dirty_pages:0000000000000000 oled_flush_dirty_pages
-     /tmp/cc36Cegq.s:716    .text.oled_flush_dirty_pages:0000000000000024 $d
-     /tmp/cc36Cegq.s:721    .text.oled_mark_dirty_if_changed:0000000000000000 $t
-     /tmp/cc36Cegq.s:727    .text.oled_mark_dirty_if_changed:0000000000000000 oled_mark_dirty_if_changed
-     /tmp/cc36Cegq.s:784    .text.oled_mark_dirty_if_changed:0000000000000030 $d
-     /tmp/cc36Cegq.s:791    .text.BSP_Init:0000000000000000 $t
-     /tmp/cc36Cegq.s:798    .text.BSP_Init:0000000000000000 BSP_Init
-     /tmp/cc36Cegq.s:811    .text.BSP_Led_Set:0000000000000000 $t
-     /tmp/cc36Cegq.s:818    .text.BSP_Led_Set:0000000000000000 BSP_Led_Set
-     /tmp/cc36Cegq.s:847    .text.BSP_Led_Set:0000000000000014 $d
-     /tmp/cc36Cegq.s:852    .text.BSP_Lcd_Init:0000000000000000 $t
-     /tmp/cc36Cegq.s:859    .text.BSP_Lcd_Init:0000000000000000 BSP_Lcd_Init
-     /tmp/cc36Cegq.s:899    .text.BSP_Lcd_Init:000000000000002c $d
-     /tmp/cc36Cegq.s:906    .rodata.BSP_Lcd_PrintLine.str1.4:0000000000000000 $d
-     /tmp/cc36Cegq.s:910    .text.BSP_Lcd_PrintLine:0000000000000000 $t
-     /tmp/cc36Cegq.s:917    .text.BSP_Lcd_PrintLine:0000000000000000 BSP_Lcd_PrintLine
-     /tmp/cc36Cegq.s:1022   .text.BSP_Lcd_PrintLine:0000000000000050 $d
-     /tmp/cc36Cegq.s:1028   .text.BSP_Keys_Init:0000000000000000 $t
-     /tmp/cc36Cegq.s:1035   .text.BSP_Keys_Init:0000000000000000 BSP_Keys_Init
-     /tmp/cc36Cegq.s:1051   .text.BSP_Keys_Init:0000000000000008 $d
-     /tmp/cc36Cegq.s:1056   .text.BSP_Keys_GetEvent:0000000000000000 $t
-     /tmp/cc36Cegq.s:1063   .text.BSP_Keys_GetEvent:0000000000000000 BSP_Keys_GetEvent
-     /tmp/cc36Cegq.s:1213   .text.BSP_Keys_GetEvent:0000000000000088 $d
-     /tmp/cc36Cegq.s:1219   .text.BSP_Uart_Init:0000000000000000 $t
-     /tmp/cc36Cegq.s:1226   .text.BSP_Uart_Init:0000000000000000 BSP_Uart_Init
-     /tmp/cc36Cegq.s:1264   .text.BSP_Uart_Init:0000000000000018 $d
-     /tmp/cc36Cegq.s:1269   .text.BSP_Uart_Send:0000000000000000 $t
-     /tmp/cc36Cegq.s:1276   .text.BSP_Uart_Send:0000000000000000 BSP_Uart_Send
-     /tmp/cc36Cegq.s:1329   .text.BSP_Uart_Send:0000000000000024 $d
-ARM GAS  /tmp/cc36Cegq.s 			page 37
-
-
-     /tmp/cc36Cegq.s:1334   .bss.s_last_pressed:0000000000000000 $d
-     /tmp/cc36Cegq.s:1338   .bss.s_last_pressed:0000000000000000 s_last_pressed
-     /tmp/cc36Cegq.s:1341   .bss.s_oledBack:0000000000000000 $d
-     /tmp/cc36Cegq.s:1345   .bss.s_oledBack:0000000000000000 s_oledBack
-     /tmp/cc36Cegq.s:1351   .bss.s_oledDirtyMask:0000000000000000 s_oledDirtyMask
-     /tmp/cc36Cegq.s:1352   .bss.s_oledDirtyMask:0000000000000000 $d
-     /tmp/cc36Cegq.s:1354   .bss.s_oledFront:0000000000000000 $d
-     /tmp/cc36Cegq.s:1358   .bss.s_oledFront:0000000000000000 s_oledFront
-     /tmp/cc36Cegq.s:1361   .rodata.s_font6x8:0000000000000000 $d
-     /tmp/cc36Cegq.s:1365   .rodata.s_font6x8:0000000000000000 s_font6x8
+     /tmp/cchWBekZ.s:16     .text.BSP_Init:0000000000000000 $t
+     /tmp/cchWBekZ.s:24     .text.BSP_Init:0000000000000000 BSP_Init
+     /tmp/cchWBekZ.s:38     .text.BSP_Led_Set:0000000000000000 $t
+     /tmp/cchWBekZ.s:45     .text.BSP_Led_Set:0000000000000000 BSP_Led_Set
+     /tmp/cchWBekZ.s:74     .text.BSP_Led_Set:0000000000000014 $d
+     /tmp/cchWBekZ.s:79     .text.BSP_Lcd_Init:0000000000000000 $t
+     /tmp/cchWBekZ.s:86     .text.BSP_Lcd_Init:0000000000000000 BSP_Lcd_Init
+     /tmp/cchWBekZ.s:106    .text.BSP_Lcd_PrintLine:0000000000000000 $t
+     /tmp/cchWBekZ.s:113    .text.BSP_Lcd_PrintLine:0000000000000000 BSP_Lcd_PrintLine
+     /tmp/cchWBekZ.s:135    .text.BSP_Keys_Init:0000000000000000 $t
+     /tmp/cchWBekZ.s:142    .text.BSP_Keys_Init:0000000000000000 BSP_Keys_Init
+     /tmp/cchWBekZ.s:162    .text.BSP_Keys_GetEvent:0000000000000000 $t
+     /tmp/cchWBekZ.s:169    .text.BSP_Keys_GetEvent:0000000000000000 BSP_Keys_GetEvent
+     /tmp/cchWBekZ.s:192    .text.BSP_Uart_Init:0000000000000000 $t
+     /tmp/cchWBekZ.s:199    .text.BSP_Uart_Init:0000000000000000 BSP_Uart_Init
+     /tmp/cchWBekZ.s:237    .text.BSP_Uart_Init:0000000000000018 $d
+     /tmp/cchWBekZ.s:242    .text.BSP_Uart_Send:0000000000000000 $t
+     /tmp/cchWBekZ.s:249    .text.BSP_Uart_Send:0000000000000000 BSP_Uart_Send
+     /tmp/cchWBekZ.s:302    .text.BSP_Uart_Send:0000000000000024 $d
 
 UNDEFINED SYMBOLS
-memset
-HAL_I2C_Master_Transmit
-hi2c2
-memcpy
-memcmp
 HAL_GPIO_WritePin
-HAL_GPIO_ReadPin
+BSP_Oled_Init
+BSP_Oled_PrintLine
+BSP_KeysDrv_Init
+BSP_KeysDrv_GetEvent
 HAL_UART_Init
 huart1
 HAL_UART_Transmit

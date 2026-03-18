@@ -24,7 +24,7 @@ build/bsp_stm32.o: Core/Src/bsp_stm32.c Core/Inc/bsp.h Core/Inc/gpio.h \
  Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim.h \
  Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim_ex.h \
  Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h Core/Inc/usart.h \
- Core/Inc/i2c.h Core/Inc/dma.h Core/Inc/main.h
+ Core/Inc/bsp_oled.h Core/Inc/bsp_keys.h Core/Inc/bsp.h Core/Inc/main.h
 Core/Inc/bsp.h:
 Core/Inc/gpio.h:
 Core/Inc/main.h:
@@ -56,6 +56,7 @@ Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim.h:
 Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim_ex.h:
 Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h:
 Core/Inc/usart.h:
-Core/Inc/i2c.h:
-Core/Inc/dma.h:
+Core/Inc/bsp_oled.h:
+Core/Inc/bsp_keys.h:
+Core/Inc/bsp.h:
 Core/Inc/main.h:
