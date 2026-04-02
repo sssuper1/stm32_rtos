@@ -32,6 +32,9 @@ uint16_t APP_UartProto_CalcCrc(const uint8_t *data, uint16_t len)
     }
   }
 
+  /* 与主控板 CRC_Check 保持一致：返回前交换高低字节。 */
+  crc = (uint16_t)((crc >> 8) | (crc << 8));
+
   return crc;
 }
 

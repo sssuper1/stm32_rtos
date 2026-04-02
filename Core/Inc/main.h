@@ -59,21 +59,21 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define LED_HEARTBEAT_Pin GPIO_PIN_13
 #define LED_HEARTBEAT_GPIO_Port GPIOC
-#define KEY_C2_Pin GPIO_PIN_12
+#define KEY_C2_Pin GPIO_PIN_7
 #define KEY_C2_GPIO_Port GPIOB
-#define KEY_C3_Pin GPIO_PIN_13
+#define KEY_C3_Pin GPIO_PIN_8
 #define KEY_C3_GPIO_Port GPIOB
-#define KEY_C4_Pin GPIO_PIN_14
+#define KEY_C4_Pin GPIO_PIN_9
 #define KEY_C4_GPIO_Port GPIOB
-#define KEY_R1_Pin GPIO_PIN_5
+#define KEY_R1_Pin GPIO_PIN_12
 #define KEY_R1_GPIO_Port GPIOB
-#define KEY_R2_Pin GPIO_PIN_6
+#define KEY_R2_Pin GPIO_PIN_13
 #define KEY_R2_GPIO_Port GPIOB
-#define KEY_R3_Pin GPIO_PIN_7
+#define KEY_R3_Pin GPIO_PIN_14
 #define KEY_R3_GPIO_Port GPIOB
-#define KEY_R4_Pin GPIO_PIN_8
+#define KEY_R4_Pin GPIO_PIN_5
 #define KEY_R4_GPIO_Port GPIOB
-#define KEY_C1_Pin GPIO_PIN_9
+#define KEY_C1_Pin GPIO_PIN_6
 #define KEY_C1_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */

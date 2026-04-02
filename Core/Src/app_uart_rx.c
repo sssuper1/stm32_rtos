@@ -22,12 +22,36 @@ static uint16_t s_rxIndex = 0u;
 static volatile uint16_t s_isrWrite = 0u;
 static volatile uint16_t s_isrRead  = 0u;
 static uint8_t s_isrRing[UART_ISR_RING_SIZE];
+static volatile uint32_t s_isrByteCount = 0u;
+static volatile uint32_t s_validFrameCount = 0u;
+static volatile uint32_t s_crcFailCount = 0u;
+static volatile uint32_t s_headHitCount = 0u;
+static volatile uint32_t s_tailHitCount = 0u;
+static volatile uint32_t s_head7BitHitCount = 0u;
+static volatile uint32_t s_headInvertedHitCount = 0u;
+static uint8_t s_prevByte = 0u;
+static bool s_hasPrevByte = false;
+static volatile uint8_t s_lastBurstByte0 = 0u;
+static volatile uint8_t s_lastBurstByte1 = 0xFFu;
+static volatile uint8_t s_lastBurstLastByte = 0u;
 
 void APP_UartRx_Init(void)
 {
   s_rxIndex = 0u;
   s_isrWrite = 0u;
   s_isrRead = 0u;
+  s_isrByteCount = 0u;
+  s_validFrameCount = 0u;
+  s_crcFailCount = 0u;
+  s_headHitCount = 0u;
+  s_tailHitCount = 0u;
+  s_head7BitHitCount = 0u;
+  s_headInvertedHitCount = 0u;
+  s_prevByte = 0u;
+  s_hasPrevByte = false;
+  s_lastBurstByte0 = 0u;
+  s_lastBurstByte1 = 0xFFu;
+  s_lastBurstLastByte = 0u;
 }
 
 static void uart_rx_reset(void)
@@ -37,6 +61,20 @@ static void uart_rx_reset(void)
 
 void APP_UartRx_OnByte(uint8_t byte)
 {
+  if (s_hasPrevByte)
+  {
+    if ((s_prevByte == 0x55u) && (byte == 0x5Du))
+    {
+      s_head7BitHitCount++;
+    }
+    if ((s_prevByte == 0x2Au) && (byte == 0xA2u))
+    {
+      s_headInvertedHitCount++;
+    }
+  }
+  s_prevByte = byte;
+  s_hasPrevByte = true;
+
   /* 简单状态机：始终维护一个缓冲区，以“帧头+任意内容+帧尾”的方式寻找完整帧 */
 
   if (s_rxIndex == 0u)
@@ -54,6 +92,7 @@ void APP_UartRx_OnByte(uint8_t byte)
     if (byte == UART_FRAME_HEAD_L)
     {
       s_rxBuf[s_rxIndex++] = byte;
+      s_headHitCount++;
     }
     else
     {
@@ -87,6 +126,8 @@ void APP_UartRx_OnByte(uint8_t byte)
   if ((s_rxBuf[s_rxIndex - 2u] == UART_FRAME_TAIL_H) &&
       (s_rxBuf[s_rxIndex - 1u] == UART_FRAME_TAIL_L))
   {
+    s_tailHitCount++;
+
     /* 解析一帧 */
     const uint16_t totalLen = s_rxIndex;
 
@@ -118,8 +159,13 @@ void APP_UartRx_OnByte(uint8_t byte)
 
     if (crcCalc == crcFrame)
     {
+      s_validFrameCount++;
       /* CRC 正确，调用上层回调 */
       APP_UartRx_OnFrame(cmd, msgType, payload, payloadLen);
+    }
+    else
+    {
+      s_crcFailCount++;
     }
 
     /* 无论校验成功与否，重置，开始寻找下一帧 */
@@ -146,6 +192,11 @@ void APP_UartRx_PushFromISR(const uint8_t *data, size_t len)
   {
     return;
   }
+
+  s_isrByteCount += (uint32_t)len;
+  s_lastBurstByte0 = data[0];
+  s_lastBurstByte1 = (len >= 2u) ? data[1] : 0xFFu;
+  s_lastBurstLastByte = data[len - 1u];
 
   for (size_t i = 0u; i < len; ++i)
   {
@@ -182,6 +233,56 @@ void APP_UartRx_ProcessPending(void)
 
     APP_UartRx_OnByte(byte);
   }
+}
+
+uint32_t APP_UartRx_GetValidFrameCount(void)
+{
+  return s_validFrameCount;
+}
+
+uint32_t APP_UartRx_GetIsrByteCount(void)
+{
+  return s_isrByteCount;
+}
+
+uint32_t APP_UartRx_GetCrcFailCount(void)
+{
+  return s_crcFailCount;
+}
+
+uint32_t APP_UartRx_GetHeadHitCount(void)
+{
+  return s_headHitCount;
+}
+
+uint32_t APP_UartRx_GetTailHitCount(void)
+{
+  return s_tailHitCount;
+}
+
+uint32_t APP_UartRx_GetHead7BitHitCount(void)
+{
+  return s_head7BitHitCount;
+}
+
+uint32_t APP_UartRx_GetHeadInvertedHitCount(void)
+{
+  return s_headInvertedHitCount;
+}
+
+uint8_t APP_UartRx_GetLastBurstByte0(void)
+{
+  return s_lastBurstByte0;
+}
+
+uint8_t APP_UartRx_GetLastBurstByte1(void)
+{
+  return s_lastBurstByte1;
+}
+
+uint8_t APP_UartRx_GetLastBurstLastByte(void)
+{
+  return s_lastBurstLastByte;
 }
 
 /* 默认的弱实现：用户可在其他模块中重新实现此函数 */

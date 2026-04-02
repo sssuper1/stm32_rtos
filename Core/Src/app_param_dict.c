@@ -1,4 +1,6 @@
 #include "app_param_dict.h"
+#include "cmsis_os2.h"
+extern osMutexId_t gParamMutexHandle;
 #include <stddef.h>
 
 /**
@@ -18,7 +20,7 @@ static ParamDef_t s_paramDict[] =
     .type      = PARAM_TYPE_UINT8,
     .access    = PARAM_ACCESS_RW,
     .min_value = 0,
-    .max_value = 3,
+    .max_value = 1,
     .scale     = 0,
     .value     = 0
   },
@@ -31,8 +33,8 @@ static ParamDef_t s_paramDict[] =
     .id        = PARAM_ID_NET_IP_ADDR,
     .type      = PARAM_TYPE_UINT32,
     .access    = PARAM_ACCESS_RW,
-    .min_value = 0x00000000,
-    .max_value = 0xFFFFFFFF,
+    .min_value = (-2147483647 - 1),
+    .max_value = 2147483647,
     .scale     = 0,
     .value     = 0xC0A80201  /* 默认 192.168.2.1 */
   },
@@ -64,15 +66,36 @@ static ParamDef_t s_paramDict[] =
     .value     = 250    /* 25.0 ℃ 示例 */
   },
 
-  /* 路由协议：
-   * 0 = OLSR, 1 = AODV, 2 = BATMAN 等，范围 0~3 预留。
+  /* 路由协议（屏端协议值）：
+   * 0 = OLSR, 1 = AODV, 2 = BATMAN。
    */
   {
     .id        = PARAM_ID_ROUTING_PROTOCOL,
     .type      = PARAM_TYPE_UINT8,
     .access    = PARAM_ACCESS_RW,
     .min_value = 0,
-    .max_value = 3,
+    .max_value = 2,
+    .scale     = 0,
+    .value     = 0
+  },
+
+  /* 接入协议：当前仅支持 0=动态TDMA */
+  {
+    .id        = PARAM_ID_ACCESS_PROTOCOL,
+    .type      = PARAM_TYPE_UINT8,
+    .access    = PARAM_ACCESS_RW,
+    .min_value = 0,
+    .max_value = 0,
+    .scale     = 0,
+    .value     = 0
+  },
+
+  {
+    .id        = PARAM_ID_DEVICE_ID,
+    .type      = PARAM_TYPE_UINT8,
+    .access    = PARAM_ACCESS_RO,
+    .min_value = 0,
+    .max_value = 255,
     .scale     = 0,
     .value     = 0
   },
@@ -81,7 +104,7 @@ static ParamDef_t s_paramDict[] =
   {
     .id        = PARAM_ID_GPS_LONGITUDE,
     .type      = PARAM_TYPE_INT32,
-    .access    = PARAM_ACCESS_RO,
+    .access    = PARAM_ACCESS_RW,
     .min_value = (-2147483647 - 1),
     .max_value = 2147483647,
     .scale     = 0,
@@ -90,7 +113,7 @@ static ParamDef_t s_paramDict[] =
   {
     .id        = PARAM_ID_GPS_LATITUDE,
     .type      = PARAM_TYPE_INT32,
-    .access    = PARAM_ACCESS_RO,
+    .access    = PARAM_ACCESS_RW,
     .min_value = (-2147483647 - 1),
     .max_value = 2147483647,
     .scale     = 0,
@@ -99,7 +122,7 @@ static ParamDef_t s_paramDict[] =
   {
     .id        = PARAM_ID_GPS_ALTITUDE,
     .type      = PARAM_TYPE_INT16,
-    .access    = PARAM_ACCESS_RO,
+    .access    = PARAM_ACCESS_RW,
     .min_value = -32768,
     .max_value = 32767,
     .scale     = 0,
@@ -172,12 +195,66 @@ static ParamDef_t s_paramDict[] =
     .scale     = 0,
     .value     = 0
   },
+  {
+    .id        = PARAM_ID_SELFTEST_STATE,
+    .type      = PARAM_TYPE_UINT8,
+    .access    = PARAM_ACCESS_RO,
+    .min_value = 0,
+    .max_value = 255,
+    .scale     = 0,
+    .value     = 0
+  },
+  {
+    .id        = PARAM_ID_CLOCK_SELECTION,
+    .type      = PARAM_TYPE_UINT8,
+    .access    = PARAM_ACCESS_RO,
+    .min_value = 0,
+    .max_value = 255,
+    .scale     = 0,
+    .value     = 0
+  },
+  {
+    .id        = PARAM_ID_ADC_STATUS,
+    .type      = PARAM_TYPE_UINT8,
+    .access    = PARAM_ACCESS_RO,
+    .min_value = 0,
+    .max_value = 255,
+    .scale     = 0,
+    .value     = 0
+  },
+  {
+    .id        = PARAM_ID_CLOCK_SRC_TEMP,
+    .type      = PARAM_TYPE_UINT8,
+    .access    = PARAM_ACCESS_RO,
+    .min_value = 0,
+    .max_value = 255,
+    .scale     = 0,
+    .value     = 0
+  },
+  {
+    .id        = PARAM_ID_FREQ_WORD_CNT,
+    .type      = PARAM_TYPE_UINT16,
+    .access    = PARAM_ACCESS_RO,
+    .min_value = 0,
+    .max_value = 65535,
+    .scale     = 0,
+    .value     = 0
+  },
+  {
+    .id        = PARAM_ID_COMM_SENSE_ST,
+    .type      = PARAM_TYPE_UINT8,
+    .access    = PARAM_ACCESS_RO,
+    .min_value = 0,
+    .max_value = 255,
+    .scale     = 0,
+    .value     = 0
+  },
 
   /* 0x08 开机显示参数 */
   {
     .id        = PARAM_ID_TIME_HOUR,
     .type      = PARAM_TYPE_UINT8,
-    .access    = PARAM_ACCESS_RO,
+    .access    = PARAM_ACCESS_RW,
     .min_value = 0,
     .max_value = 23,
     .scale     = 0,
@@ -186,7 +263,7 @@ static ParamDef_t s_paramDict[] =
   {
     .id        = PARAM_ID_TIME_MINUTE,
     .type      = PARAM_TYPE_UINT8,
-    .access    = PARAM_ACCESS_RO,
+    .access    = PARAM_ACCESS_RW,
     .min_value = 0,
     .max_value = 59,
     .scale     = 0,
@@ -195,7 +272,7 @@ static ParamDef_t s_paramDict[] =
   {
     .id        = PARAM_ID_TIME_SECOND,
     .type      = PARAM_TYPE_UINT8,
-    .access    = PARAM_ACCESS_RO,
+    .access    = PARAM_ACCESS_RW,
     .min_value = 0,
     .max_value = 59,
     .scale     = 0,
@@ -224,7 +301,7 @@ static ParamDef_t s_paramDict[] =
     .type      = PARAM_TYPE_UINT8,
     .access    = PARAM_ACCESS_RW,
     .min_value = 0,
-    .max_value = 4,
+    .max_value = 3,
     .scale     = 0,
     .value     = 0
   },
@@ -285,7 +362,7 @@ static ParamDef_t s_paramDict[] =
   {
     .id        = PARAM_ID_SPATIAL_FILTER,
     .type      = PARAM_TYPE_UINT8,
-    .access    = PARAM_ACCESS_RO,
+    .access    = PARAM_ACCESS_RW,
     .min_value = 0,
     .max_value = 1,
     .scale     = 0,
@@ -319,6 +396,24 @@ static ParamDef_t s_paramDict[] =
     .value     = 0
   },
 
+    {
+    .id        = PARAM_ID_MCS,
+    .type      = PARAM_TYPE_UINT8,
+    .access    = PARAM_ACCESS_RW,
+    .min_value = 0,
+    .max_value = 7,
+    .scale     = 0,
+    .value     = 0
+  },
+  {
+    .id        = PARAM_ID_SLOTLEN,
+    .type      = PARAM_TYPE_UINT8,
+    .access    = PARAM_ACCESS_RW,
+    .min_value = 0,
+    .max_value = 3,
+    .scale     = 0,
+    .value     = 3
+  },
   /* 0x09 邻居信息 */
   {
     .id        = PARAM_ID_NEIGHBOR_COUNT,
@@ -338,6 +433,170 @@ static ParamDef_t s_paramDict[] =
     .scale     = 0,
     .value     = 0
   },
+  {
+    .id        = PARAM_ID_NEIGHBOR_NODE_ID,
+    .type      = PARAM_TYPE_UINT8,
+    .access    = PARAM_ACCESS_RO,
+    .min_value = 0,
+    .max_value = 255,
+    .scale     = 0,
+    .value     = 0
+  },
+  {
+    .id        = PARAM_ID_NEIGHBOR_NODE_IP,
+    .type      = PARAM_TYPE_UINT32,
+    .access    = PARAM_ACCESS_RO,
+    .min_value = (-2147483647 - 1),
+    .max_value = 2147483647,
+    .scale     = 0,
+    .value     = 0
+  },
+  {
+    .id        = PARAM_ID_NEIGHBOR_NODE_HOPS,
+    .type      = PARAM_TYPE_UINT8,
+    .access    = PARAM_ACCESS_RO,
+    .min_value = 0,
+    .max_value = 255,
+    .scale     = 0,
+    .value     = 0
+  },
+  {
+    .id        = PARAM_ID_NEIGHBOR_NODE_DELAY,
+    .type      = PARAM_TYPE_UINT16,
+    .access    = PARAM_ACCESS_RO,
+    .min_value = 0,
+    .max_value = 65535,
+    .scale     = 0,
+    .value     = 0
+  },
+  {
+    .id        = PARAM_ID_NEIGHBOR_NODE_LON,
+    .type      = PARAM_TYPE_INT32,
+    .access    = PARAM_ACCESS_RO,
+    .min_value = (-2147483647 - 1),
+    .max_value = 2147483647,
+    .scale     = 0,
+    .value     = 0
+  },
+  {
+    .id        = PARAM_ID_NEIGHBOR_NODE_LAT,
+    .type      = PARAM_TYPE_INT32,
+    .access    = PARAM_ACCESS_RO,
+    .min_value = (-2147483647 - 1),
+    .max_value = 2147483647,
+    .scale     = 0,
+    .value     = 0
+  },
+  {
+    .id        = PARAM_ID_NEIGHBOR_NODE_ALT,
+    .type      = PARAM_TYPE_UINT16,
+    .access    = PARAM_ACCESS_RO,
+    .min_value = 0,
+    .max_value = 65535,
+    .scale     = 0,
+    .value     = 0
+  },
+
+  /* 0x0A 节点详细信息 */
+  {
+    .id        = PARAM_ID_DETAIL_MEMBER_ID,
+    .type      = PARAM_TYPE_UINT8,
+    .access    = PARAM_ACCESS_RO,
+    .min_value = 0,
+    .max_value = 255,
+    .scale     = 0,
+    .value     = 0
+  },
+  {
+    .id        = PARAM_ID_DETAIL_SPATIAL,
+    .type      = PARAM_TYPE_UINT8,
+    .access    = PARAM_ACCESS_RO,
+    .min_value = 0,
+    .max_value = 1,
+    .scale     = 0,
+    .value     = 0
+  },
+  {
+    .id        = PARAM_ID_DETAIL_IP,
+    .type      = PARAM_TYPE_UINT32,
+    .access    = PARAM_ACCESS_RO,
+    .min_value = (-2147483647 - 1),
+    .max_value = 2147483647,
+    .scale     = 0,
+    .value     = 0
+  },
+  {
+    .id        = PARAM_ID_DETAIL_CH1_HOP,
+    .type      = PARAM_TYPE_UINT8,
+    .access    = PARAM_ACCESS_RO,
+    .min_value = 0,
+    .max_value = 1,
+    .scale     = 0,
+    .value     = 0
+  },
+  {
+    .id        = PARAM_ID_DETAIL_CH1_FREQ,
+    .type      = PARAM_TYPE_UINT32,
+    .access    = PARAM_ACCESS_RO,
+    .min_value = 0,
+    .max_value = 3000000,
+    .scale     = 3,
+    .value     = 0
+  },
+  {
+    .id        = PARAM_ID_DETAIL_CH1_BW,
+    .type      = PARAM_TYPE_UINT8,
+    .access    = PARAM_ACCESS_RO,
+    .min_value = 0,
+    .max_value = 4,
+    .scale     = 0,
+    .value     = 0
+  },
+  {
+    .id        = PARAM_ID_DETAIL_CH1_WAVE,
+    .type      = PARAM_TYPE_UINT8,
+    .access    = PARAM_ACCESS_RO,
+    .min_value = 0,
+    .max_value = 7,
+    .scale     = 0,
+    .value     = 0
+  },
+  {
+    .id        = PARAM_ID_DETAIL_CH1_TXPWR,
+    .type      = PARAM_TYPE_UINT8,
+    .access    = PARAM_ACCESS_RO,
+    .min_value = 0,
+    .max_value = 2,
+    .scale     = 0,
+    .value     = 0
+  },
+  {
+    .id        = PARAM_ID_DETAIL_CH1_TXATTEN,
+    .type      = PARAM_TYPE_UINT8,
+    .access    = PARAM_ACCESS_RO,
+    .min_value = 0,
+    .max_value = 90,
+    .scale     = 0,
+    .value     = 0
+  },
+  {
+    .id        = PARAM_ID_DETAIL_CH1_ROUTE,
+    .type      = PARAM_TYPE_UINT8,
+    .access    = PARAM_ACCESS_RO,
+    .min_value = 0,
+    .max_value = 2,
+    .scale     = 0,
+    .value     = 0
+  },
+  {
+    .id        = PARAM_ID_DETAIL_CH1_ACCESS,
+    .type      = PARAM_TYPE_UINT8,
+    .access    = PARAM_ACCESS_RO,
+    .min_value = 0,
+    .max_value = 0,
+    .scale     = 0,
+    .value     = 0
+  },
 
   {
     .id        = PARAM_ID_UART_ACK_STATE,
@@ -354,6 +613,132 @@ static ParamDef_t s_paramDict[] =
     .access    = PARAM_ACCESS_RO,
     .min_value = 0,
     .max_value = 255,
+    .scale     = 0,
+    .value     = 0
+  },
+  {
+    .id        = PARAM_ID_TXRX_OPERATION,
+    .type      = PARAM_TYPE_UINT8,
+    .access    = PARAM_ACCESS_RW,
+    .min_value = 0,
+    .max_value = 2,
+    .scale     = 0,
+    .value     = 0
+  },
+  {
+    .id        = PARAM_ID_DEVICE_NAME_TOKEN,
+    .type      = PARAM_TYPE_UINT32,
+    .access    = PARAM_ACCESS_RW,
+    .min_value = 0,
+    .max_value = 2147483647,
+    .scale     = 0,
+    .value     = 0
+  },
+  {
+    .id        = PARAM_ID_NET_BIZ_PORT,
+    .type      = PARAM_TYPE_UINT16,
+    .access    = PARAM_ACCESS_RW,
+    .min_value = 0,
+    .max_value = 65535,
+    .scale     = 0,
+    .value     = 0
+  },
+  {
+    .id        = PARAM_ID_NET_MGMT_IP,
+    .type      = PARAM_TYPE_UINT32,
+    .access    = PARAM_ACCESS_RW,
+    .min_value = (-2147483647 - 1),
+    .max_value = 2147483647,
+    .scale     = 0,
+    .value     = 0
+  },
+  {
+    .id        = PARAM_ID_NET_MGMT_PORT,
+    .type      = PARAM_TYPE_UINT16,
+    .access    = PARAM_ACCESS_RW,
+    .min_value = 0,
+    .max_value = 65535,
+    .scale     = 0,
+    .value     = 0
+  },
+  {
+    .id        = PARAM_ID_NET_SENSE_IP,
+    .type      = PARAM_TYPE_UINT32,
+    .access    = PARAM_ACCESS_RW,
+    .min_value = (-2147483647 - 1),
+    .max_value = 2147483647,
+    .scale     = 0,
+    .value     = 0
+  },
+  {
+    .id        = PARAM_ID_NET_SENSE_PORT,
+    .type      = PARAM_TYPE_UINT16,
+    .access    = PARAM_ACCESS_RW,
+    .min_value = 0,
+    .max_value = 65535,
+    .scale     = 0,
+    .value     = 0
+  },
+  {
+    .id        = PARAM_ID_UART_BAUD_IDX,
+    .type      = PARAM_TYPE_UINT8,
+    .access    = PARAM_ACCESS_RW,
+    .min_value = 0,
+    .max_value = 7,
+    .scale     = 0,
+    .value     = 4
+  },
+  {
+    .id        = PARAM_ID_UART_DATABITS,
+    .type      = PARAM_TYPE_UINT8,
+    .access    = PARAM_ACCESS_RW,
+    .min_value = 0,
+    .max_value = 3,
+    .scale     = 0,
+    .value     = 3
+  },
+  {
+    .id        = PARAM_ID_UART_STOPBITS,
+    .type      = PARAM_TYPE_UINT8,
+    .access    = PARAM_ACCESS_RW,
+    .min_value = 0,
+    .max_value = 2,
+    .scale     = 0,
+    .value     = 0
+  },
+  {
+    .id        = PARAM_ID_UART_PARITY,
+    .type      = PARAM_TYPE_UINT8,
+    .access    = PARAM_ACCESS_RW,
+    .min_value = 0,
+    .max_value = 4,
+    .scale     = 0,
+    .value     = 0
+  },
+  {
+    .id        = PARAM_ID_UART_FLOW,
+    .type      = PARAM_TYPE_UINT8,
+    .access    = PARAM_ACCESS_RW,
+    .min_value = 0,
+    .max_value = 5,
+    .scale     = 0,
+    .value     = 0
+  },
+  {
+    .id        = PARAM_ID_LOC_AUTO_SYNC,
+    .type      = PARAM_TYPE_UINT8,
+    .access    = PARAM_ACCESS_RW,
+    .min_value = 0,
+    .max_value = 1,
+    .scale     = 0,
+    .value     = 0
+  },
+  {
+    .id        = PARAM_ID_TIME_AUTO_SYNC,
+    .type      = PARAM_TYPE_UINT8,
+    .access    = PARAM_ACCESS_RW,
+    .min_value = 0,
+    .max_value = 1,
     .scale     = 0,
     .value     = 0
   }
@@ -384,13 +769,16 @@ ParamDef_t *APP_ParamDict_FindById(ParamId_t id)
 
 bool APP_ParamDict_GetValue(ParamId_t id, int32_t *outVal)
 {
+  if (gParamMutexHandle != NULL) osMutexAcquire(gParamMutexHandle, osWaitForever);
   ParamDef_t *param = APP_ParamDict_FindById(id);
   if ((param == NULL) || (outVal == NULL))
   {
+    if (gParamMutexHandle != NULL) osMutexRelease(gParamMutexHandle);
     return false;
   }
 
   *outVal = param->value;
+  if (gParamMutexHandle != NULL) osMutexRelease(gParamMutexHandle);
   return true;
 }
 

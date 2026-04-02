@@ -1,4 +1,4 @@
-ARM GAS  /tmp/ccZ2H2pP.s 			page 1
+ARM GAS  /tmp/ccmIGntK.s 			page 1
 
 
    1              		.cpu cortex-m3
@@ -49,32 +49,56 @@ ARM GAS  /tmp/ccZ2H2pP.s 			page 1
   22:Core/Src/app_uart_rx.c **** static volatile uint16_t s_isrWrite = 0u;
   23:Core/Src/app_uart_rx.c **** static volatile uint16_t s_isrRead  = 0u;
   24:Core/Src/app_uart_rx.c **** static uint8_t s_isrRing[UART_ISR_RING_SIZE];
-  25:Core/Src/app_uart_rx.c **** 
-  26:Core/Src/app_uart_rx.c **** void APP_UartRx_Init(void)
-  27:Core/Src/app_uart_rx.c **** {
-  28:Core/Src/app_uart_rx.c ****   s_rxIndex = 0u;
-  29:Core/Src/app_uart_rx.c ****   s_isrWrite = 0u;
-  30:Core/Src/app_uart_rx.c ****   s_isrRead = 0u;
-  31:Core/Src/app_uart_rx.c **** }
-  32:Core/Src/app_uart_rx.c **** 
-  33:Core/Src/app_uart_rx.c **** static void uart_rx_reset(void)
-ARM GAS  /tmp/ccZ2H2pP.s 			page 2
+  25:Core/Src/app_uart_rx.c **** static volatile uint32_t s_isrByteCount = 0u;
+  26:Core/Src/app_uart_rx.c **** static volatile uint32_t s_validFrameCount = 0u;
+  27:Core/Src/app_uart_rx.c **** static volatile uint32_t s_crcFailCount = 0u;
+  28:Core/Src/app_uart_rx.c **** static volatile uint32_t s_headHitCount = 0u;
+  29:Core/Src/app_uart_rx.c **** static volatile uint32_t s_tailHitCount = 0u;
+  30:Core/Src/app_uart_rx.c **** static volatile uint32_t s_head7BitHitCount = 0u;
+  31:Core/Src/app_uart_rx.c **** static volatile uint32_t s_headInvertedHitCount = 0u;
+  32:Core/Src/app_uart_rx.c **** static uint8_t s_prevByte = 0u;
+  33:Core/Src/app_uart_rx.c **** static bool s_hasPrevByte = false;
+ARM GAS  /tmp/ccmIGntK.s 			page 2
 
 
-  34:Core/Src/app_uart_rx.c **** {
-  26              		.loc 1 34 1 view -0
+  34:Core/Src/app_uart_rx.c **** static volatile uint8_t s_lastBurstByte0 = 0u;
+  35:Core/Src/app_uart_rx.c **** static volatile uint8_t s_lastBurstByte1 = 0xFFu;
+  36:Core/Src/app_uart_rx.c **** static volatile uint8_t s_lastBurstLastByte = 0u;
+  37:Core/Src/app_uart_rx.c **** 
+  38:Core/Src/app_uart_rx.c **** void APP_UartRx_Init(void)
+  39:Core/Src/app_uart_rx.c **** {
+  40:Core/Src/app_uart_rx.c ****   s_rxIndex = 0u;
+  41:Core/Src/app_uart_rx.c ****   s_isrWrite = 0u;
+  42:Core/Src/app_uart_rx.c ****   s_isrRead = 0u;
+  43:Core/Src/app_uart_rx.c ****   s_isrByteCount = 0u;
+  44:Core/Src/app_uart_rx.c ****   s_validFrameCount = 0u;
+  45:Core/Src/app_uart_rx.c ****   s_crcFailCount = 0u;
+  46:Core/Src/app_uart_rx.c ****   s_headHitCount = 0u;
+  47:Core/Src/app_uart_rx.c ****   s_tailHitCount = 0u;
+  48:Core/Src/app_uart_rx.c ****   s_head7BitHitCount = 0u;
+  49:Core/Src/app_uart_rx.c ****   s_headInvertedHitCount = 0u;
+  50:Core/Src/app_uart_rx.c ****   s_prevByte = 0u;
+  51:Core/Src/app_uart_rx.c ****   s_hasPrevByte = false;
+  52:Core/Src/app_uart_rx.c ****   s_lastBurstByte0 = 0u;
+  53:Core/Src/app_uart_rx.c ****   s_lastBurstByte1 = 0xFFu;
+  54:Core/Src/app_uart_rx.c ****   s_lastBurstLastByte = 0u;
+  55:Core/Src/app_uart_rx.c **** }
+  56:Core/Src/app_uart_rx.c **** 
+  57:Core/Src/app_uart_rx.c **** static void uart_rx_reset(void)
+  58:Core/Src/app_uart_rx.c **** {
+  26              		.loc 1 58 1 view -0
   27              		.cfi_startproc
   28              		@ args = 0, pretend = 0, frame = 0
   29              		@ frame_needed = 0, uses_anonymous_args = 0
   30              		@ link register save eliminated.
-  35:Core/Src/app_uart_rx.c ****   s_rxIndex = 0u;
-  31              		.loc 1 35 3 view .LVU1
-  32              		.loc 1 35 13 is_stmt 0 view .LVU2
+  59:Core/Src/app_uart_rx.c ****   s_rxIndex = 0u;
+  31              		.loc 1 59 3 view .LVU1
+  32              		.loc 1 59 13 is_stmt 0 view .LVU2
   33 0000 014B     		ldr	r3, .L2
   34 0002 0022     		movs	r2, #0
   35 0004 1A80     		strh	r2, [r3]	@ movhi
-  36:Core/Src/app_uart_rx.c **** }
-  36              		.loc 1 36 1 view .LVU3
+  60:Core/Src/app_uart_rx.c **** }
+  36              		.loc 1 60 1 view .LVU3
   37 0006 7047     		bx	lr
   38              	.L3:
   39              		.align	2
@@ -91,965 +115,1698 @@ ARM GAS  /tmp/ccZ2H2pP.s 			page 1
   51              		.fpu softvfp
   53              	APP_UartRx_Init:
   54              	.LFB4:
-  27:Core/Src/app_uart_rx.c ****   s_rxIndex = 0u;
-  55              		.loc 1 27 1 is_stmt 1 view -0
+  39:Core/Src/app_uart_rx.c ****   s_rxIndex = 0u;
+  55              		.loc 1 39 1 is_stmt 1 view -0
   56              		.cfi_startproc
+ARM GAS  /tmp/ccmIGntK.s 			page 3
+
+
   57              		@ args = 0, pretend = 0, frame = 0
   58              		@ frame_needed = 0, uses_anonymous_args = 0
   59              		@ link register save eliminated.
-  28:Core/Src/app_uart_rx.c ****   s_isrWrite = 0u;
-  60              		.loc 1 28 3 view .LVU5
-  28:Core/Src/app_uart_rx.c ****   s_isrWrite = 0u;
-  61              		.loc 1 28 13 is_stmt 0 view .LVU6
+  40:Core/Src/app_uart_rx.c ****   s_isrWrite = 0u;
+  60              		.loc 1 40 3 view .LVU5
+  40:Core/Src/app_uart_rx.c ****   s_isrWrite = 0u;
+  61              		.loc 1 40 13 is_stmt 0 view .LVU6
   62 0000 0023     		movs	r3, #0
-  63 0002 034A     		ldr	r2, .L5
+  63 0002 104A     		ldr	r2, .L5
   64 0004 1380     		strh	r3, [r2]	@ movhi
-  29:Core/Src/app_uart_rx.c ****   s_isrRead = 0u;
-  65              		.loc 1 29 3 is_stmt 1 view .LVU7
-  29:Core/Src/app_uart_rx.c ****   s_isrRead = 0u;
-  66              		.loc 1 29 14 is_stmt 0 view .LVU8
-  67 0006 034A     		ldr	r2, .L5+4
+  41:Core/Src/app_uart_rx.c ****   s_isrRead = 0u;
+  65              		.loc 1 41 3 is_stmt 1 view .LVU7
+  41:Core/Src/app_uart_rx.c ****   s_isrRead = 0u;
+  66              		.loc 1 41 14 is_stmt 0 view .LVU8
+  67 0006 104A     		ldr	r2, .L5+4
   68 0008 1380     		strh	r3, [r2]	@ movhi
-  30:Core/Src/app_uart_rx.c **** }
-  69              		.loc 1 30 3 is_stmt 1 view .LVU9
-  30:Core/Src/app_uart_rx.c **** }
-  70              		.loc 1 30 13 is_stmt 0 view .LVU10
-  71 000a 034A     		ldr	r2, .L5+8
+  42:Core/Src/app_uart_rx.c ****   s_isrByteCount = 0u;
+  69              		.loc 1 42 3 is_stmt 1 view .LVU9
+  42:Core/Src/app_uart_rx.c ****   s_isrByteCount = 0u;
+  70              		.loc 1 42 13 is_stmt 0 view .LVU10
+  71 000a 104A     		ldr	r2, .L5+8
   72 000c 1380     		strh	r3, [r2]	@ movhi
-  31:Core/Src/app_uart_rx.c **** 
-  73              		.loc 1 31 1 view .LVU11
-ARM GAS  /tmp/ccZ2H2pP.s 			page 3
+  43:Core/Src/app_uart_rx.c ****   s_validFrameCount = 0u;
+  73              		.loc 1 43 3 is_stmt 1 view .LVU11
+  43:Core/Src/app_uart_rx.c ****   s_validFrameCount = 0u;
+  74              		.loc 1 43 18 is_stmt 0 view .LVU12
+  75 000e 104A     		ldr	r2, .L5+12
+  76 0010 1360     		str	r3, [r2]
+  44:Core/Src/app_uart_rx.c ****   s_crcFailCount = 0u;
+  77              		.loc 1 44 3 is_stmt 1 view .LVU13
+  44:Core/Src/app_uart_rx.c ****   s_crcFailCount = 0u;
+  78              		.loc 1 44 21 is_stmt 0 view .LVU14
+  79 0012 104A     		ldr	r2, .L5+16
+  80 0014 1360     		str	r3, [r2]
+  45:Core/Src/app_uart_rx.c ****   s_headHitCount = 0u;
+  81              		.loc 1 45 3 is_stmt 1 view .LVU15
+  45:Core/Src/app_uart_rx.c ****   s_headHitCount = 0u;
+  82              		.loc 1 45 18 is_stmt 0 view .LVU16
+  83 0016 104A     		ldr	r2, .L5+20
+  84 0018 1360     		str	r3, [r2]
+  46:Core/Src/app_uart_rx.c ****   s_tailHitCount = 0u;
+  85              		.loc 1 46 3 is_stmt 1 view .LVU17
+  46:Core/Src/app_uart_rx.c ****   s_tailHitCount = 0u;
+  86              		.loc 1 46 18 is_stmt 0 view .LVU18
+  87 001a 104A     		ldr	r2, .L5+24
+  88 001c 1360     		str	r3, [r2]
+  47:Core/Src/app_uart_rx.c ****   s_head7BitHitCount = 0u;
+  89              		.loc 1 47 3 is_stmt 1 view .LVU19
+  47:Core/Src/app_uart_rx.c ****   s_head7BitHitCount = 0u;
+  90              		.loc 1 47 18 is_stmt 0 view .LVU20
+  91 001e 104A     		ldr	r2, .L5+28
+  92 0020 1360     		str	r3, [r2]
+  48:Core/Src/app_uart_rx.c ****   s_headInvertedHitCount = 0u;
+  93              		.loc 1 48 3 is_stmt 1 view .LVU21
+  48:Core/Src/app_uart_rx.c ****   s_headInvertedHitCount = 0u;
+  94              		.loc 1 48 22 is_stmt 0 view .LVU22
+  95 0022 104A     		ldr	r2, .L5+32
+ARM GAS  /tmp/ccmIGntK.s 			page 4
 
 
-  74 000e 7047     		bx	lr
-  75              	.L6:
-  76              		.align	2
-  77              	.L5:
-  78 0010 00000000 		.word	.LANCHOR0
-  79 0014 00000000 		.word	.LANCHOR1
-  80 0018 00000000 		.word	.LANCHOR2
-  81              		.cfi_endproc
-  82              	.LFE4:
-  84              		.section	.text.APP_UartRx_PushFromISR,"ax",%progbits
-  85              		.align	1
-  86              		.global	APP_UartRx_PushFromISR
-  87              		.syntax unified
-  88              		.thumb
-  89              		.thumb_func
-  90              		.fpu softvfp
-  92              	APP_UartRx_PushFromISR:
-  93              	.LVL0:
-  94              	.LFB8:
-  37:Core/Src/app_uart_rx.c **** 
-  38:Core/Src/app_uart_rx.c **** void APP_UartRx_OnByte(uint8_t byte)
-  39:Core/Src/app_uart_rx.c **** {
-  40:Core/Src/app_uart_rx.c ****   /* 简单状态机：始终维护一个缓冲区，以“帧头+任意内容+帧尾”的方式�
-  41:Core/Src/app_uart_rx.c **** 
-  42:Core/Src/app_uart_rx.c ****   if (s_rxIndex == 0u)
-  43:Core/Src/app_uart_rx.c ****   {
-  44:Core/Src/app_uart_rx.c ****     /* 只接受 0xD5 作为可能的帧头起始 */
-  45:Core/Src/app_uart_rx.c ****     if (byte == UART_FRAME_HEAD_H)
-  46:Core/Src/app_uart_rx.c ****     {
-  47:Core/Src/app_uart_rx.c ****       s_rxBuf[s_rxIndex++] = byte;
-  48:Core/Src/app_uart_rx.c ****     }
-  49:Core/Src/app_uart_rx.c ****     return;
-  50:Core/Src/app_uart_rx.c ****   }
-  51:Core/Src/app_uart_rx.c ****   else if (s_rxIndex == 1u)
-  52:Core/Src/app_uart_rx.c ****   {
-  53:Core/Src/app_uart_rx.c ****     /* 第二个字节必须是 0x5D，否则视作新的起点尝试 */
-  54:Core/Src/app_uart_rx.c ****     if (byte == UART_FRAME_HEAD_L)
-  55:Core/Src/app_uart_rx.c ****     {
-  56:Core/Src/app_uart_rx.c ****       s_rxBuf[s_rxIndex++] = byte;
-  57:Core/Src/app_uart_rx.c ****     }
-  58:Core/Src/app_uart_rx.c ****     else
-  59:Core/Src/app_uart_rx.c ****     {
-  60:Core/Src/app_uart_rx.c ****       /* 若此字节本身是 0xD5，则可以作为新的起点 */
-  61:Core/Src/app_uart_rx.c ****       s_rxIndex = 0u;
-  62:Core/Src/app_uart_rx.c ****       if (byte == UART_FRAME_HEAD_H)
-  63:Core/Src/app_uart_rx.c ****       {
-  64:Core/Src/app_uart_rx.c ****         s_rxBuf[s_rxIndex++] = byte;
-  65:Core/Src/app_uart_rx.c ****       }
-  66:Core/Src/app_uart_rx.c ****     }
-  67:Core/Src/app_uart_rx.c ****     return;
-  68:Core/Src/app_uart_rx.c ****   }
-  69:Core/Src/app_uart_rx.c **** 
-  70:Core/Src/app_uart_rx.c ****   /* 已有帧头，继续累积 */
-  71:Core/Src/app_uart_rx.c ****   if (s_rxIndex >= UART_RX_BUFFER_MAX)
-  72:Core/Src/app_uart_rx.c ****   {
-  73:Core/Src/app_uart_rx.c ****     /* 缓冲区溢出，丢弃当前帧 */
-  74:Core/Src/app_uart_rx.c ****     uart_rx_reset();
-ARM GAS  /tmp/ccZ2H2pP.s 			page 4
+  96 0024 1360     		str	r3, [r2]
+  49:Core/Src/app_uart_rx.c ****   s_prevByte = 0u;
+  97              		.loc 1 49 3 is_stmt 1 view .LVU23
+  49:Core/Src/app_uart_rx.c ****   s_prevByte = 0u;
+  98              		.loc 1 49 26 is_stmt 0 view .LVU24
+  99 0026 104A     		ldr	r2, .L5+36
+ 100 0028 1360     		str	r3, [r2]
+  50:Core/Src/app_uart_rx.c ****   s_hasPrevByte = false;
+ 101              		.loc 1 50 3 is_stmt 1 view .LVU25
+  50:Core/Src/app_uart_rx.c ****   s_hasPrevByte = false;
+ 102              		.loc 1 50 14 is_stmt 0 view .LVU26
+ 103 002a 104A     		ldr	r2, .L5+40
+ 104 002c 1370     		strb	r3, [r2]
+  51:Core/Src/app_uart_rx.c ****   s_lastBurstByte0 = 0u;
+ 105              		.loc 1 51 3 is_stmt 1 view .LVU27
+  51:Core/Src/app_uart_rx.c ****   s_lastBurstByte0 = 0u;
+ 106              		.loc 1 51 17 is_stmt 0 view .LVU28
+ 107 002e 104A     		ldr	r2, .L5+44
+ 108 0030 1370     		strb	r3, [r2]
+  52:Core/Src/app_uart_rx.c ****   s_lastBurstByte1 = 0xFFu;
+ 109              		.loc 1 52 3 is_stmt 1 view .LVU29
+  52:Core/Src/app_uart_rx.c ****   s_lastBurstByte1 = 0xFFu;
+ 110              		.loc 1 52 20 is_stmt 0 view .LVU30
+ 111 0032 104A     		ldr	r2, .L5+48
+ 112 0034 1370     		strb	r3, [r2]
+  53:Core/Src/app_uart_rx.c ****   s_lastBurstLastByte = 0u;
+ 113              		.loc 1 53 3 is_stmt 1 view .LVU31
+  53:Core/Src/app_uart_rx.c ****   s_lastBurstLastByte = 0u;
+ 114              		.loc 1 53 20 is_stmt 0 view .LVU32
+ 115 0036 104A     		ldr	r2, .L5+52
+ 116 0038 FF21     		movs	r1, #255
+ 117 003a 1170     		strb	r1, [r2]
+  54:Core/Src/app_uart_rx.c **** }
+ 118              		.loc 1 54 3 is_stmt 1 view .LVU33
+  54:Core/Src/app_uart_rx.c **** }
+ 119              		.loc 1 54 23 is_stmt 0 view .LVU34
+ 120 003c 0F4A     		ldr	r2, .L5+56
+ 121 003e 1370     		strb	r3, [r2]
+  55:Core/Src/app_uart_rx.c **** 
+ 122              		.loc 1 55 1 view .LVU35
+ 123 0040 7047     		bx	lr
+ 124              	.L6:
+ 125 0042 00BF     		.align	2
+ 126              	.L5:
+ 127 0044 00000000 		.word	.LANCHOR0
+ 128 0048 00000000 		.word	.LANCHOR1
+ 129 004c 00000000 		.word	.LANCHOR2
+ 130 0050 00000000 		.word	.LANCHOR3
+ 131 0054 00000000 		.word	.LANCHOR4
+ 132 0058 00000000 		.word	.LANCHOR5
+ 133 005c 00000000 		.word	.LANCHOR6
+ 134 0060 00000000 		.word	.LANCHOR7
+ 135 0064 00000000 		.word	.LANCHOR8
+ 136 0068 00000000 		.word	.LANCHOR9
+ 137 006c 00000000 		.word	.LANCHOR10
+ 138 0070 00000000 		.word	.LANCHOR11
+ 139 0074 00000000 		.word	.LANCHOR12
+ARM GAS  /tmp/ccmIGntK.s 			page 5
 
 
-  75:Core/Src/app_uart_rx.c ****     return;
-  76:Core/Src/app_uart_rx.c ****   }
+ 140 0078 00000000 		.word	.LANCHOR13
+ 141 007c 00000000 		.word	.LANCHOR14
+ 142              		.cfi_endproc
+ 143              	.LFE4:
+ 145              		.section	.text.APP_UartRx_PushFromISR,"ax",%progbits
+ 146              		.align	1
+ 147              		.global	APP_UartRx_PushFromISR
+ 148              		.syntax unified
+ 149              		.thumb
+ 150              		.thumb_func
+ 151              		.fpu softvfp
+ 153              	APP_UartRx_PushFromISR:
+ 154              	.LVL0:
+ 155              	.LFB8:
+  61:Core/Src/app_uart_rx.c **** 
+  62:Core/Src/app_uart_rx.c **** void APP_UartRx_OnByte(uint8_t byte)
+  63:Core/Src/app_uart_rx.c **** {
+  64:Core/Src/app_uart_rx.c ****   if (s_hasPrevByte)
+  65:Core/Src/app_uart_rx.c ****   {
+  66:Core/Src/app_uart_rx.c ****     if ((s_prevByte == 0x55u) && (byte == 0x5Du))
+  67:Core/Src/app_uart_rx.c ****     {
+  68:Core/Src/app_uart_rx.c ****       s_head7BitHitCount++;
+  69:Core/Src/app_uart_rx.c ****     }
+  70:Core/Src/app_uart_rx.c ****     if ((s_prevByte == 0x2Au) && (byte == 0xA2u))
+  71:Core/Src/app_uart_rx.c ****     {
+  72:Core/Src/app_uart_rx.c ****       s_headInvertedHitCount++;
+  73:Core/Src/app_uart_rx.c ****     }
+  74:Core/Src/app_uart_rx.c ****   }
+  75:Core/Src/app_uart_rx.c ****   s_prevByte = byte;
+  76:Core/Src/app_uart_rx.c ****   s_hasPrevByte = true;
   77:Core/Src/app_uart_rx.c **** 
-  78:Core/Src/app_uart_rx.c ****   s_rxBuf[s_rxIndex++] = byte;
+  78:Core/Src/app_uart_rx.c ****   /* 简单状态机：始终维护一个缓冲区，以“帧头+任意内容+帧尾”的方式�
   79:Core/Src/app_uart_rx.c **** 
-  80:Core/Src/app_uart_rx.c ****   /* 最小合法帧长度：2(head) + 1(cmd) + 1(type) + 0(payload) + 2(crc) + 2(tail) = 8 */
-  81:Core/Src/app_uart_rx.c ****   if (s_rxIndex < 8u)
-  82:Core/Src/app_uart_rx.c ****   {
-  83:Core/Src/app_uart_rx.c ****     return;
-  84:Core/Src/app_uart_rx.c ****   }
-  85:Core/Src/app_uart_rx.c **** 
-  86:Core/Src/app_uart_rx.c ****   /* 检查末尾是否为帧尾 */
-  87:Core/Src/app_uart_rx.c ****   if ((s_rxBuf[s_rxIndex - 2u] == UART_FRAME_TAIL_H) &&
-  88:Core/Src/app_uart_rx.c ****       (s_rxBuf[s_rxIndex - 1u] == UART_FRAME_TAIL_L))
-  89:Core/Src/app_uart_rx.c ****   {
-  90:Core/Src/app_uart_rx.c ****     /* 解析一帧 */
-  91:Core/Src/app_uart_rx.c ****     const uint16_t totalLen = s_rxIndex;
-  92:Core/Src/app_uart_rx.c **** 
-  93:Core/Src/app_uart_rx.c ****     const uint8_t  cmd     = s_rxBuf[2u];
-  94:Core/Src/app_uart_rx.c ****     const uint8_t  msgType = s_rxBuf[3u];
-  95:Core/Src/app_uart_rx.c **** 
-  96:Core/Src/app_uart_rx.c ****     /* payload 起始索引/长度 */
-  97:Core/Src/app_uart_rx.c ****     const uint16_t headerLen  = 2u /* head */ + 1u /* cmd */ + 1u /* type */;
-  98:Core/Src/app_uart_rx.c ****     const uint16_t tailLen    = 2u;
-  99:Core/Src/app_uart_rx.c ****     const uint16_t crcLen     = 2u;
- 100:Core/Src/app_uart_rx.c ****     const uint16_t payloadLen = (uint16_t)(totalLen - headerLen - crcLen - tailLen);
- 101:Core/Src/app_uart_rx.c **** 
- 102:Core/Src/app_uart_rx.c ****     if ((int16_t)payloadLen < 0)
- 103:Core/Src/app_uart_rx.c ****     {
- 104:Core/Src/app_uart_rx.c ****       uart_rx_reset();
- 105:Core/Src/app_uart_rx.c ****       return;
- 106:Core/Src/app_uart_rx.c ****     }
- 107:Core/Src/app_uart_rx.c **** 
- 108:Core/Src/app_uart_rx.c ****     const uint8_t *payload = &s_rxBuf[headerLen];
- 109:Core/Src/app_uart_rx.c **** 
- 110:Core/Src/app_uart_rx.c ****     /* CRC frame index: 紧跟在 payload 之后的两个字节 (高字节在前) */
- 111:Core/Src/app_uart_rx.c ****     const uint16_t crcIndex = (uint16_t)(headerLen + payloadLen);
- 112:Core/Src/app_uart_rx.c ****     uint16_t crcFrame = (uint16_t)(((uint16_t)s_rxBuf[crcIndex] << 8) |
- 113:Core/Src/app_uart_rx.c ****                                    (uint16_t)s_rxBuf[crcIndex + 1u]);
- 114:Core/Src/app_uart_rx.c **** 
- 115:Core/Src/app_uart_rx.c ****     /* 计算 CRC */
- 116:Core/Src/app_uart_rx.c ****     uint16_t crcCalc = APP_UartProto_CalcCrc(&s_rxBuf[2u],
- 117:Core/Src/app_uart_rx.c ****                                              (uint16_t)(2u + payloadLen)); /* cmd+type+payload */
- 118:Core/Src/app_uart_rx.c **** 
- 119:Core/Src/app_uart_rx.c ****     if (crcCalc == crcFrame)
- 120:Core/Src/app_uart_rx.c ****     {
- 121:Core/Src/app_uart_rx.c ****       /* CRC 正确，调用上层回调 */
- 122:Core/Src/app_uart_rx.c ****       APP_UartRx_OnFrame(cmd, msgType, payload, payloadLen);
- 123:Core/Src/app_uart_rx.c ****     }
- 124:Core/Src/app_uart_rx.c **** 
- 125:Core/Src/app_uart_rx.c ****     /* 无论校验成功与否，重置，开始寻找下一帧 */
- 126:Core/Src/app_uart_rx.c ****     uart_rx_reset();
- 127:Core/Src/app_uart_rx.c ****   }
- 128:Core/Src/app_uart_rx.c **** }
- 129:Core/Src/app_uart_rx.c **** 
- 130:Core/Src/app_uart_rx.c **** void APP_UartRx_OnBytes(const uint8_t *data, size_t len)
- 131:Core/Src/app_uart_rx.c **** {
-ARM GAS  /tmp/ccZ2H2pP.s 			page 5
-
-
- 132:Core/Src/app_uart_rx.c ****   if ((data == NULL) || (len == 0u))
- 133:Core/Src/app_uart_rx.c ****   {
- 134:Core/Src/app_uart_rx.c ****     return;
- 135:Core/Src/app_uart_rx.c ****   }
- 136:Core/Src/app_uart_rx.c **** 
- 137:Core/Src/app_uart_rx.c ****   for (size_t i = 0u; i < len; ++i)
- 138:Core/Src/app_uart_rx.c ****   {
- 139:Core/Src/app_uart_rx.c ****     APP_UartRx_OnByte(data[i]);
- 140:Core/Src/app_uart_rx.c ****   }
- 141:Core/Src/app_uart_rx.c **** }
- 142:Core/Src/app_uart_rx.c **** 
- 143:Core/Src/app_uart_rx.c **** void APP_UartRx_PushFromISR(const uint8_t *data, size_t len)
- 144:Core/Src/app_uart_rx.c **** {
-  95              		.loc 1 144 1 is_stmt 1 view -0
-  96              		.cfi_startproc
-  97              		@ args = 0, pretend = 0, frame = 0
-  98              		@ frame_needed = 0, uses_anonymous_args = 0
- 145:Core/Src/app_uart_rx.c ****   if ((data == NULL) || (len == 0u))
-  99              		.loc 1 145 3 view .LVU13
- 100              		.loc 1 145 6 is_stmt 0 view .LVU14
- 101 0000 38B3     		cbz	r0, .L13
- 102 0002 8446     		mov	ip, r0
- 103              		.loc 1 145 22 discriminator 1 view .LVU15
- 104 0004 29B3     		cbz	r1, .L13
- 105              	.LBB2:
- 146:Core/Src/app_uart_rx.c ****   {
- 147:Core/Src/app_uart_rx.c ****     return;
- 148:Core/Src/app_uart_rx.c ****   }
- 149:Core/Src/app_uart_rx.c **** 
- 150:Core/Src/app_uart_rx.c ****   for (size_t i = 0u; i < len; ++i)
- 106              		.loc 1 150 15 view .LVU16
- 107 0006 0022     		movs	r2, #0
- 108              	.LVL1:
- 109              		.loc 1 150 23 is_stmt 1 view .LVU17
- 110              		.loc 1 150 3 is_stmt 0 view .LVU18
- 111 0008 8A42     		cmp	r2, r1
- 112 000a 21D2     		bcs	.L17
- 113              	.LBE2:
- 144:Core/Src/app_uart_rx.c ****   if ((data == NULL) || (len == 0u))
- 114              		.loc 1 144 1 view .LVU19
- 115 000c 30B5     		push	{r4, r5, lr}
- 116              	.LCFI0:
- 117              		.cfi_def_cfa_offset 12
- 118              		.cfi_offset 4, -12
- 119              		.cfi_offset 5, -8
- 120              		.cfi_offset 14, -4
- 121 000e 0BE0     		b	.L11
- 122              	.LVL2:
- 123              	.L10:
- 124              	.LBB5:
- 125              	.LBB3:
- 151:Core/Src/app_uart_rx.c ****   {
- 152:Core/Src/app_uart_rx.c ****     uint16_t next = (uint16_t)((s_isrWrite + 1u) % UART_ISR_RING_SIZE);
- 153:Core/Src/app_uart_rx.c ****     if (next == s_isrRead)
- 154:Core/Src/app_uart_rx.c ****     {
- 155:Core/Src/app_uart_rx.c ****       /* ring full: drop oldest byte */
- 156:Core/Src/app_uart_rx.c ****       s_isrRead = (uint16_t)((s_isrRead + 1u) % UART_ISR_RING_SIZE);
-ARM GAS  /tmp/ccZ2H2pP.s 			page 6
-
-
- 157:Core/Src/app_uart_rx.c ****     }
- 158:Core/Src/app_uart_rx.c ****     s_isrRing[s_isrWrite] = data[i];
- 126              		.loc 1 158 5 is_stmt 1 discriminator 2 view .LVU20
- 127              		.loc 1 158 14 is_stmt 0 discriminator 2 view .LVU21
- 128 0010 104C     		ldr	r4, .L19
- 129 0012 2088     		ldrh	r0, [r4]
- 130 0014 80B2     		uxth	r0, r0
- 131              		.loc 1 158 33 discriminator 2 view .LVU22
- 132 0016 1CF802E0 		ldrb	lr, [ip, r2]	@ zero_extendqisi2
- 133              		.loc 1 158 27 discriminator 2 view .LVU23
- 134 001a 0F4D     		ldr	r5, .L19+4
- 135 001c 05F800E0 		strb	lr, [r5, r0]
- 159:Core/Src/app_uart_rx.c ****     s_isrWrite = next;
- 136              		.loc 1 159 5 is_stmt 1 discriminator 2 view .LVU24
- 137              		.loc 1 159 16 is_stmt 0 discriminator 2 view .LVU25
- 138 0020 2380     		strh	r3, [r4]	@ movhi
- 139              	.LBE3:
- 150:Core/Src/app_uart_rx.c ****   {
- 140              		.loc 1 150 32 is_stmt 1 discriminator 2 view .LVU26
- 141 0022 0132     		adds	r2, r2, #1
- 142              	.LVL3:
- 150:Core/Src/app_uart_rx.c ****   {
- 143              		.loc 1 150 23 discriminator 2 view .LVU27
- 150:Core/Src/app_uart_rx.c ****   {
- 144              		.loc 1 150 3 is_stmt 0 discriminator 2 view .LVU28
- 145 0024 8A42     		cmp	r2, r1
- 146 0026 12D2     		bcs	.L18
- 147              	.LVL4:
- 148              	.L11:
- 149              	.LBB4:
- 152:Core/Src/app_uart_rx.c ****     if (next == s_isrRead)
- 150              		.loc 1 152 5 is_stmt 1 view .LVU29
- 152:Core/Src/app_uart_rx.c ****     if (next == s_isrRead)
- 151              		.loc 1 152 21 is_stmt 0 view .LVU30
- 152 0028 0A4B     		ldr	r3, .L19
- 153 002a 1B88     		ldrh	r3, [r3]
- 154 002c 9BB2     		uxth	r3, r3
- 155 002e 0133     		adds	r3, r3, #1
- 152:Core/Src/app_uart_rx.c ****     if (next == s_isrRead)
- 156              		.loc 1 152 14 view .LVU31
- 157 0030 C3F30803 		ubfx	r3, r3, #0, #9
- 158              	.LVL5:
- 153:Core/Src/app_uart_rx.c ****     {
- 159              		.loc 1 153 5 is_stmt 1 view .LVU32
- 153:Core/Src/app_uart_rx.c ****     {
- 160              		.loc 1 153 14 is_stmt 0 view .LVU33
- 161 0034 0948     		ldr	r0, .L19+8
- 162 0036 0088     		ldrh	r0, [r0]
- 163 0038 80B2     		uxth	r0, r0
- 153:Core/Src/app_uart_rx.c ****     {
- 164              		.loc 1 153 8 view .LVU34
- 165 003a 9842     		cmp	r0, r3
- 166 003c E8D1     		bne	.L10
- 156:Core/Src/app_uart_rx.c ****     }
- 167              		.loc 1 156 7 is_stmt 1 view .LVU35
- 156:Core/Src/app_uart_rx.c ****     }
- 168              		.loc 1 156 19 is_stmt 0 view .LVU36
-ARM GAS  /tmp/ccZ2H2pP.s 			page 7
-
-
- 169 003e 074C     		ldr	r4, .L19+8
- 170 0040 2088     		ldrh	r0, [r4]
- 171 0042 80B2     		uxth	r0, r0
- 172 0044 0130     		adds	r0, r0, #1
- 173 0046 C0F30800 		ubfx	r0, r0, #0, #9
- 156:Core/Src/app_uart_rx.c ****     }
- 174              		.loc 1 156 17 view .LVU37
- 175 004a 2080     		strh	r0, [r4]	@ movhi
- 176 004c E0E7     		b	.L10
- 177              	.L18:
- 156:Core/Src/app_uart_rx.c ****     }
- 178              		.loc 1 156 17 view .LVU38
- 179              	.LBE4:
- 180              	.LBE5:
- 160:Core/Src/app_uart_rx.c ****   }
- 161:Core/Src/app_uart_rx.c **** }
- 181              		.loc 1 161 1 view .LVU39
- 182 004e 30BD     		pop	{r4, r5, pc}
- 183              	.LVL6:
- 184              	.L17:
- 185              	.LCFI1:
- 186              		.cfi_def_cfa_offset 0
- 187              		.cfi_restore 4
- 188              		.cfi_restore 5
- 189              		.cfi_restore 14
- 190              		.loc 1 161 1 view .LVU40
- 191 0050 7047     		bx	lr
- 192              	.LVL7:
- 193              	.L13:
- 194              		.loc 1 161 1 view .LVU41
- 195 0052 7047     		bx	lr
- 196              	.L20:
- 197              		.align	2
- 198              	.L19:
- 199 0054 00000000 		.word	.LANCHOR1
- 200 0058 00000000 		.word	.LANCHOR3
- 201 005c 00000000 		.word	.LANCHOR2
- 202              		.cfi_endproc
- 203              	.LFE8:
- 205              		.section	.text.APP_UartRx_OnFrame,"ax",%progbits
- 206              		.align	1
- 207              		.weak	APP_UartRx_OnFrame
- 208              		.syntax unified
- 209              		.thumb
- 210              		.thumb_func
- 211              		.fpu softvfp
- 213              	APP_UartRx_OnFrame:
- 214              	.LVL8:
- 215              	.LFB10:
- 162:Core/Src/app_uart_rx.c **** 
- 163:Core/Src/app_uart_rx.c **** void APP_UartRx_ProcessPending(void)
- 164:Core/Src/app_uart_rx.c **** {
- 165:Core/Src/app_uart_rx.c ****   for (;;)
- 166:Core/Src/app_uart_rx.c ****   {
- 167:Core/Src/app_uart_rx.c ****     uint8_t byte;
- 168:Core/Src/app_uart_rx.c **** 
- 169:Core/Src/app_uart_rx.c ****     taskENTER_CRITICAL();
-ARM GAS  /tmp/ccZ2H2pP.s 			page 8
-
-
- 170:Core/Src/app_uart_rx.c ****     bool hasData = (s_isrRead != s_isrWrite);
- 171:Core/Src/app_uart_rx.c ****     if (hasData)
- 172:Core/Src/app_uart_rx.c ****     {
- 173:Core/Src/app_uart_rx.c ****       byte = s_isrRing[s_isrRead];
- 174:Core/Src/app_uart_rx.c ****       s_isrRead = (uint16_t)((s_isrRead + 1u) % UART_ISR_RING_SIZE);
- 175:Core/Src/app_uart_rx.c ****     }
- 176:Core/Src/app_uart_rx.c ****     taskEXIT_CRITICAL();
- 177:Core/Src/app_uart_rx.c **** 
- 178:Core/Src/app_uart_rx.c ****     if (!hasData)
- 179:Core/Src/app_uart_rx.c ****     {
- 180:Core/Src/app_uart_rx.c ****       break;
- 181:Core/Src/app_uart_rx.c ****     }
- 182:Core/Src/app_uart_rx.c **** 
- 183:Core/Src/app_uart_rx.c ****     APP_UartRx_OnByte(byte);
- 184:Core/Src/app_uart_rx.c ****   }
- 185:Core/Src/app_uart_rx.c **** }
- 186:Core/Src/app_uart_rx.c **** 
- 187:Core/Src/app_uart_rx.c **** /* 默认的弱实现：用户可在其他模块中重新实现此函数 */
- 188:Core/Src/app_uart_rx.c **** __attribute__((weak)) void APP_UartRx_OnFrame(uint8_t cmd,
- 189:Core/Src/app_uart_rx.c ****                                               uint8_t msgType,
- 190:Core/Src/app_uart_rx.c ****                                               const uint8_t *payload,
- 191:Core/Src/app_uart_rx.c ****                                               uint16_t payloadLen)
- 192:Core/Src/app_uart_rx.c **** {
- 216              		.loc 1 192 1 is_stmt 1 view -0
- 217              		.cfi_startproc
- 218              		@ args = 0, pretend = 0, frame = 0
- 219              		@ frame_needed = 0, uses_anonymous_args = 0
- 220              		@ link register save eliminated.
- 193:Core/Src/app_uart_rx.c ****   (void)cmd;
- 221              		.loc 1 193 3 view .LVU43
- 194:Core/Src/app_uart_rx.c ****   (void)msgType;
- 222              		.loc 1 194 3 view .LVU44
- 195:Core/Src/app_uart_rx.c ****   (void)payload;
- 223              		.loc 1 195 3 view .LVU45
- 196:Core/Src/app_uart_rx.c ****   (void)payloadLen;
- 224              		.loc 1 196 3 view .LVU46
- 197:Core/Src/app_uart_rx.c **** }
- 225              		.loc 1 197 1 is_stmt 0 view .LVU47
- 226 0000 7047     		bx	lr
- 227              		.cfi_endproc
- 228              	.LFE10:
- 230              		.section	.text.APP_UartRx_OnByte,"ax",%progbits
- 231              		.align	1
- 232              		.global	APP_UartRx_OnByte
- 233              		.syntax unified
- 234              		.thumb
- 235              		.thumb_func
- 236              		.fpu softvfp
- 238              	APP_UartRx_OnByte:
- 239              	.LVL9:
- 240              	.LFB6:
-  39:Core/Src/app_uart_rx.c ****   /* 简单状态机：始终维护一个缓冲区，以“帧头+任意内容+帧尾”的方式�
- 241              		.loc 1 39 1 is_stmt 1 view -0
- 242              		.cfi_startproc
- 243              		@ args = 0, pretend = 0, frame = 0
- 244              		@ frame_needed = 0, uses_anonymous_args = 0
-  39:Core/Src/app_uart_rx.c ****   /* 简单状态机：始终维护一个缓冲区，以“帧头+任意内容+帧尾”的方式�
-ARM GAS  /tmp/ccZ2H2pP.s 			page 9
-
-
- 245              		.loc 1 39 1 is_stmt 0 view .LVU49
- 246 0000 F8B5     		push	{r3, r4, r5, r6, r7, lr}
- 247              	.LCFI2:
- 248              		.cfi_def_cfa_offset 24
- 249              		.cfi_offset 3, -24
- 250              		.cfi_offset 4, -20
- 251              		.cfi_offset 5, -16
- 252              		.cfi_offset 6, -12
- 253              		.cfi_offset 7, -8
- 254              		.cfi_offset 14, -4
-  42:Core/Src/app_uart_rx.c ****   {
- 255              		.loc 1 42 3 is_stmt 1 view .LVU50
-  42:Core/Src/app_uart_rx.c ****   {
- 256              		.loc 1 42 17 is_stmt 0 view .LVU51
- 257 0002 2C4B     		ldr	r3, .L40
- 258 0004 1B88     		ldrh	r3, [r3]
-  42:Core/Src/app_uart_rx.c ****   {
- 259              		.loc 1 42 6 view .LVU52
- 260 0006 6BB3     		cbz	r3, .L33
-  51:Core/Src/app_uart_rx.c ****   {
- 261              		.loc 1 51 8 is_stmt 1 view .LVU53
-  51:Core/Src/app_uart_rx.c ****   {
- 262              		.loc 1 51 11 is_stmt 0 view .LVU54
- 263 0008 012B     		cmp	r3, #1
- 264 000a 34D0     		beq	.L34
-  71:Core/Src/app_uart_rx.c ****   {
- 265              		.loc 1 71 3 is_stmt 1 view .LVU55
-  71:Core/Src/app_uart_rx.c ****   {
- 266              		.loc 1 71 6 is_stmt 0 view .LVU56
- 267 000c FF2B     		cmp	r3, #255
- 268 000e 44D8     		bhi	.L35
-  78:Core/Src/app_uart_rx.c **** 
- 269              		.loc 1 78 3 is_stmt 1 view .LVU57
-  78:Core/Src/app_uart_rx.c **** 
- 270              		.loc 1 78 20 is_stmt 0 view .LVU58
- 271 0010 591C     		adds	r1, r3, #1
- 272 0012 89B2     		uxth	r1, r1
- 273 0014 274A     		ldr	r2, .L40
- 274 0016 1180     		strh	r1, [r2]	@ movhi
-  78:Core/Src/app_uart_rx.c **** 
- 275              		.loc 1 78 24 view .LVU59
- 276 0018 274A     		ldr	r2, .L40+4
- 277 001a D054     		strb	r0, [r2, r3]
+  80:Core/Src/app_uart_rx.c ****   if (s_rxIndex == 0u)
   81:Core/Src/app_uart_rx.c ****   {
- 278              		.loc 1 81 3 is_stmt 1 view .LVU60
-  81:Core/Src/app_uart_rx.c ****   {
- 279              		.loc 1 81 6 is_stmt 0 view .LVU61
- 280 001c 0729     		cmp	r1, #7
- 281 001e 23D9     		bls	.L22
-  87:Core/Src/app_uart_rx.c ****       (s_rxBuf[s_rxIndex - 1u] == UART_FRAME_TAIL_L))
- 282              		.loc 1 87 3 is_stmt 1 view .LVU62
-  87:Core/Src/app_uart_rx.c ****       (s_rxBuf[s_rxIndex - 1u] == UART_FRAME_TAIL_L))
- 283              		.loc 1 87 26 is_stmt 0 view .LVU63
- 284 0020 8B1E     		subs	r3, r1, #2
-  87:Core/Src/app_uart_rx.c ****       (s_rxBuf[s_rxIndex - 1u] == UART_FRAME_TAIL_L))
- 285              		.loc 1 87 15 view .LVU64
- 286 0022 D35C     		ldrb	r3, [r2, r3]	@ zero_extendqisi2
-ARM GAS  /tmp/ccZ2H2pP.s 			page 10
+  82:Core/Src/app_uart_rx.c ****     /* 只接受 0xD5 作为可能的帧头起始 */
+  83:Core/Src/app_uart_rx.c ****     if (byte == UART_FRAME_HEAD_H)
+  84:Core/Src/app_uart_rx.c ****     {
+  85:Core/Src/app_uart_rx.c ****       s_rxBuf[s_rxIndex++] = byte;
+  86:Core/Src/app_uart_rx.c ****     }
+  87:Core/Src/app_uart_rx.c ****     return;
+  88:Core/Src/app_uart_rx.c ****   }
+  89:Core/Src/app_uart_rx.c ****   else if (s_rxIndex == 1u)
+  90:Core/Src/app_uart_rx.c ****   {
+  91:Core/Src/app_uart_rx.c ****     /* 第二个字节必须是 0x5D，否则视作新的起点尝试 */
+  92:Core/Src/app_uart_rx.c ****     if (byte == UART_FRAME_HEAD_L)
+  93:Core/Src/app_uart_rx.c ****     {
+  94:Core/Src/app_uart_rx.c ****       s_rxBuf[s_rxIndex++] = byte;
+  95:Core/Src/app_uart_rx.c ****       s_headHitCount++;
+  96:Core/Src/app_uart_rx.c ****     }
+  97:Core/Src/app_uart_rx.c ****     else
+  98:Core/Src/app_uart_rx.c ****     {
+  99:Core/Src/app_uart_rx.c ****       /* 若此字节本身是 0xD5，则可以作为新的起点 */
+ 100:Core/Src/app_uart_rx.c ****       s_rxIndex = 0u;
+ 101:Core/Src/app_uart_rx.c ****       if (byte == UART_FRAME_HEAD_H)
+ 102:Core/Src/app_uart_rx.c ****       {
+ 103:Core/Src/app_uart_rx.c ****         s_rxBuf[s_rxIndex++] = byte;
+ARM GAS  /tmp/ccmIGntK.s 			page 6
 
 
-  87:Core/Src/app_uart_rx.c ****       (s_rxBuf[s_rxIndex - 1u] == UART_FRAME_TAIL_L))
- 287              		.loc 1 87 6 view .LVU65
- 288 0024 5D2B     		cmp	r3, #93
- 289 0026 1FD1     		bne	.L22
-  88:Core/Src/app_uart_rx.c ****   {
- 290              		.loc 1 88 26 discriminator 1 view .LVU66
- 291 0028 4B1E     		subs	r3, r1, #1
-  88:Core/Src/app_uart_rx.c ****   {
- 292              		.loc 1 88 15 discriminator 1 view .LVU67
- 293 002a D35C     		ldrb	r3, [r2, r3]	@ zero_extendqisi2
-  87:Core/Src/app_uart_rx.c ****       (s_rxBuf[s_rxIndex - 1u] == UART_FRAME_TAIL_L))
- 294              		.loc 1 87 54 discriminator 1 view .LVU68
- 295 002c D52B     		cmp	r3, #213
- 296 002e 1BD1     		bne	.L22
- 297              	.LBB6:
-  91:Core/Src/app_uart_rx.c **** 
- 298              		.loc 1 91 5 is_stmt 1 view .LVU69
- 299              	.LVL10:
-  93:Core/Src/app_uart_rx.c ****     const uint8_t  msgType = s_rxBuf[3u];
- 300              		.loc 1 93 5 view .LVU70
-  93:Core/Src/app_uart_rx.c ****     const uint8_t  msgType = s_rxBuf[3u];
- 301              		.loc 1 93 20 is_stmt 0 view .LVU71
- 302 0030 9478     		ldrb	r4, [r2, #2]	@ zero_extendqisi2
- 303              	.LVL11:
-  94:Core/Src/app_uart_rx.c **** 
- 304              		.loc 1 94 5 is_stmt 1 view .LVU72
-  94:Core/Src/app_uart_rx.c **** 
- 305              		.loc 1 94 20 is_stmt 0 view .LVU73
- 306 0032 D578     		ldrb	r5, [r2, #3]	@ zero_extendqisi2
- 307              	.LVL12:
-  97:Core/Src/app_uart_rx.c ****     const uint16_t tailLen    = 2u;
- 308              		.loc 1 97 5 is_stmt 1 view .LVU74
-  98:Core/Src/app_uart_rx.c ****     const uint16_t crcLen     = 2u;
- 309              		.loc 1 98 5 view .LVU75
-  99:Core/Src/app_uart_rx.c ****     const uint16_t payloadLen = (uint16_t)(totalLen - headerLen - crcLen - tailLen);
- 310              		.loc 1 99 5 view .LVU76
- 100:Core/Src/app_uart_rx.c **** 
- 311              		.loc 1 100 5 view .LVU77
- 100:Core/Src/app_uart_rx.c **** 
- 312              		.loc 1 100 20 is_stmt 0 view .LVU78
- 313 0034 A1F10803 		sub	r3, r1, #8
- 314 0038 9EB2     		uxth	r6, r3
- 315              	.LVL13:
- 102:Core/Src/app_uart_rx.c ****     {
- 316              		.loc 1 102 5 is_stmt 1 view .LVU79
- 102:Core/Src/app_uart_rx.c ****     {
- 317              		.loc 1 102 8 is_stmt 0 view .LVU80
- 318 003a 13F4004F 		tst	r3, #32768
- 319 003e 2FD1     		bne	.L36
- 108:Core/Src/app_uart_rx.c **** 
- 320              		.loc 1 108 5 is_stmt 1 view .LVU81
- 321              	.LVL14:
- 111:Core/Src/app_uart_rx.c ****     uint16_t crcFrame = (uint16_t)(((uint16_t)s_rxBuf[crcIndex] << 8) |
- 322              		.loc 1 111 5 view .LVU82
- 111:Core/Src/app_uart_rx.c ****     uint16_t crcFrame = (uint16_t)(((uint16_t)s_rxBuf[crcIndex] << 8) |
- 323              		.loc 1 111 20 is_stmt 0 view .LVU83
- 324 0040 0B1F     		subs	r3, r1, #4
-ARM GAS  /tmp/ccZ2H2pP.s 			page 11
-
-
- 325 0042 9BB2     		uxth	r3, r3
- 326              	.LVL15:
- 112:Core/Src/app_uart_rx.c ****                                    (uint16_t)s_rxBuf[crcIndex + 1u]);
- 327              		.loc 1 112 5 is_stmt 1 view .LVU84
- 112:Core/Src/app_uart_rx.c ****                                    (uint16_t)s_rxBuf[crcIndex + 1u]);
- 328              		.loc 1 112 54 is_stmt 0 view .LVU85
- 329 0044 1C48     		ldr	r0, .L40+4
- 330              	.LVL16:
- 112:Core/Src/app_uart_rx.c ****                                    (uint16_t)s_rxBuf[crcIndex + 1u]);
- 331              		.loc 1 112 54 view .LVU86
- 332 0046 C25C     		ldrb	r2, [r0, r3]	@ zero_extendqisi2
- 113:Core/Src/app_uart_rx.c **** 
- 333              		.loc 1 113 63 view .LVU87
- 334 0048 0133     		adds	r3, r3, #1
- 335              	.LVL17:
- 113:Core/Src/app_uart_rx.c **** 
- 336              		.loc 1 113 53 view .LVU88
- 337 004a C75C     		ldrb	r7, [r0, r3]	@ zero_extendqisi2
- 112:Core/Src/app_uart_rx.c ****                                    (uint16_t)s_rxBuf[crcIndex + 1u]);
- 338              		.loc 1 112 14 view .LVU89
- 339 004c 47EA0227 		orr	r7, r7, r2, lsl #8
- 340              	.LVL18:
- 116:Core/Src/app_uart_rx.c ****                                              (uint16_t)(2u + payloadLen)); /* cmd+type+payload */
- 341              		.loc 1 116 5 is_stmt 1 view .LVU90
- 116:Core/Src/app_uart_rx.c ****                                              (uint16_t)(2u + payloadLen)); /* cmd+type+payload */
- 342              		.loc 1 116 24 is_stmt 0 view .LVU91
- 343 0050 0639     		subs	r1, r1, #6
- 344              	.LVL19:
- 116:Core/Src/app_uart_rx.c ****                                              (uint16_t)(2u + payloadLen)); /* cmd+type+payload */
- 345              		.loc 1 116 24 view .LVU92
- 346 0052 89B2     		uxth	r1, r1
- 347 0054 0230     		adds	r0, r0, #2
- 348 0056 FFF7FEFF 		bl	APP_UartProto_CalcCrc
- 349              	.LVL20:
- 119:Core/Src/app_uart_rx.c ****     {
- 350              		.loc 1 119 5 is_stmt 1 view .LVU93
- 119:Core/Src/app_uart_rx.c ****     {
- 351              		.loc 1 119 8 is_stmt 0 view .LVU94
- 352 005a 8742     		cmp	r7, r0
- 353 005c 23D0     		beq	.L37
- 354              	.LVL21:
- 355              	.L31:
- 126:Core/Src/app_uart_rx.c ****   }
- 356              		.loc 1 126 5 is_stmt 1 view .LVU95
- 357 005e FFF7FEFF 		bl	uart_rx_reset
- 358              	.LVL22:
- 359 0062 01E0     		b	.L22
- 360              	.LVL23:
- 361              	.L33:
- 126:Core/Src/app_uart_rx.c ****   }
- 362              		.loc 1 126 5 is_stmt 0 view .LVU96
- 363              	.LBE6:
-  45:Core/Src/app_uart_rx.c ****     {
- 364              		.loc 1 45 5 is_stmt 1 view .LVU97
-  45:Core/Src/app_uart_rx.c ****     {
- 365              		.loc 1 45 8 is_stmt 0 view .LVU98
- 366 0064 D528     		cmp	r0, #213
-ARM GAS  /tmp/ccZ2H2pP.s 			page 12
-
-
- 367 0066 00D0     		beq	.L38
- 368              	.LVL24:
- 369              	.L22:
- 128:Core/Src/app_uart_rx.c **** 
- 370              		.loc 1 128 1 view .LVU99
- 371 0068 F8BD     		pop	{r3, r4, r5, r6, r7, pc}
- 372              	.LVL25:
- 373              	.L38:
-  47:Core/Src/app_uart_rx.c ****     }
- 374              		.loc 1 47 7 is_stmt 1 view .LVU100
-  47:Core/Src/app_uart_rx.c ****     }
- 375              		.loc 1 47 24 is_stmt 0 view .LVU101
- 376 006a 591C     		adds	r1, r3, #1
- 377 006c 114A     		ldr	r2, .L40
- 378 006e 1180     		strh	r1, [r2]	@ movhi
-  47:Core/Src/app_uart_rx.c ****     }
- 379              		.loc 1 47 28 view .LVU102
- 380 0070 114A     		ldr	r2, .L40+4
- 381 0072 D054     		strb	r0, [r2, r3]
-  49:Core/Src/app_uart_rx.c ****   }
- 382              		.loc 1 49 5 is_stmt 1 view .LVU103
- 383 0074 F8E7     		b	.L22
- 384              	.L34:
-  54:Core/Src/app_uart_rx.c ****     {
- 385              		.loc 1 54 5 view .LVU104
-  54:Core/Src/app_uart_rx.c ****     {
- 386              		.loc 1 54 8 is_stmt 0 view .LVU105
- 387 0076 5D28     		cmp	r0, #93
- 388 0078 09D0     		beq	.L39
-  61:Core/Src/app_uart_rx.c ****       if (byte == UART_FRAME_HEAD_H)
- 389              		.loc 1 61 7 is_stmt 1 view .LVU106
-  61:Core/Src/app_uart_rx.c ****       if (byte == UART_FRAME_HEAD_H)
- 390              		.loc 1 61 17 is_stmt 0 view .LVU107
- 391 007a 0E4B     		ldr	r3, .L40
- 392 007c 0022     		movs	r2, #0
- 393 007e 1A80     		strh	r2, [r3]	@ movhi
-  62:Core/Src/app_uart_rx.c ****       {
- 394              		.loc 1 62 7 is_stmt 1 view .LVU108
-  62:Core/Src/app_uart_rx.c ****       {
- 395              		.loc 1 62 10 is_stmt 0 view .LVU109
- 396 0080 D528     		cmp	r0, #213
- 397 0082 F1D1     		bne	.L22
-  64:Core/Src/app_uart_rx.c ****       }
- 398              		.loc 1 64 9 is_stmt 1 view .LVU110
-  64:Core/Src/app_uart_rx.c ****       }
- 399              		.loc 1 64 26 is_stmt 0 view .LVU111
- 400 0084 0122     		movs	r2, #1
- 401 0086 1A80     		strh	r2, [r3]	@ movhi
-  64:Core/Src/app_uart_rx.c ****       }
- 402              		.loc 1 64 30 view .LVU112
- 403 0088 0B4B     		ldr	r3, .L40+4
- 404 008a 1870     		strb	r0, [r3]
-  67:Core/Src/app_uart_rx.c ****   }
- 405              		.loc 1 67 5 is_stmt 1 view .LVU113
- 406 008c ECE7     		b	.L22
- 407              	.L39:
-  56:Core/Src/app_uart_rx.c ****     }
-ARM GAS  /tmp/ccZ2H2pP.s 			page 13
-
-
- 408              		.loc 1 56 7 view .LVU114
-  56:Core/Src/app_uart_rx.c ****     }
- 409              		.loc 1 56 24 is_stmt 0 view .LVU115
- 410 008e 591C     		adds	r1, r3, #1
- 411 0090 084A     		ldr	r2, .L40
- 412 0092 1180     		strh	r1, [r2]	@ movhi
-  56:Core/Src/app_uart_rx.c ****     }
- 413              		.loc 1 56 28 view .LVU116
- 414 0094 084A     		ldr	r2, .L40+4
- 415 0096 D054     		strb	r0, [r2, r3]
- 416 0098 E6E7     		b	.L22
- 417              	.L35:
-  74:Core/Src/app_uart_rx.c ****     return;
- 418              		.loc 1 74 5 is_stmt 1 view .LVU117
- 419 009a FFF7FEFF 		bl	uart_rx_reset
- 420              	.LVL26:
-  75:Core/Src/app_uart_rx.c ****   }
- 421              		.loc 1 75 5 view .LVU118
- 422 009e E3E7     		b	.L22
- 423              	.LVL27:
- 424              	.L36:
- 425              	.LBB7:
- 104:Core/Src/app_uart_rx.c ****       return;
- 426              		.loc 1 104 7 view .LVU119
- 427 00a0 FFF7FEFF 		bl	uart_rx_reset
- 428              	.LVL28:
+ 104:Core/Src/app_uart_rx.c ****       }
  105:Core/Src/app_uart_rx.c ****     }
- 429              		.loc 1 105 7 view .LVU120
- 430 00a4 E0E7     		b	.L22
- 431              	.LVL29:
- 432              	.L37:
- 122:Core/Src/app_uart_rx.c ****     }
- 433              		.loc 1 122 7 view .LVU121
- 434 00a6 3346     		mov	r3, r6
- 435 00a8 044A     		ldr	r2, .L40+8
- 436 00aa 2946     		mov	r1, r5
- 437 00ac 2046     		mov	r0, r4
- 438              	.LVL30:
- 122:Core/Src/app_uart_rx.c ****     }
- 439              		.loc 1 122 7 is_stmt 0 view .LVU122
- 440 00ae FFF7FEFF 		bl	APP_UartRx_OnFrame
- 441              	.LVL31:
- 442 00b2 D4E7     		b	.L31
- 443              	.L41:
- 444              		.align	2
- 445              	.L40:
- 446 00b4 00000000 		.word	.LANCHOR0
- 447 00b8 00000000 		.word	.LANCHOR4
- 448 00bc 04000000 		.word	.LANCHOR4+4
- 449              	.LBE7:
- 450              		.cfi_endproc
- 451              	.LFE6:
- 453              		.section	.text.APP_UartRx_OnBytes,"ax",%progbits
- 454              		.align	1
- 455              		.global	APP_UartRx_OnBytes
- 456              		.syntax unified
- 457              		.thumb
-ARM GAS  /tmp/ccZ2H2pP.s 			page 14
+ 106:Core/Src/app_uart_rx.c ****     return;
+ 107:Core/Src/app_uart_rx.c ****   }
+ 108:Core/Src/app_uart_rx.c **** 
+ 109:Core/Src/app_uart_rx.c ****   /* 已有帧头，继续累积 */
+ 110:Core/Src/app_uart_rx.c ****   if (s_rxIndex >= UART_RX_BUFFER_MAX)
+ 111:Core/Src/app_uart_rx.c ****   {
+ 112:Core/Src/app_uart_rx.c ****     /* 缓冲区溢出，丢弃当前帧 */
+ 113:Core/Src/app_uart_rx.c ****     uart_rx_reset();
+ 114:Core/Src/app_uart_rx.c ****     return;
+ 115:Core/Src/app_uart_rx.c ****   }
+ 116:Core/Src/app_uart_rx.c **** 
+ 117:Core/Src/app_uart_rx.c ****   s_rxBuf[s_rxIndex++] = byte;
+ 118:Core/Src/app_uart_rx.c **** 
+ 119:Core/Src/app_uart_rx.c ****   /* 最小合法帧长度：2(head) + 1(cmd) + 1(type) + 0(payload) + 2(crc) + 2(tail) = 8 */
+ 120:Core/Src/app_uart_rx.c ****   if (s_rxIndex < 8u)
+ 121:Core/Src/app_uart_rx.c ****   {
+ 122:Core/Src/app_uart_rx.c ****     return;
+ 123:Core/Src/app_uart_rx.c ****   }
+ 124:Core/Src/app_uart_rx.c **** 
+ 125:Core/Src/app_uart_rx.c ****   /* 检查末尾是否为帧尾 */
+ 126:Core/Src/app_uart_rx.c ****   if ((s_rxBuf[s_rxIndex - 2u] == UART_FRAME_TAIL_H) &&
+ 127:Core/Src/app_uart_rx.c ****       (s_rxBuf[s_rxIndex - 1u] == UART_FRAME_TAIL_L))
+ 128:Core/Src/app_uart_rx.c ****   {
+ 129:Core/Src/app_uart_rx.c ****     s_tailHitCount++;
+ 130:Core/Src/app_uart_rx.c **** 
+ 131:Core/Src/app_uart_rx.c ****     /* 解析一帧 */
+ 132:Core/Src/app_uart_rx.c ****     const uint16_t totalLen = s_rxIndex;
+ 133:Core/Src/app_uart_rx.c **** 
+ 134:Core/Src/app_uart_rx.c ****     const uint8_t  cmd     = s_rxBuf[2u];
+ 135:Core/Src/app_uart_rx.c ****     const uint8_t  msgType = s_rxBuf[3u];
+ 136:Core/Src/app_uart_rx.c **** 
+ 137:Core/Src/app_uart_rx.c ****     /* payload 起始索引/长度 */
+ 138:Core/Src/app_uart_rx.c ****     const uint16_t headerLen  = 2u /* head */ + 1u /* cmd */ + 1u /* type */;
+ 139:Core/Src/app_uart_rx.c ****     const uint16_t tailLen    = 2u;
+ 140:Core/Src/app_uart_rx.c ****     const uint16_t crcLen     = 2u;
+ 141:Core/Src/app_uart_rx.c ****     const uint16_t payloadLen = (uint16_t)(totalLen - headerLen - crcLen - tailLen);
+ 142:Core/Src/app_uart_rx.c **** 
+ 143:Core/Src/app_uart_rx.c ****     if ((int16_t)payloadLen < 0)
+ 144:Core/Src/app_uart_rx.c ****     {
+ 145:Core/Src/app_uart_rx.c ****       uart_rx_reset();
+ 146:Core/Src/app_uart_rx.c ****       return;
+ 147:Core/Src/app_uart_rx.c ****     }
+ 148:Core/Src/app_uart_rx.c **** 
+ 149:Core/Src/app_uart_rx.c ****     const uint8_t *payload = &s_rxBuf[headerLen];
+ 150:Core/Src/app_uart_rx.c **** 
+ 151:Core/Src/app_uart_rx.c ****     /* CRC frame index: 紧跟在 payload 之后的两个字节 (高字节在前) */
+ 152:Core/Src/app_uart_rx.c ****     const uint16_t crcIndex = (uint16_t)(headerLen + payloadLen);
+ 153:Core/Src/app_uart_rx.c ****     uint16_t crcFrame = (uint16_t)(((uint16_t)s_rxBuf[crcIndex] << 8) |
+ 154:Core/Src/app_uart_rx.c ****                                    (uint16_t)s_rxBuf[crcIndex + 1u]);
+ 155:Core/Src/app_uart_rx.c **** 
+ 156:Core/Src/app_uart_rx.c ****     /* 计算 CRC */
+ 157:Core/Src/app_uart_rx.c ****     uint16_t crcCalc = APP_UartProto_CalcCrc(&s_rxBuf[2u],
+ 158:Core/Src/app_uart_rx.c ****                                              (uint16_t)(2u + payloadLen)); /* cmd+type+payload */
+ 159:Core/Src/app_uart_rx.c **** 
+ 160:Core/Src/app_uart_rx.c ****     if (crcCalc == crcFrame)
+ARM GAS  /tmp/ccmIGntK.s 			page 7
 
 
- 458              		.thumb_func
- 459              		.fpu softvfp
- 461              	APP_UartRx_OnBytes:
- 462              	.LVL32:
- 463              	.LFB7:
- 131:Core/Src/app_uart_rx.c ****   if ((data == NULL) || (len == 0u))
- 464              		.loc 1 131 1 is_stmt 1 view -0
- 465              		.cfi_startproc
- 466              		@ args = 0, pretend = 0, frame = 0
- 467              		@ frame_needed = 0, uses_anonymous_args = 0
- 132:Core/Src/app_uart_rx.c ****   {
- 468              		.loc 1 132 3 view .LVU124
- 132:Core/Src/app_uart_rx.c ****   {
- 469              		.loc 1 132 6 is_stmt 0 view .LVU125
- 470 0000 60B1     		cbz	r0, .L47
- 131:Core/Src/app_uart_rx.c ****   if ((data == NULL) || (len == 0u))
- 471              		.loc 1 131 1 discriminator 1 view .LVU126
- 472 0002 70B5     		push	{r4, r5, r6, lr}
- 473              	.LCFI3:
- 474              		.cfi_def_cfa_offset 16
- 475              		.cfi_offset 4, -16
- 476              		.cfi_offset 5, -12
- 477              		.cfi_offset 6, -8
- 478              		.cfi_offset 14, -4
- 479 0004 0D46     		mov	r5, r1
- 480 0006 0646     		mov	r6, r0
- 132:Core/Src/app_uart_rx.c ****   {
- 481              		.loc 1 132 22 discriminator 1 view .LVU127
- 482 0008 39B1     		cbz	r1, .L42
- 483              	.LBB8:
- 137:Core/Src/app_uart_rx.c ****   {
- 484              		.loc 1 137 15 view .LVU128
- 485 000a 0024     		movs	r4, #0
- 486 000c 03E0     		b	.L44
- 487              	.LVL33:
- 488              	.L45:
- 139:Core/Src/app_uart_rx.c ****   }
- 489              		.loc 1 139 5 is_stmt 1 discriminator 3 view .LVU129
- 490 000e 305D     		ldrb	r0, [r6, r4]	@ zero_extendqisi2
- 491 0010 FFF7FEFF 		bl	APP_UartRx_OnByte
- 492              	.LVL34:
- 137:Core/Src/app_uart_rx.c ****   {
- 493              		.loc 1 137 32 discriminator 3 view .LVU130
- 494 0014 0134     		adds	r4, r4, #1
- 495              	.LVL35:
- 496              	.L44:
- 137:Core/Src/app_uart_rx.c ****   {
- 497              		.loc 1 137 23 discriminator 1 view .LVU131
- 137:Core/Src/app_uart_rx.c ****   {
- 498              		.loc 1 137 3 is_stmt 0 discriminator 1 view .LVU132
- 499 0016 AC42     		cmp	r4, r5
- 500 0018 F9D3     		bcc	.L45
- 501              	.LVL36:
- 502              	.L42:
- 137:Core/Src/app_uart_rx.c ****   {
- 503              		.loc 1 137 3 discriminator 1 view .LVU133
- 504              	.LBE8:
-ARM GAS  /tmp/ccZ2H2pP.s 			page 15
+ 161:Core/Src/app_uart_rx.c ****     {
+ 162:Core/Src/app_uart_rx.c ****       s_validFrameCount++;
+ 163:Core/Src/app_uart_rx.c ****       /* CRC 正确，调用上层回调 */
+ 164:Core/Src/app_uart_rx.c ****       APP_UartRx_OnFrame(cmd, msgType, payload, payloadLen);
+ 165:Core/Src/app_uart_rx.c ****     }
+ 166:Core/Src/app_uart_rx.c ****     else
+ 167:Core/Src/app_uart_rx.c ****     {
+ 168:Core/Src/app_uart_rx.c ****       s_crcFailCount++;
+ 169:Core/Src/app_uart_rx.c ****     }
+ 170:Core/Src/app_uart_rx.c **** 
+ 171:Core/Src/app_uart_rx.c ****     /* 无论校验成功与否，重置，开始寻找下一帧 */
+ 172:Core/Src/app_uart_rx.c ****     uart_rx_reset();
+ 173:Core/Src/app_uart_rx.c ****   }
+ 174:Core/Src/app_uart_rx.c **** }
+ 175:Core/Src/app_uart_rx.c **** 
+ 176:Core/Src/app_uart_rx.c **** void APP_UartRx_OnBytes(const uint8_t *data, size_t len)
+ 177:Core/Src/app_uart_rx.c **** {
+ 178:Core/Src/app_uart_rx.c ****   if ((data == NULL) || (len == 0u))
+ 179:Core/Src/app_uart_rx.c ****   {
+ 180:Core/Src/app_uart_rx.c ****     return;
+ 181:Core/Src/app_uart_rx.c ****   }
+ 182:Core/Src/app_uart_rx.c **** 
+ 183:Core/Src/app_uart_rx.c ****   for (size_t i = 0u; i < len; ++i)
+ 184:Core/Src/app_uart_rx.c ****   {
+ 185:Core/Src/app_uart_rx.c ****     APP_UartRx_OnByte(data[i]);
+ 186:Core/Src/app_uart_rx.c ****   }
+ 187:Core/Src/app_uart_rx.c **** }
+ 188:Core/Src/app_uart_rx.c **** 
+ 189:Core/Src/app_uart_rx.c **** void APP_UartRx_PushFromISR(const uint8_t *data, size_t len)
+ 190:Core/Src/app_uart_rx.c **** {
+ 156              		.loc 1 190 1 is_stmt 1 view -0
+ 157              		.cfi_startproc
+ 158              		@ args = 0, pretend = 0, frame = 0
+ 159              		@ frame_needed = 0, uses_anonymous_args = 0
+ 191:Core/Src/app_uart_rx.c ****   if ((data == NULL) || (len == 0u))
+ 160              		.loc 1 191 3 view .LVU37
+ 161              		.loc 1 191 6 is_stmt 0 view .LVU38
+ 162 0000 0028     		cmp	r0, #0
+ 163 0002 3CD0     		beq	.L15
+ 164 0004 8446     		mov	ip, r0
+ 165              		.loc 1 191 22 discriminator 1 view .LVU39
+ 166 0006 0029     		cmp	r1, #0
+ 167 0008 39D0     		beq	.L15
+ 192:Core/Src/app_uart_rx.c ****   {
+ 193:Core/Src/app_uart_rx.c ****     return;
+ 194:Core/Src/app_uart_rx.c ****   }
+ 195:Core/Src/app_uart_rx.c **** 
+ 196:Core/Src/app_uart_rx.c ****   s_isrByteCount += (uint32_t)len;
+ 168              		.loc 1 196 3 is_stmt 1 view .LVU40
+ 169              		.loc 1 196 18 is_stmt 0 view .LVU41
+ 170 000a 1D4A     		ldr	r2, .L20
+ 171 000c 1368     		ldr	r3, [r2]
+ 172 000e 0B44     		add	r3, r3, r1
+ 173 0010 1360     		str	r3, [r2]
+ 197:Core/Src/app_uart_rx.c ****   s_lastBurstByte0 = data[0];
+ 174              		.loc 1 197 3 is_stmt 1 view .LVU42
+ 175              		.loc 1 197 26 is_stmt 0 view .LVU43
+ARM GAS  /tmp/ccmIGntK.s 			page 8
 
 
+ 176 0012 0278     		ldrb	r2, [r0]	@ zero_extendqisi2
+ 177              		.loc 1 197 20 view .LVU44
+ 178 0014 1B4B     		ldr	r3, .L20+4
+ 179 0016 1A70     		strb	r2, [r3]
+ 198:Core/Src/app_uart_rx.c ****   s_lastBurstByte1 = (len >= 2u) ? data[1] : 0xFFu;
+ 180              		.loc 1 198 3 is_stmt 1 view .LVU45
+ 181              		.loc 1 198 20 is_stmt 0 view .LVU46
+ 182 0018 0129     		cmp	r1, #1
+ 183 001a 0DD9     		bls	.L13
+ 184              		.loc 1 198 20 discriminator 1 view .LVU47
+ 185 001c 4278     		ldrb	r2, [r0, #1]	@ zero_extendqisi2
+ 186              	.L9:
+ 187              		.loc 1 198 20 discriminator 4 view .LVU48
+ 188 001e 1A4B     		ldr	r3, .L20+8
+ 189 0020 1A70     		strb	r2, [r3]
+ 199:Core/Src/app_uart_rx.c ****   s_lastBurstLastByte = data[len - 1u];
+ 190              		.loc 1 199 3 is_stmt 1 discriminator 4 view .LVU49
+ 191              		.loc 1 199 29 is_stmt 0 discriminator 4 view .LVU50
+ 192 0022 0CEB0103 		add	r3, ip, r1
+ 193 0026 13F8012C 		ldrb	r2, [r3, #-1]	@ zero_extendqisi2
+ 194              		.loc 1 199 23 discriminator 4 view .LVU51
+ 195 002a 184B     		ldr	r3, .L20+12
+ 196 002c 1A70     		strb	r2, [r3]
+ 200:Core/Src/app_uart_rx.c **** 
+ 201:Core/Src/app_uart_rx.c ****   for (size_t i = 0u; i < len; ++i)
+ 197              		.loc 1 201 3 is_stmt 1 discriminator 4 view .LVU52
+ 198              	.LBB2:
+ 199              		.loc 1 201 8 discriminator 4 view .LVU53
+ 200              	.LVL1:
+ 201              		.loc 1 201 15 is_stmt 0 discriminator 4 view .LVU54
+ 202 002e 0022     		movs	r2, #0
+ 203              	.LVL2:
+ 204              		.loc 1 201 23 is_stmt 1 discriminator 4 view .LVU55
+ 205              		.loc 1 201 3 is_stmt 0 discriminator 4 view .LVU56
+ 206 0030 8A42     		cmp	r2, r1
+ 207 0032 23D2     		bcs	.L18
+ 208              	.LBE2:
+ 190:Core/Src/app_uart_rx.c ****   if ((data == NULL) || (len == 0u))
+ 209              		.loc 1 190 1 view .LVU57
+ 210 0034 30B5     		push	{r4, r5, lr}
+ 211              	.LCFI0:
+ 212              		.cfi_def_cfa_offset 12
+ 213              		.cfi_offset 4, -12
+ 214              		.cfi_offset 5, -8
+ 215              		.cfi_offset 14, -4
+ 216 0036 0DE0     		b	.L12
+ 217              	.LVL3:
+ 218              	.L13:
+ 219              	.LCFI1:
+ 220              		.cfi_def_cfa_offset 0
+ 221              		.cfi_restore 4
+ 222              		.cfi_restore 5
+ 223              		.cfi_restore 14
+ 198:Core/Src/app_uart_rx.c ****   s_lastBurstLastByte = data[len - 1u];
+ 224              		.loc 1 198 20 view .LVU58
+ 225 0038 FF22     		movs	r2, #255
+ 226 003a F0E7     		b	.L9
+ARM GAS  /tmp/ccmIGntK.s 			page 9
+
+
+ 227              	.LVL4:
+ 228              	.L11:
+ 229              	.LCFI2:
+ 230              		.cfi_def_cfa_offset 12
+ 231              		.cfi_offset 4, -12
+ 232              		.cfi_offset 5, -8
+ 233              		.cfi_offset 14, -4
+ 234              	.LBB5:
+ 235              	.LBB3:
+ 202:Core/Src/app_uart_rx.c ****   {
+ 203:Core/Src/app_uart_rx.c ****     uint16_t next = (uint16_t)((s_isrWrite + 1u) % UART_ISR_RING_SIZE);
+ 204:Core/Src/app_uart_rx.c ****     if (next == s_isrRead)
+ 205:Core/Src/app_uart_rx.c ****     {
+ 206:Core/Src/app_uart_rx.c ****       /* ring full: drop oldest byte */
+ 207:Core/Src/app_uart_rx.c ****       s_isrRead = (uint16_t)((s_isrRead + 1u) % UART_ISR_RING_SIZE);
+ 208:Core/Src/app_uart_rx.c ****     }
+ 209:Core/Src/app_uart_rx.c ****     s_isrRing[s_isrWrite] = data[i];
+ 236              		.loc 1 209 5 is_stmt 1 discriminator 2 view .LVU59
+ 237              		.loc 1 209 14 is_stmt 0 discriminator 2 view .LVU60
+ 238 003c 144C     		ldr	r4, .L20+16
+ 239 003e 2088     		ldrh	r0, [r4]
+ 240 0040 80B2     		uxth	r0, r0
+ 241              		.loc 1 209 33 discriminator 2 view .LVU61
+ 242 0042 1CF802E0 		ldrb	lr, [ip, r2]	@ zero_extendqisi2
+ 243              		.loc 1 209 27 discriminator 2 view .LVU62
+ 244 0046 134D     		ldr	r5, .L20+20
+ 245 0048 05F800E0 		strb	lr, [r5, r0]
+ 210:Core/Src/app_uart_rx.c ****     s_isrWrite = next;
+ 246              		.loc 1 210 5 is_stmt 1 discriminator 2 view .LVU63
+ 247              		.loc 1 210 16 is_stmt 0 discriminator 2 view .LVU64
+ 248 004c 2380     		strh	r3, [r4]	@ movhi
+ 249              	.LBE3:
+ 201:Core/Src/app_uart_rx.c ****   {
+ 250              		.loc 1 201 32 is_stmt 1 discriminator 2 view .LVU65
+ 251 004e 0132     		adds	r2, r2, #1
+ 252              	.LVL5:
+ 201:Core/Src/app_uart_rx.c ****   {
+ 253              		.loc 1 201 23 discriminator 2 view .LVU66
+ 201:Core/Src/app_uart_rx.c ****   {
+ 254              		.loc 1 201 3 is_stmt 0 discriminator 2 view .LVU67
+ 255 0050 8A42     		cmp	r2, r1
+ 256 0052 12D2     		bcs	.L19
+ 257              	.LVL6:
+ 258              	.L12:
+ 259              	.LBB4:
+ 203:Core/Src/app_uart_rx.c ****     if (next == s_isrRead)
+ 260              		.loc 1 203 5 is_stmt 1 view .LVU68
+ 203:Core/Src/app_uart_rx.c ****     if (next == s_isrRead)
+ 261              		.loc 1 203 21 is_stmt 0 view .LVU69
+ 262 0054 0E4B     		ldr	r3, .L20+16
+ 263 0056 1B88     		ldrh	r3, [r3]
+ 264 0058 9BB2     		uxth	r3, r3
+ 265 005a 0133     		adds	r3, r3, #1
+ 203:Core/Src/app_uart_rx.c ****     if (next == s_isrRead)
+ 266              		.loc 1 203 14 view .LVU70
+ 267 005c C3F30803 		ubfx	r3, r3, #0, #9
+ 268              	.LVL7:
+ARM GAS  /tmp/ccmIGntK.s 			page 10
+
+
+ 204:Core/Src/app_uart_rx.c ****     {
+ 269              		.loc 1 204 5 is_stmt 1 view .LVU71
+ 204:Core/Src/app_uart_rx.c ****     {
+ 270              		.loc 1 204 14 is_stmt 0 view .LVU72
+ 271 0060 0D48     		ldr	r0, .L20+24
+ 272 0062 0088     		ldrh	r0, [r0]
+ 273 0064 80B2     		uxth	r0, r0
+ 204:Core/Src/app_uart_rx.c ****     {
+ 274              		.loc 1 204 8 view .LVU73
+ 275 0066 9842     		cmp	r0, r3
+ 276 0068 E8D1     		bne	.L11
+ 207:Core/Src/app_uart_rx.c ****     }
+ 277              		.loc 1 207 7 is_stmt 1 view .LVU74
+ 207:Core/Src/app_uart_rx.c ****     }
+ 278              		.loc 1 207 19 is_stmt 0 view .LVU75
+ 279 006a 0B4C     		ldr	r4, .L20+24
+ 280 006c 2088     		ldrh	r0, [r4]
+ 281 006e 80B2     		uxth	r0, r0
+ 282 0070 0130     		adds	r0, r0, #1
+ 283 0072 C0F30800 		ubfx	r0, r0, #0, #9
+ 207:Core/Src/app_uart_rx.c ****     }
+ 284              		.loc 1 207 17 view .LVU76
+ 285 0076 2080     		strh	r0, [r4]	@ movhi
+ 286 0078 E0E7     		b	.L11
+ 287              	.L19:
+ 207:Core/Src/app_uart_rx.c ****     }
+ 288              		.loc 1 207 17 view .LVU77
+ 289              	.LBE4:
+ 290              	.LBE5:
+ 211:Core/Src/app_uart_rx.c ****   }
+ 212:Core/Src/app_uart_rx.c **** }
+ 291              		.loc 1 212 1 view .LVU78
+ 292 007a 30BD     		pop	{r4, r5, pc}
+ 293              	.LVL8:
+ 294              	.L18:
+ 295              	.LCFI3:
+ 296              		.cfi_def_cfa_offset 0
+ 297              		.cfi_restore 4
+ 298              		.cfi_restore 5
+ 299              		.cfi_restore 14
+ 300              		.loc 1 212 1 view .LVU79
+ 301 007c 7047     		bx	lr
+ 302              	.LVL9:
+ 303              	.L15:
+ 304              		.loc 1 212 1 view .LVU80
+ 305 007e 7047     		bx	lr
+ 306              	.L21:
+ 307              		.align	2
+ 308              	.L20:
+ 309 0080 00000000 		.word	.LANCHOR3
+ 310 0084 00000000 		.word	.LANCHOR12
+ 311 0088 00000000 		.word	.LANCHOR13
+ 312 008c 00000000 		.word	.LANCHOR14
+ 313 0090 00000000 		.word	.LANCHOR1
+ 314 0094 00000000 		.word	.LANCHOR15
+ 315 0098 00000000 		.word	.LANCHOR2
+ 316              		.cfi_endproc
+ARM GAS  /tmp/ccmIGntK.s 			page 11
+
+
+ 317              	.LFE8:
+ 319              		.section	.text.APP_UartRx_GetValidFrameCount,"ax",%progbits
+ 320              		.align	1
+ 321              		.global	APP_UartRx_GetValidFrameCount
+ 322              		.syntax unified
+ 323              		.thumb
+ 324              		.thumb_func
+ 325              		.fpu softvfp
+ 327              	APP_UartRx_GetValidFrameCount:
+ 328              	.LFB10:
+ 213:Core/Src/app_uart_rx.c **** 
+ 214:Core/Src/app_uart_rx.c **** void APP_UartRx_ProcessPending(void)
+ 215:Core/Src/app_uart_rx.c **** {
+ 216:Core/Src/app_uart_rx.c ****   for (;;)
+ 217:Core/Src/app_uart_rx.c ****   {
+ 218:Core/Src/app_uart_rx.c ****     uint8_t byte;
+ 219:Core/Src/app_uart_rx.c **** 
+ 220:Core/Src/app_uart_rx.c ****     taskENTER_CRITICAL();
+ 221:Core/Src/app_uart_rx.c ****     bool hasData = (s_isrRead != s_isrWrite);
+ 222:Core/Src/app_uart_rx.c ****     if (hasData)
+ 223:Core/Src/app_uart_rx.c ****     {
+ 224:Core/Src/app_uart_rx.c ****       byte = s_isrRing[s_isrRead];
+ 225:Core/Src/app_uart_rx.c ****       s_isrRead = (uint16_t)((s_isrRead + 1u) % UART_ISR_RING_SIZE);
+ 226:Core/Src/app_uart_rx.c ****     }
+ 227:Core/Src/app_uart_rx.c ****     taskEXIT_CRITICAL();
+ 228:Core/Src/app_uart_rx.c **** 
+ 229:Core/Src/app_uart_rx.c ****     if (!hasData)
+ 230:Core/Src/app_uart_rx.c ****     {
+ 231:Core/Src/app_uart_rx.c ****       break;
+ 232:Core/Src/app_uart_rx.c ****     }
+ 233:Core/Src/app_uart_rx.c **** 
+ 234:Core/Src/app_uart_rx.c ****     APP_UartRx_OnByte(byte);
+ 235:Core/Src/app_uart_rx.c ****   }
+ 236:Core/Src/app_uart_rx.c **** }
+ 237:Core/Src/app_uart_rx.c **** 
+ 238:Core/Src/app_uart_rx.c **** uint32_t APP_UartRx_GetValidFrameCount(void)
+ 239:Core/Src/app_uart_rx.c **** {
+ 329              		.loc 1 239 1 is_stmt 1 view -0
+ 330              		.cfi_startproc
+ 331              		@ args = 0, pretend = 0, frame = 0
+ 332              		@ frame_needed = 0, uses_anonymous_args = 0
+ 333              		@ link register save eliminated.
+ 240:Core/Src/app_uart_rx.c ****   return s_validFrameCount;
+ 334              		.loc 1 240 3 view .LVU82
+ 335              		.loc 1 240 10 is_stmt 0 view .LVU83
+ 336 0000 014B     		ldr	r3, .L23
+ 337 0002 1868     		ldr	r0, [r3]
+ 241:Core/Src/app_uart_rx.c **** }
+ 338              		.loc 1 241 1 view .LVU84
+ 339 0004 7047     		bx	lr
+ 340              	.L24:
+ 341 0006 00BF     		.align	2
+ 342              	.L23:
+ 343 0008 00000000 		.word	.LANCHOR4
+ 344              		.cfi_endproc
+ 345              	.LFE10:
+ 347              		.section	.text.APP_UartRx_GetIsrByteCount,"ax",%progbits
+ARM GAS  /tmp/ccmIGntK.s 			page 12
+
+
+ 348              		.align	1
+ 349              		.global	APP_UartRx_GetIsrByteCount
+ 350              		.syntax unified
+ 351              		.thumb
+ 352              		.thumb_func
+ 353              		.fpu softvfp
+ 355              	APP_UartRx_GetIsrByteCount:
+ 356              	.LFB11:
+ 242:Core/Src/app_uart_rx.c **** 
+ 243:Core/Src/app_uart_rx.c **** uint32_t APP_UartRx_GetIsrByteCount(void)
+ 244:Core/Src/app_uart_rx.c **** {
+ 357              		.loc 1 244 1 is_stmt 1 view -0
+ 358              		.cfi_startproc
+ 359              		@ args = 0, pretend = 0, frame = 0
+ 360              		@ frame_needed = 0, uses_anonymous_args = 0
+ 361              		@ link register save eliminated.
+ 245:Core/Src/app_uart_rx.c ****   return s_isrByteCount;
+ 362              		.loc 1 245 3 view .LVU86
+ 363              		.loc 1 245 10 is_stmt 0 view .LVU87
+ 364 0000 014B     		ldr	r3, .L26
+ 365 0002 1868     		ldr	r0, [r3]
+ 246:Core/Src/app_uart_rx.c **** }
+ 366              		.loc 1 246 1 view .LVU88
+ 367 0004 7047     		bx	lr
+ 368              	.L27:
+ 369 0006 00BF     		.align	2
+ 370              	.L26:
+ 371 0008 00000000 		.word	.LANCHOR3
+ 372              		.cfi_endproc
+ 373              	.LFE11:
+ 375              		.section	.text.APP_UartRx_GetCrcFailCount,"ax",%progbits
+ 376              		.align	1
+ 377              		.global	APP_UartRx_GetCrcFailCount
+ 378              		.syntax unified
+ 379              		.thumb
+ 380              		.thumb_func
+ 381              		.fpu softvfp
+ 383              	APP_UartRx_GetCrcFailCount:
+ 384              	.LFB12:
+ 247:Core/Src/app_uart_rx.c **** 
+ 248:Core/Src/app_uart_rx.c **** uint32_t APP_UartRx_GetCrcFailCount(void)
+ 249:Core/Src/app_uart_rx.c **** {
+ 385              		.loc 1 249 1 is_stmt 1 view -0
+ 386              		.cfi_startproc
+ 387              		@ args = 0, pretend = 0, frame = 0
+ 388              		@ frame_needed = 0, uses_anonymous_args = 0
+ 389              		@ link register save eliminated.
+ 250:Core/Src/app_uart_rx.c ****   return s_crcFailCount;
+ 390              		.loc 1 250 3 view .LVU90
+ 391              		.loc 1 250 10 is_stmt 0 view .LVU91
+ 392 0000 014B     		ldr	r3, .L29
+ 393 0002 1868     		ldr	r0, [r3]
+ 251:Core/Src/app_uart_rx.c **** }
+ 394              		.loc 1 251 1 view .LVU92
+ 395 0004 7047     		bx	lr
+ 396              	.L30:
+ 397 0006 00BF     		.align	2
+ARM GAS  /tmp/ccmIGntK.s 			page 13
+
+
+ 398              	.L29:
+ 399 0008 00000000 		.word	.LANCHOR5
+ 400              		.cfi_endproc
+ 401              	.LFE12:
+ 403              		.section	.text.APP_UartRx_GetHeadHitCount,"ax",%progbits
+ 404              		.align	1
+ 405              		.global	APP_UartRx_GetHeadHitCount
+ 406              		.syntax unified
+ 407              		.thumb
+ 408              		.thumb_func
+ 409              		.fpu softvfp
+ 411              	APP_UartRx_GetHeadHitCount:
+ 412              	.LFB13:
+ 252:Core/Src/app_uart_rx.c **** 
+ 253:Core/Src/app_uart_rx.c **** uint32_t APP_UartRx_GetHeadHitCount(void)
+ 254:Core/Src/app_uart_rx.c **** {
+ 413              		.loc 1 254 1 is_stmt 1 view -0
+ 414              		.cfi_startproc
+ 415              		@ args = 0, pretend = 0, frame = 0
+ 416              		@ frame_needed = 0, uses_anonymous_args = 0
+ 417              		@ link register save eliminated.
+ 255:Core/Src/app_uart_rx.c ****   return s_headHitCount;
+ 418              		.loc 1 255 3 view .LVU94
+ 419              		.loc 1 255 10 is_stmt 0 view .LVU95
+ 420 0000 014B     		ldr	r3, .L32
+ 421 0002 1868     		ldr	r0, [r3]
+ 256:Core/Src/app_uart_rx.c **** }
+ 422              		.loc 1 256 1 view .LVU96
+ 423 0004 7047     		bx	lr
+ 424              	.L33:
+ 425 0006 00BF     		.align	2
+ 426              	.L32:
+ 427 0008 00000000 		.word	.LANCHOR6
+ 428              		.cfi_endproc
+ 429              	.LFE13:
+ 431              		.section	.text.APP_UartRx_GetTailHitCount,"ax",%progbits
+ 432              		.align	1
+ 433              		.global	APP_UartRx_GetTailHitCount
+ 434              		.syntax unified
+ 435              		.thumb
+ 436              		.thumb_func
+ 437              		.fpu softvfp
+ 439              	APP_UartRx_GetTailHitCount:
+ 440              	.LFB14:
+ 257:Core/Src/app_uart_rx.c **** 
+ 258:Core/Src/app_uart_rx.c **** uint32_t APP_UartRx_GetTailHitCount(void)
+ 259:Core/Src/app_uart_rx.c **** {
+ 441              		.loc 1 259 1 is_stmt 1 view -0
+ 442              		.cfi_startproc
+ 443              		@ args = 0, pretend = 0, frame = 0
+ 444              		@ frame_needed = 0, uses_anonymous_args = 0
+ 445              		@ link register save eliminated.
+ 260:Core/Src/app_uart_rx.c ****   return s_tailHitCount;
+ 446              		.loc 1 260 3 view .LVU98
+ 447              		.loc 1 260 10 is_stmt 0 view .LVU99
+ 448 0000 014B     		ldr	r3, .L35
+ 449 0002 1868     		ldr	r0, [r3]
+ARM GAS  /tmp/ccmIGntK.s 			page 14
+
+
+ 261:Core/Src/app_uart_rx.c **** }
+ 450              		.loc 1 261 1 view .LVU100
+ 451 0004 7047     		bx	lr
+ 452              	.L36:
+ 453 0006 00BF     		.align	2
+ 454              	.L35:
+ 455 0008 00000000 		.word	.LANCHOR7
+ 456              		.cfi_endproc
+ 457              	.LFE14:
+ 459              		.section	.text.APP_UartRx_GetHead7BitHitCount,"ax",%progbits
+ 460              		.align	1
+ 461              		.global	APP_UartRx_GetHead7BitHitCount
+ 462              		.syntax unified
+ 463              		.thumb
+ 464              		.thumb_func
+ 465              		.fpu softvfp
+ 467              	APP_UartRx_GetHead7BitHitCount:
+ 468              	.LFB15:
+ 262:Core/Src/app_uart_rx.c **** 
+ 263:Core/Src/app_uart_rx.c **** uint32_t APP_UartRx_GetHead7BitHitCount(void)
+ 264:Core/Src/app_uart_rx.c **** {
+ 469              		.loc 1 264 1 is_stmt 1 view -0
+ 470              		.cfi_startproc
+ 471              		@ args = 0, pretend = 0, frame = 0
+ 472              		@ frame_needed = 0, uses_anonymous_args = 0
+ 473              		@ link register save eliminated.
+ 265:Core/Src/app_uart_rx.c ****   return s_head7BitHitCount;
+ 474              		.loc 1 265 3 view .LVU102
+ 475              		.loc 1 265 10 is_stmt 0 view .LVU103
+ 476 0000 014B     		ldr	r3, .L38
+ 477 0002 1868     		ldr	r0, [r3]
+ 266:Core/Src/app_uart_rx.c **** }
+ 478              		.loc 1 266 1 view .LVU104
+ 479 0004 7047     		bx	lr
+ 480              	.L39:
+ 481 0006 00BF     		.align	2
+ 482              	.L38:
+ 483 0008 00000000 		.word	.LANCHOR8
+ 484              		.cfi_endproc
+ 485              	.LFE15:
+ 487              		.section	.text.APP_UartRx_GetHeadInvertedHitCount,"ax",%progbits
+ 488              		.align	1
+ 489              		.global	APP_UartRx_GetHeadInvertedHitCount
+ 490              		.syntax unified
+ 491              		.thumb
+ 492              		.thumb_func
+ 493              		.fpu softvfp
+ 495              	APP_UartRx_GetHeadInvertedHitCount:
+ 496              	.LFB16:
+ 267:Core/Src/app_uart_rx.c **** 
+ 268:Core/Src/app_uart_rx.c **** uint32_t APP_UartRx_GetHeadInvertedHitCount(void)
+ 269:Core/Src/app_uart_rx.c **** {
+ 497              		.loc 1 269 1 is_stmt 1 view -0
+ 498              		.cfi_startproc
+ 499              		@ args = 0, pretend = 0, frame = 0
+ 500              		@ frame_needed = 0, uses_anonymous_args = 0
+ 501              		@ link register save eliminated.
+ARM GAS  /tmp/ccmIGntK.s 			page 15
+
+
+ 270:Core/Src/app_uart_rx.c ****   return s_headInvertedHitCount;
+ 502              		.loc 1 270 3 view .LVU106
+ 503              		.loc 1 270 10 is_stmt 0 view .LVU107
+ 504 0000 014B     		ldr	r3, .L41
+ 505 0002 1868     		ldr	r0, [r3]
+ 271:Core/Src/app_uart_rx.c **** }
+ 506              		.loc 1 271 1 view .LVU108
+ 507 0004 7047     		bx	lr
+ 508              	.L42:
+ 509 0006 00BF     		.align	2
+ 510              	.L41:
+ 511 0008 00000000 		.word	.LANCHOR9
+ 512              		.cfi_endproc
+ 513              	.LFE16:
+ 515              		.section	.text.APP_UartRx_GetLastBurstByte0,"ax",%progbits
+ 516              		.align	1
+ 517              		.global	APP_UartRx_GetLastBurstByte0
+ 518              		.syntax unified
+ 519              		.thumb
+ 520              		.thumb_func
+ 521              		.fpu softvfp
+ 523              	APP_UartRx_GetLastBurstByte0:
+ 524              	.LFB17:
+ 272:Core/Src/app_uart_rx.c **** 
+ 273:Core/Src/app_uart_rx.c **** uint8_t APP_UartRx_GetLastBurstByte0(void)
+ 274:Core/Src/app_uart_rx.c **** {
+ 525              		.loc 1 274 1 is_stmt 1 view -0
+ 526              		.cfi_startproc
+ 527              		@ args = 0, pretend = 0, frame = 0
+ 528              		@ frame_needed = 0, uses_anonymous_args = 0
+ 529              		@ link register save eliminated.
+ 275:Core/Src/app_uart_rx.c ****   return s_lastBurstByte0;
+ 530              		.loc 1 275 3 view .LVU110
+ 531              		.loc 1 275 10 is_stmt 0 view .LVU111
+ 532 0000 014B     		ldr	r3, .L44
+ 533 0002 1878     		ldrb	r0, [r3]	@ zero_extendqisi2
+ 276:Core/Src/app_uart_rx.c **** }
+ 534              		.loc 1 276 1 view .LVU112
+ 535 0004 7047     		bx	lr
+ 536              	.L45:
+ 537 0006 00BF     		.align	2
+ 538              	.L44:
+ 539 0008 00000000 		.word	.LANCHOR12
+ 540              		.cfi_endproc
+ 541              	.LFE17:
+ 543              		.section	.text.APP_UartRx_GetLastBurstByte1,"ax",%progbits
+ 544              		.align	1
+ 545              		.global	APP_UartRx_GetLastBurstByte1
+ 546              		.syntax unified
+ 547              		.thumb
+ 548              		.thumb_func
+ 549              		.fpu softvfp
+ 551              	APP_UartRx_GetLastBurstByte1:
+ 552              	.LFB18:
+ 277:Core/Src/app_uart_rx.c **** 
+ 278:Core/Src/app_uart_rx.c **** uint8_t APP_UartRx_GetLastBurstByte1(void)
+ 279:Core/Src/app_uart_rx.c **** {
+ARM GAS  /tmp/ccmIGntK.s 			page 16
+
+
+ 553              		.loc 1 279 1 is_stmt 1 view -0
+ 554              		.cfi_startproc
+ 555              		@ args = 0, pretend = 0, frame = 0
+ 556              		@ frame_needed = 0, uses_anonymous_args = 0
+ 557              		@ link register save eliminated.
+ 280:Core/Src/app_uart_rx.c ****   return s_lastBurstByte1;
+ 558              		.loc 1 280 3 view .LVU114
+ 559              		.loc 1 280 10 is_stmt 0 view .LVU115
+ 560 0000 014B     		ldr	r3, .L47
+ 561 0002 1878     		ldrb	r0, [r3]	@ zero_extendqisi2
+ 281:Core/Src/app_uart_rx.c **** }
+ 562              		.loc 1 281 1 view .LVU116
+ 563 0004 7047     		bx	lr
+ 564              	.L48:
+ 565 0006 00BF     		.align	2
+ 566              	.L47:
+ 567 0008 00000000 		.word	.LANCHOR13
+ 568              		.cfi_endproc
+ 569              	.LFE18:
+ 571              		.section	.text.APP_UartRx_GetLastBurstLastByte,"ax",%progbits
+ 572              		.align	1
+ 573              		.global	APP_UartRx_GetLastBurstLastByte
+ 574              		.syntax unified
+ 575              		.thumb
+ 576              		.thumb_func
+ 577              		.fpu softvfp
+ 579              	APP_UartRx_GetLastBurstLastByte:
+ 580              	.LFB19:
+ 282:Core/Src/app_uart_rx.c **** 
+ 283:Core/Src/app_uart_rx.c **** uint8_t APP_UartRx_GetLastBurstLastByte(void)
+ 284:Core/Src/app_uart_rx.c **** {
+ 581              		.loc 1 284 1 is_stmt 1 view -0
+ 582              		.cfi_startproc
+ 583              		@ args = 0, pretend = 0, frame = 0
+ 584              		@ frame_needed = 0, uses_anonymous_args = 0
+ 585              		@ link register save eliminated.
+ 285:Core/Src/app_uart_rx.c ****   return s_lastBurstLastByte;
+ 586              		.loc 1 285 3 view .LVU118
+ 587              		.loc 1 285 10 is_stmt 0 view .LVU119
+ 588 0000 014B     		ldr	r3, .L50
+ 589 0002 1878     		ldrb	r0, [r3]	@ zero_extendqisi2
+ 286:Core/Src/app_uart_rx.c **** }
+ 590              		.loc 1 286 1 view .LVU120
+ 591 0004 7047     		bx	lr
+ 592              	.L51:
+ 593 0006 00BF     		.align	2
+ 594              	.L50:
+ 595 0008 00000000 		.word	.LANCHOR14
+ 596              		.cfi_endproc
+ 597              	.LFE19:
+ 599              		.section	.text.APP_UartRx_OnFrame,"ax",%progbits
+ 600              		.align	1
+ 601              		.weak	APP_UartRx_OnFrame
+ 602              		.syntax unified
+ 603              		.thumb
+ 604              		.thumb_func
+ 605              		.fpu softvfp
+ARM GAS  /tmp/ccmIGntK.s 			page 17
+
+
+ 607              	APP_UartRx_OnFrame:
+ 608              	.LVL10:
+ 609              	.LFB20:
+ 287:Core/Src/app_uart_rx.c **** 
+ 288:Core/Src/app_uart_rx.c **** /* 默认的弱实现：用户可在其他模块中重新实现此函数 */
+ 289:Core/Src/app_uart_rx.c **** __attribute__((weak)) void APP_UartRx_OnFrame(uint8_t cmd,
+ 290:Core/Src/app_uart_rx.c ****                                               uint8_t msgType,
+ 291:Core/Src/app_uart_rx.c ****                                               const uint8_t *payload,
+ 292:Core/Src/app_uart_rx.c ****                                               uint16_t payloadLen)
+ 293:Core/Src/app_uart_rx.c **** {
+ 610              		.loc 1 293 1 is_stmt 1 view -0
+ 611              		.cfi_startproc
+ 612              		@ args = 0, pretend = 0, frame = 0
+ 613              		@ frame_needed = 0, uses_anonymous_args = 0
+ 614              		@ link register save eliminated.
+ 294:Core/Src/app_uart_rx.c ****   (void)cmd;
+ 615              		.loc 1 294 3 view .LVU122
+ 295:Core/Src/app_uart_rx.c ****   (void)msgType;
+ 616              		.loc 1 295 3 view .LVU123
+ 296:Core/Src/app_uart_rx.c ****   (void)payload;
+ 617              		.loc 1 296 3 view .LVU124
+ 297:Core/Src/app_uart_rx.c ****   (void)payloadLen;
+ 618              		.loc 1 297 3 view .LVU125
+ 298:Core/Src/app_uart_rx.c **** }
+ 619              		.loc 1 298 1 is_stmt 0 view .LVU126
+ 620 0000 7047     		bx	lr
+ 621              		.cfi_endproc
+ 622              	.LFE20:
+ 624              		.section	.text.APP_UartRx_OnByte,"ax",%progbits
+ 625              		.align	1
+ 626              		.global	APP_UartRx_OnByte
+ 627              		.syntax unified
+ 628              		.thumb
+ 629              		.thumb_func
+ 630              		.fpu softvfp
+ 632              	APP_UartRx_OnByte:
+ 633              	.LVL11:
+ 634              	.LFB6:
+  63:Core/Src/app_uart_rx.c ****   if (s_hasPrevByte)
+ 635              		.loc 1 63 1 is_stmt 1 view -0
+ 636              		.cfi_startproc
+ 637              		@ args = 0, pretend = 0, frame = 0
+ 638              		@ frame_needed = 0, uses_anonymous_args = 0
+  63:Core/Src/app_uart_rx.c ****   if (s_hasPrevByte)
+ 639              		.loc 1 63 1 is_stmt 0 view .LVU128
+ 640 0000 F8B5     		push	{r3, r4, r5, r6, r7, lr}
+ 641              	.LCFI4:
+ 642              		.cfi_def_cfa_offset 24
+ 643              		.cfi_offset 3, -24
+ 644              		.cfi_offset 4, -20
+ 645              		.cfi_offset 5, -16
+ 646              		.cfi_offset 6, -12
+ 647              		.cfi_offset 7, -8
+ 648              		.cfi_offset 14, -4
+  64:Core/Src/app_uart_rx.c ****   {
+ 649              		.loc 1 64 3 is_stmt 1 view .LVU129
+  64:Core/Src/app_uart_rx.c ****   {
+ARM GAS  /tmp/ccmIGntK.s 			page 18
+
+
+ 650              		.loc 1 64 7 is_stmt 0 view .LVU130
+ 651 0002 434B     		ldr	r3, .L76
+ 652 0004 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+  64:Core/Src/app_uart_rx.c ****   {
+ 653              		.loc 1 64 6 view .LVU131
+ 654 0006 2BB1     		cbz	r3, .L54
+  66:Core/Src/app_uart_rx.c ****     {
+ 655              		.loc 1 66 5 is_stmt 1 view .LVU132
+  66:Core/Src/app_uart_rx.c ****     {
+ 656              		.loc 1 66 21 is_stmt 0 view .LVU133
+ 657 0008 424B     		ldr	r3, .L76+4
+ 658 000a 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+  66:Core/Src/app_uart_rx.c ****     {
+ 659              		.loc 1 66 8 view .LVU134
+ 660 000c 552B     		cmp	r3, #85
+ 661 000e 41D0     		beq	.L67
+ 662              	.L55:
+  70:Core/Src/app_uart_rx.c ****     {
+ 663              		.loc 1 70 5 is_stmt 1 view .LVU135
+  70:Core/Src/app_uart_rx.c ****     {
+ 664              		.loc 1 70 8 is_stmt 0 view .LVU136
+ 665 0010 2A2B     		cmp	r3, #42
+ 666 0012 46D0     		beq	.L68
+ 667              	.L54:
+  75:Core/Src/app_uart_rx.c ****   s_hasPrevByte = true;
+ 668              		.loc 1 75 3 is_stmt 1 view .LVU137
+  75:Core/Src/app_uart_rx.c ****   s_hasPrevByte = true;
+ 669              		.loc 1 75 14 is_stmt 0 view .LVU138
+ 670 0014 3F4B     		ldr	r3, .L76+4
+ 671 0016 1870     		strb	r0, [r3]
+  76:Core/Src/app_uart_rx.c **** 
+ 672              		.loc 1 76 3 is_stmt 1 view .LVU139
+  76:Core/Src/app_uart_rx.c **** 
+ 673              		.loc 1 76 17 is_stmt 0 view .LVU140
+ 674 0018 3D4B     		ldr	r3, .L76
+ 675 001a 0122     		movs	r2, #1
+ 676 001c 1A70     		strb	r2, [r3]
+  80:Core/Src/app_uart_rx.c ****   {
+ 677              		.loc 1 80 3 is_stmt 1 view .LVU141
+  80:Core/Src/app_uart_rx.c ****   {
+ 678              		.loc 1 80 17 is_stmt 0 view .LVU142
+ 679 001e 3E4B     		ldr	r3, .L76+8
+ 680 0020 1B88     		ldrh	r3, [r3]
+  80:Core/Src/app_uart_rx.c ****   {
+ 681              		.loc 1 80 6 view .LVU143
+ 682 0022 002B     		cmp	r3, #0
+ 683 0024 44D0     		beq	.L69
+  89:Core/Src/app_uart_rx.c ****   {
+ 684              		.loc 1 89 8 is_stmt 1 view .LVU144
+  89:Core/Src/app_uart_rx.c ****   {
+ 685              		.loc 1 89 11 is_stmt 0 view .LVU145
+ 686 0026 012B     		cmp	r3, #1
+ 687 0028 4BD0     		beq	.L70
+ 110:Core/Src/app_uart_rx.c ****   {
+ 688              		.loc 1 110 3 is_stmt 1 view .LVU146
+ 110:Core/Src/app_uart_rx.c ****   {
+ 689              		.loc 1 110 6 is_stmt 0 view .LVU147
+ARM GAS  /tmp/ccmIGntK.s 			page 19
+
+
+ 690 002a FF2B     		cmp	r3, #255
+ 691 002c 5FD8     		bhi	.L71
+ 117:Core/Src/app_uart_rx.c **** 
+ 692              		.loc 1 117 3 is_stmt 1 view .LVU148
+ 117:Core/Src/app_uart_rx.c **** 
+ 693              		.loc 1 117 20 is_stmt 0 view .LVU149
+ 694 002e 591C     		adds	r1, r3, #1
+ 695 0030 89B2     		uxth	r1, r1
+ 696 0032 394A     		ldr	r2, .L76+8
+ 697 0034 1180     		strh	r1, [r2]	@ movhi
+ 117:Core/Src/app_uart_rx.c **** 
+ 698              		.loc 1 117 24 view .LVU150
+ 699 0036 394A     		ldr	r2, .L76+12
+ 700 0038 D054     		strb	r0, [r2, r3]
+ 120:Core/Src/app_uart_rx.c ****   {
+ 701              		.loc 1 120 3 is_stmt 1 view .LVU151
+ 120:Core/Src/app_uart_rx.c ****   {
+ 702              		.loc 1 120 6 is_stmt 0 view .LVU152
+ 703 003a 0729     		cmp	r1, #7
+ 704 003c 3AD9     		bls	.L53
+ 126:Core/Src/app_uart_rx.c ****       (s_rxBuf[s_rxIndex - 1u] == UART_FRAME_TAIL_L))
+ 705              		.loc 1 126 3 is_stmt 1 view .LVU153
+ 126:Core/Src/app_uart_rx.c ****       (s_rxBuf[s_rxIndex - 1u] == UART_FRAME_TAIL_L))
+ 706              		.loc 1 126 26 is_stmt 0 view .LVU154
+ 707 003e 8B1E     		subs	r3, r1, #2
+ 126:Core/Src/app_uart_rx.c ****       (s_rxBuf[s_rxIndex - 1u] == UART_FRAME_TAIL_L))
+ 708              		.loc 1 126 15 view .LVU155
+ 709 0040 D35C     		ldrb	r3, [r2, r3]	@ zero_extendqisi2
+ 126:Core/Src/app_uart_rx.c ****       (s_rxBuf[s_rxIndex - 1u] == UART_FRAME_TAIL_L))
+ 710              		.loc 1 126 6 view .LVU156
+ 711 0042 5D2B     		cmp	r3, #93
+ 712 0044 36D1     		bne	.L53
+ 127:Core/Src/app_uart_rx.c ****   {
+ 713              		.loc 1 127 26 discriminator 1 view .LVU157
+ 714 0046 4B1E     		subs	r3, r1, #1
+ 127:Core/Src/app_uart_rx.c ****   {
+ 715              		.loc 1 127 15 discriminator 1 view .LVU158
+ 716 0048 D35C     		ldrb	r3, [r2, r3]	@ zero_extendqisi2
+ 126:Core/Src/app_uart_rx.c ****       (s_rxBuf[s_rxIndex - 1u] == UART_FRAME_TAIL_L))
+ 717              		.loc 1 126 54 discriminator 1 view .LVU159
+ 718 004a D52B     		cmp	r3, #213
+ 719 004c 32D1     		bne	.L53
+ 720              	.LBB6:
+ 129:Core/Src/app_uart_rx.c **** 
+ 721              		.loc 1 129 5 is_stmt 1 view .LVU160
+ 129:Core/Src/app_uart_rx.c **** 
+ 722              		.loc 1 129 19 is_stmt 0 view .LVU161
+ 723 004e 344A     		ldr	r2, .L76+16
+ 724 0050 1368     		ldr	r3, [r2]
+ 725 0052 0133     		adds	r3, r3, #1
+ 726 0054 1360     		str	r3, [r2]
+ 132:Core/Src/app_uart_rx.c **** 
+ 727              		.loc 1 132 5 is_stmt 1 view .LVU162
+ 728              	.LVL12:
+ 134:Core/Src/app_uart_rx.c ****     const uint8_t  msgType = s_rxBuf[3u];
+ 729              		.loc 1 134 5 view .LVU163
+ 134:Core/Src/app_uart_rx.c ****     const uint8_t  msgType = s_rxBuf[3u];
+ARM GAS  /tmp/ccmIGntK.s 			page 20
+
+
+ 730              		.loc 1 134 20 is_stmt 0 view .LVU164
+ 731 0056 314B     		ldr	r3, .L76+12
+ 732 0058 9C78     		ldrb	r4, [r3, #2]	@ zero_extendqisi2
+ 733              	.LVL13:
+ 135:Core/Src/app_uart_rx.c **** 
+ 734              		.loc 1 135 5 is_stmt 1 view .LVU165
+ 135:Core/Src/app_uart_rx.c **** 
+ 735              		.loc 1 135 20 is_stmt 0 view .LVU166
+ 736 005a DD78     		ldrb	r5, [r3, #3]	@ zero_extendqisi2
+ 737              	.LVL14:
+ 138:Core/Src/app_uart_rx.c ****     const uint16_t tailLen    = 2u;
+ 738              		.loc 1 138 5 is_stmt 1 view .LVU167
+ 139:Core/Src/app_uart_rx.c ****     const uint16_t crcLen     = 2u;
+ 739              		.loc 1 139 5 view .LVU168
+ 140:Core/Src/app_uart_rx.c ****     const uint16_t payloadLen = (uint16_t)(totalLen - headerLen - crcLen - tailLen);
+ 740              		.loc 1 140 5 view .LVU169
  141:Core/Src/app_uart_rx.c **** 
- 505              		.loc 1 141 1 view .LVU134
- 506 001a 70BD     		pop	{r4, r5, r6, pc}
- 507              	.LVL37:
- 508              	.L47:
- 509              	.LCFI4:
- 510              		.cfi_def_cfa_offset 0
- 511              		.cfi_restore 4
- 512              		.cfi_restore 5
- 513              		.cfi_restore 6
- 514              		.cfi_restore 14
+ 741              		.loc 1 141 5 view .LVU170
  141:Core/Src/app_uart_rx.c **** 
- 515              		.loc 1 141 1 view .LVU135
- 516 001c 7047     		bx	lr
- 517              		.cfi_endproc
- 518              	.LFE7:
- 520              		.section	.text.APP_UartRx_ProcessPending,"ax",%progbits
- 521              		.align	1
- 522              		.global	APP_UartRx_ProcessPending
- 523              		.syntax unified
- 524              		.thumb
- 525              		.thumb_func
- 526              		.fpu softvfp
- 528              	APP_UartRx_ProcessPending:
- 529              	.LFB9:
- 164:Core/Src/app_uart_rx.c ****   for (;;)
- 530              		.loc 1 164 1 is_stmt 1 view -0
- 531              		.cfi_startproc
- 532              		@ args = 0, pretend = 0, frame = 0
- 533              		@ frame_needed = 0, uses_anonymous_args = 0
- 534 0000 70B5     		push	{r4, r5, r6, lr}
- 535              	.LCFI5:
- 536              		.cfi_def_cfa_offset 16
- 537              		.cfi_offset 4, -16
- 538              		.cfi_offset 5, -12
- 539              		.cfi_offset 6, -8
- 540              		.cfi_offset 14, -4
- 541 0002 0026     		movs	r6, #0
- 542 0004 11E0     		b	.L53
- 543              	.LVL38:
- 544              	.L55:
- 545              	.LBB9:
- 173:Core/Src/app_uart_rx.c ****       s_isrRead = (uint16_t)((s_isrRead + 1u) % UART_ISR_RING_SIZE);
- 546              		.loc 1 173 7 view .LVU137
- 173:Core/Src/app_uart_rx.c ****       s_isrRead = (uint16_t)((s_isrRead + 1u) % UART_ISR_RING_SIZE);
- 547              		.loc 1 173 23 is_stmt 0 view .LVU138
- 548 0006 0F4A     		ldr	r2, .L56
- 549 0008 1388     		ldrh	r3, [r2]
- 550 000a 9BB2     		uxth	r3, r3
- 173:Core/Src/app_uart_rx.c ****       s_isrRead = (uint16_t)((s_isrRead + 1u) % UART_ISR_RING_SIZE);
- 551              		.loc 1 173 12 view .LVU139
- 552 000c 0E49     		ldr	r1, .L56+4
- 553 000e CE5C     		ldrb	r6, [r1, r3]	@ zero_extendqisi2
- 554              	.LVL39:
- 174:Core/Src/app_uart_rx.c ****     }
- 555              		.loc 1 174 7 is_stmt 1 view .LVU140
- 174:Core/Src/app_uart_rx.c ****     }
-ARM GAS  /tmp/ccZ2H2pP.s 			page 16
+ 742              		.loc 1 141 20 is_stmt 0 view .LVU171
+ 743 005c A1F10803 		sub	r3, r1, #8
+ 744 0060 9EB2     		uxth	r6, r3
+ 745              	.LVL15:
+ 143:Core/Src/app_uart_rx.c ****     {
+ 746              		.loc 1 143 5 is_stmt 1 view .LVU172
+ 143:Core/Src/app_uart_rx.c ****     {
+ 747              		.loc 1 143 8 is_stmt 0 view .LVU173
+ 748 0062 13F4004F 		tst	r3, #32768
+ 749 0066 45D1     		bne	.L72
+ 149:Core/Src/app_uart_rx.c **** 
+ 750              		.loc 1 149 5 is_stmt 1 view .LVU174
+ 751              	.LVL16:
+ 152:Core/Src/app_uart_rx.c ****     uint16_t crcFrame = (uint16_t)(((uint16_t)s_rxBuf[crcIndex] << 8) |
+ 752              		.loc 1 152 5 view .LVU175
+ 152:Core/Src/app_uart_rx.c ****     uint16_t crcFrame = (uint16_t)(((uint16_t)s_rxBuf[crcIndex] << 8) |
+ 753              		.loc 1 152 20 is_stmt 0 view .LVU176
+ 754 0068 0B1F     		subs	r3, r1, #4
+ 755 006a 9BB2     		uxth	r3, r3
+ 756              	.LVL17:
+ 153:Core/Src/app_uart_rx.c ****                                    (uint16_t)s_rxBuf[crcIndex + 1u]);
+ 757              		.loc 1 153 5 is_stmt 1 view .LVU177
+ 153:Core/Src/app_uart_rx.c ****                                    (uint16_t)s_rxBuf[crcIndex + 1u]);
+ 758              		.loc 1 153 54 is_stmt 0 view .LVU178
+ 759 006c 2B48     		ldr	r0, .L76+12
+ 760              	.LVL18:
+ 153:Core/Src/app_uart_rx.c ****                                    (uint16_t)s_rxBuf[crcIndex + 1u]);
+ 761              		.loc 1 153 54 view .LVU179
+ 762 006e C25C     		ldrb	r2, [r0, r3]	@ zero_extendqisi2
+ 154:Core/Src/app_uart_rx.c **** 
+ 763              		.loc 1 154 63 view .LVU180
+ 764 0070 0133     		adds	r3, r3, #1
+ 765              	.LVL19:
+ 154:Core/Src/app_uart_rx.c **** 
+ 766              		.loc 1 154 53 view .LVU181
+ 767 0072 C75C     		ldrb	r7, [r0, r3]	@ zero_extendqisi2
+ 153:Core/Src/app_uart_rx.c ****                                    (uint16_t)s_rxBuf[crcIndex + 1u]);
+ 768              		.loc 1 153 14 view .LVU182
+ARM GAS  /tmp/ccmIGntK.s 			page 21
 
 
- 556              		.loc 1 174 19 is_stmt 0 view .LVU141
- 557 0010 1388     		ldrh	r3, [r2]
- 558 0012 9BB2     		uxth	r3, r3
- 559 0014 0133     		adds	r3, r3, #1
- 560 0016 C3F30803 		ubfx	r3, r3, #0, #9
- 174:Core/Src/app_uart_rx.c ****     }
- 561              		.loc 1 174 17 view .LVU142
- 562 001a 1380     		strh	r3, [r2]	@ movhi
- 563              	.L51:
- 176:Core/Src/app_uart_rx.c **** 
- 564              		.loc 1 176 5 is_stmt 1 view .LVU143
- 565 001c FFF7FEFF 		bl	vPortExitCritical
- 566              	.LVL40:
- 178:Core/Src/app_uart_rx.c ****     {
- 567              		.loc 1 178 5 view .LVU144
- 178:Core/Src/app_uart_rx.c ****     {
- 568              		.loc 1 178 8 is_stmt 0 view .LVU145
- 569 0020 A542     		cmp	r5, r4
- 570 0022 0DD0     		beq	.L50
- 183:Core/Src/app_uart_rx.c ****   }
- 571              		.loc 1 183 5 is_stmt 1 view .LVU146
- 572 0024 3046     		mov	r0, r6
- 573 0026 FFF7FEFF 		bl	APP_UartRx_OnByte
- 574              	.LVL41:
- 575              	.LBE9:
- 165:Core/Src/app_uart_rx.c ****   {
- 576              		.loc 1 165 9 view .LVU147
- 577              	.L53:
- 165:Core/Src/app_uart_rx.c ****   {
- 578              		.loc 1 165 3 view .LVU148
- 579              	.LBB10:
- 167:Core/Src/app_uart_rx.c **** 
- 580              		.loc 1 167 5 view .LVU149
- 169:Core/Src/app_uart_rx.c ****     bool hasData = (s_isrRead != s_isrWrite);
- 581              		.loc 1 169 5 view .LVU150
- 582 002a FFF7FEFF 		bl	vPortEnterCritical
- 583              	.LVL42:
- 170:Core/Src/app_uart_rx.c ****     if (hasData)
- 584              		.loc 1 170 5 view .LVU151
- 170:Core/Src/app_uart_rx.c ****     if (hasData)
- 585              		.loc 1 170 31 is_stmt 0 view .LVU152
- 586 002e 054B     		ldr	r3, .L56
- 587 0030 1D88     		ldrh	r5, [r3]
- 588 0032 ADB2     		uxth	r5, r5
- 589 0034 054B     		ldr	r3, .L56+8
- 590 0036 1C88     		ldrh	r4, [r3]
- 591 0038 A4B2     		uxth	r4, r4
- 592              	.LVL43:
- 171:Core/Src/app_uart_rx.c ****     {
- 593              		.loc 1 171 5 is_stmt 1 view .LVU153
- 171:Core/Src/app_uart_rx.c ****     {
- 594              		.loc 1 171 8 is_stmt 0 view .LVU154
- 595 003a A542     		cmp	r5, r4
- 596 003c E3D1     		bne	.L55
- 597 003e EDE7     		b	.L51
- 598              	.L50:
- 171:Core/Src/app_uart_rx.c ****     {
-ARM GAS  /tmp/ccZ2H2pP.s 			page 17
+ 769 0074 47EA0227 		orr	r7, r7, r2, lsl #8
+ 770              	.LVL20:
+ 157:Core/Src/app_uart_rx.c ****                                              (uint16_t)(2u + payloadLen)); /* cmd+type+payload */
+ 771              		.loc 1 157 5 is_stmt 1 view .LVU183
+ 157:Core/Src/app_uart_rx.c ****                                              (uint16_t)(2u + payloadLen)); /* cmd+type+payload */
+ 772              		.loc 1 157 24 is_stmt 0 view .LVU184
+ 773 0078 0639     		subs	r1, r1, #6
+ 774              	.LVL21:
+ 157:Core/Src/app_uart_rx.c ****                                              (uint16_t)(2u + payloadLen)); /* cmd+type+payload */
+ 775              		.loc 1 157 24 view .LVU185
+ 776 007a 89B2     		uxth	r1, r1
+ 777 007c 0230     		adds	r0, r0, #2
+ 778 007e FFF7FEFF 		bl	APP_UartProto_CalcCrc
+ 779              	.LVL22:
+ 160:Core/Src/app_uart_rx.c ****     {
+ 780              		.loc 1 160 5 is_stmt 1 view .LVU186
+ 160:Core/Src/app_uart_rx.c ****     {
+ 781              		.loc 1 160 8 is_stmt 0 view .LVU187
+ 782 0082 8742     		cmp	r7, r0
+ 783 0084 39D0     		beq	.L73
+ 168:Core/Src/app_uart_rx.c ****     }
+ 784              		.loc 1 168 7 is_stmt 1 view .LVU188
+ 168:Core/Src/app_uart_rx.c ****     }
+ 785              		.loc 1 168 21 is_stmt 0 view .LVU189
+ 786 0086 274A     		ldr	r2, .L76+20
+ 787 0088 1368     		ldr	r3, [r2]
+ 788 008a 0133     		adds	r3, r3, #1
+ 789 008c 1360     		str	r3, [r2]
+ 790              	.LVL23:
+ 791              	.L65:
+ 172:Core/Src/app_uart_rx.c ****   }
+ 792              		.loc 1 172 5 is_stmt 1 view .LVU190
+ 793 008e FFF7FEFF 		bl	uart_rx_reset
+ 794              	.LVL24:
+ 795 0092 0FE0     		b	.L53
+ 796              	.LVL25:
+ 797              	.L67:
+ 172:Core/Src/app_uart_rx.c ****   }
+ 798              		.loc 1 172 5 is_stmt 0 view .LVU191
+ 799              	.LBE6:
+  66:Core/Src/app_uart_rx.c ****     {
+ 800              		.loc 1 66 31 discriminator 1 view .LVU192
+ 801 0094 5D28     		cmp	r0, #93
+ 802 0096 BBD1     		bne	.L55
+  68:Core/Src/app_uart_rx.c ****     }
+ 803              		.loc 1 68 7 is_stmt 1 view .LVU193
+  68:Core/Src/app_uart_rx.c ****     }
+ 804              		.loc 1 68 25 is_stmt 0 view .LVU194
+ 805 0098 2349     		ldr	r1, .L76+24
+ 806 009a 0A68     		ldr	r2, [r1]
+ 807 009c 0132     		adds	r2, r2, #1
+ 808 009e 0A60     		str	r2, [r1]
+ 809 00a0 B6E7     		b	.L55
+ 810              	.L68:
+  70:Core/Src/app_uart_rx.c ****     {
+ 811              		.loc 1 70 31 discriminator 1 view .LVU195
+ 812 00a2 A228     		cmp	r0, #162
+ARM GAS  /tmp/ccmIGntK.s 			page 22
 
 
- 599              		.loc 1 171 8 view .LVU155
- 600              	.LBE10:
- 185:Core/Src/app_uart_rx.c **** 
- 601              		.loc 1 185 1 view .LVU156
- 602 0040 70BD     		pop	{r4, r5, r6, pc}
- 603              	.LVL44:
- 604              	.L57:
- 185:Core/Src/app_uart_rx.c **** 
- 605              		.loc 1 185 1 view .LVU157
- 606 0042 00BF     		.align	2
- 607              	.L56:
- 608 0044 00000000 		.word	.LANCHOR2
- 609 0048 00000000 		.word	.LANCHOR3
- 610 004c 00000000 		.word	.LANCHOR1
- 611              		.cfi_endproc
- 612              	.LFE9:
- 614              		.section	.bss.s_isrRead,"aw",%nobits
- 615              		.align	1
- 616              		.set	.LANCHOR2,. + 0
- 619              	s_isrRead:
- 620 0000 0000     		.space	2
- 621              		.section	.bss.s_isrRing,"aw",%nobits
- 622              		.align	2
- 623              		.set	.LANCHOR3,. + 0
- 626              	s_isrRing:
- 627 0000 00000000 		.space	512
- 627      00000000 
- 627      00000000 
- 627      00000000 
- 627      00000000 
- 628              		.section	.bss.s_isrWrite,"aw",%nobits
- 629              		.align	1
- 630              		.set	.LANCHOR1,. + 0
- 633              	s_isrWrite:
- 634 0000 0000     		.space	2
- 635              		.section	.bss.s_rxBuf,"aw",%nobits
- 636              		.align	2
- 637              		.set	.LANCHOR4,. + 0
- 640              	s_rxBuf:
- 641 0000 00000000 		.space	256
- 641      00000000 
- 641      00000000 
- 641      00000000 
- 641      00000000 
- 642              		.section	.bss.s_rxIndex,"aw",%nobits
- 643              		.align	1
- 644              		.set	.LANCHOR0,. + 0
- 647              	s_rxIndex:
- 648 0000 0000     		.space	2
- 649              		.text
- 650              	.Letext0:
- 651              		.file 2 "/usr/lib/gcc/arm-none-eabi/10.3.1/include/stdint.h"
- 652              		.file 3 "/usr/lib/gcc/arm-none-eabi/10.3.1/include/stddef.h"
- 653              		.file 4 "Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM3/portmacro.h"
- 654              		.file 5 "Core/Inc/app_uart_proto.h"
-ARM GAS  /tmp/ccZ2H2pP.s 			page 18
+ 813 00a4 B6D1     		bne	.L54
+  72:Core/Src/app_uart_rx.c ****     }
+ 814              		.loc 1 72 7 is_stmt 1 view .LVU196
+  72:Core/Src/app_uart_rx.c ****     }
+ 815              		.loc 1 72 29 is_stmt 0 view .LVU197
+ 816 00a6 214A     		ldr	r2, .L76+28
+ 817 00a8 1368     		ldr	r3, [r2]
+ 818 00aa 0133     		adds	r3, r3, #1
+ 819 00ac 1360     		str	r3, [r2]
+ 820 00ae B1E7     		b	.L54
+ 821              	.L69:
+  83:Core/Src/app_uart_rx.c ****     {
+ 822              		.loc 1 83 5 is_stmt 1 view .LVU198
+  83:Core/Src/app_uart_rx.c ****     {
+ 823              		.loc 1 83 8 is_stmt 0 view .LVU199
+ 824 00b0 D528     		cmp	r0, #213
+ 825 00b2 00D0     		beq	.L74
+ 826              	.LVL26:
+ 827              	.L53:
+ 174:Core/Src/app_uart_rx.c **** 
+ 828              		.loc 1 174 1 view .LVU200
+ 829 00b4 F8BD     		pop	{r3, r4, r5, r6, r7, pc}
+ 830              	.LVL27:
+ 831              	.L74:
+  85:Core/Src/app_uart_rx.c ****     }
+ 832              		.loc 1 85 7 is_stmt 1 view .LVU201
+  85:Core/Src/app_uart_rx.c ****     }
+ 833              		.loc 1 85 24 is_stmt 0 view .LVU202
+ 834 00b6 9918     		adds	r1, r3, r2
+ 835 00b8 174A     		ldr	r2, .L76+8
+ 836 00ba 1180     		strh	r1, [r2]	@ movhi
+  85:Core/Src/app_uart_rx.c ****     }
+ 837              		.loc 1 85 28 view .LVU203
+ 838 00bc 174A     		ldr	r2, .L76+12
+ 839 00be D054     		strb	r0, [r2, r3]
+  87:Core/Src/app_uart_rx.c ****   }
+ 840              		.loc 1 87 5 is_stmt 1 view .LVU204
+ 841 00c0 F8E7     		b	.L53
+ 842              	.L70:
+  92:Core/Src/app_uart_rx.c ****     {
+ 843              		.loc 1 92 5 view .LVU205
+  92:Core/Src/app_uart_rx.c ****     {
+ 844              		.loc 1 92 8 is_stmt 0 view .LVU206
+ 845 00c2 5D28     		cmp	r0, #93
+ 846 00c4 09D0     		beq	.L75
+ 100:Core/Src/app_uart_rx.c ****       if (byte == UART_FRAME_HEAD_H)
+ 847              		.loc 1 100 7 is_stmt 1 view .LVU207
+ 100:Core/Src/app_uart_rx.c ****       if (byte == UART_FRAME_HEAD_H)
+ 848              		.loc 1 100 17 is_stmt 0 view .LVU208
+ 849 00c6 144B     		ldr	r3, .L76+8
+ 850 00c8 0022     		movs	r2, #0
+ 851 00ca 1A80     		strh	r2, [r3]	@ movhi
+ 101:Core/Src/app_uart_rx.c ****       {
+ 852              		.loc 1 101 7 is_stmt 1 view .LVU209
+ 101:Core/Src/app_uart_rx.c ****       {
+ 853              		.loc 1 101 10 is_stmt 0 view .LVU210
+ 854 00cc D528     		cmp	r0, #213
+ARM GAS  /tmp/ccmIGntK.s 			page 23
+
+
+ 855 00ce F1D1     		bne	.L53
+ 103:Core/Src/app_uart_rx.c ****       }
+ 856              		.loc 1 103 9 is_stmt 1 view .LVU211
+ 103:Core/Src/app_uart_rx.c ****       }
+ 857              		.loc 1 103 26 is_stmt 0 view .LVU212
+ 858 00d0 0122     		movs	r2, #1
+ 859 00d2 1A80     		strh	r2, [r3]	@ movhi
+ 103:Core/Src/app_uart_rx.c ****       }
+ 860              		.loc 1 103 30 view .LVU213
+ 861 00d4 114B     		ldr	r3, .L76+12
+ 862 00d6 1870     		strb	r0, [r3]
+ 106:Core/Src/app_uart_rx.c ****   }
+ 863              		.loc 1 106 5 is_stmt 1 view .LVU214
+ 864 00d8 ECE7     		b	.L53
+ 865              	.L75:
+  94:Core/Src/app_uart_rx.c ****       s_headHitCount++;
+ 866              		.loc 1 94 7 view .LVU215
+  94:Core/Src/app_uart_rx.c ****       s_headHitCount++;
+ 867              		.loc 1 94 24 is_stmt 0 view .LVU216
+ 868 00da 591C     		adds	r1, r3, #1
+ 869 00dc 0E4A     		ldr	r2, .L76+8
+ 870 00de 1180     		strh	r1, [r2]	@ movhi
+  94:Core/Src/app_uart_rx.c ****       s_headHitCount++;
+ 871              		.loc 1 94 28 view .LVU217
+ 872 00e0 0E4A     		ldr	r2, .L76+12
+ 873 00e2 D054     		strb	r0, [r2, r3]
+  95:Core/Src/app_uart_rx.c ****     }
+ 874              		.loc 1 95 7 is_stmt 1 view .LVU218
+  95:Core/Src/app_uart_rx.c ****     }
+ 875              		.loc 1 95 21 is_stmt 0 view .LVU219
+ 876 00e4 124A     		ldr	r2, .L76+32
+ 877 00e6 1368     		ldr	r3, [r2]
+ 878 00e8 0133     		adds	r3, r3, #1
+ 879 00ea 1360     		str	r3, [r2]
+ 880 00ec E2E7     		b	.L53
+ 881              	.L71:
+ 113:Core/Src/app_uart_rx.c ****     return;
+ 882              		.loc 1 113 5 is_stmt 1 view .LVU220
+ 883 00ee FFF7FEFF 		bl	uart_rx_reset
+ 884              	.LVL28:
+ 114:Core/Src/app_uart_rx.c ****   }
+ 885              		.loc 1 114 5 view .LVU221
+ 886 00f2 DFE7     		b	.L53
+ 887              	.LVL29:
+ 888              	.L72:
+ 889              	.LBB7:
+ 145:Core/Src/app_uart_rx.c ****       return;
+ 890              		.loc 1 145 7 view .LVU222
+ 891 00f4 FFF7FEFF 		bl	uart_rx_reset
+ 892              	.LVL30:
+ 146:Core/Src/app_uart_rx.c ****     }
+ 893              		.loc 1 146 7 view .LVU223
+ 894 00f8 DCE7     		b	.L53
+ 895              	.LVL31:
+ 896              	.L73:
+ 162:Core/Src/app_uart_rx.c ****       /* CRC 正确，调用上层回调 */
+ 897              		.loc 1 162 7 view .LVU224
+ARM GAS  /tmp/ccmIGntK.s 			page 24
+
+
+ 162:Core/Src/app_uart_rx.c ****       /* CRC 正确，调用上层回调 */
+ 898              		.loc 1 162 24 is_stmt 0 view .LVU225
+ 899 00fa 0E4A     		ldr	r2, .L76+36
+ 900 00fc 1368     		ldr	r3, [r2]
+ 901 00fe 0133     		adds	r3, r3, #1
+ 902 0100 1360     		str	r3, [r2]
+ 164:Core/Src/app_uart_rx.c ****     }
+ 903              		.loc 1 164 7 is_stmt 1 view .LVU226
+ 904 0102 3346     		mov	r3, r6
+ 905 0104 0C4A     		ldr	r2, .L76+40
+ 906 0106 2946     		mov	r1, r5
+ 907 0108 2046     		mov	r0, r4
+ 908              	.LVL32:
+ 164:Core/Src/app_uart_rx.c ****     }
+ 909              		.loc 1 164 7 is_stmt 0 view .LVU227
+ 910 010a FFF7FEFF 		bl	APP_UartRx_OnFrame
+ 911              	.LVL33:
+ 912 010e BEE7     		b	.L65
+ 913              	.L77:
+ 914              		.align	2
+ 915              	.L76:
+ 916 0110 00000000 		.word	.LANCHOR11
+ 917 0114 00000000 		.word	.LANCHOR10
+ 918 0118 00000000 		.word	.LANCHOR0
+ 919 011c 00000000 		.word	.LANCHOR16
+ 920 0120 00000000 		.word	.LANCHOR7
+ 921 0124 00000000 		.word	.LANCHOR5
+ 922 0128 00000000 		.word	.LANCHOR8
+ 923 012c 00000000 		.word	.LANCHOR9
+ 924 0130 00000000 		.word	.LANCHOR6
+ 925 0134 00000000 		.word	.LANCHOR4
+ 926 0138 04000000 		.word	.LANCHOR16+4
+ 927              	.LBE7:
+ 928              		.cfi_endproc
+ 929              	.LFE6:
+ 931              		.section	.text.APP_UartRx_OnBytes,"ax",%progbits
+ 932              		.align	1
+ 933              		.global	APP_UartRx_OnBytes
+ 934              		.syntax unified
+ 935              		.thumb
+ 936              		.thumb_func
+ 937              		.fpu softvfp
+ 939              	APP_UartRx_OnBytes:
+ 940              	.LVL34:
+ 941              	.LFB7:
+ 177:Core/Src/app_uart_rx.c ****   if ((data == NULL) || (len == 0u))
+ 942              		.loc 1 177 1 is_stmt 1 view -0
+ 943              		.cfi_startproc
+ 944              		@ args = 0, pretend = 0, frame = 0
+ 945              		@ frame_needed = 0, uses_anonymous_args = 0
+ 178:Core/Src/app_uart_rx.c ****   {
+ 946              		.loc 1 178 3 view .LVU229
+ 178:Core/Src/app_uart_rx.c ****   {
+ 947              		.loc 1 178 6 is_stmt 0 view .LVU230
+ 948 0000 60B1     		cbz	r0, .L83
+ 177:Core/Src/app_uart_rx.c ****   if ((data == NULL) || (len == 0u))
+ 949              		.loc 1 177 1 discriminator 1 view .LVU231
+ARM GAS  /tmp/ccmIGntK.s 			page 25
+
+
+ 950 0002 70B5     		push	{r4, r5, r6, lr}
+ 951              	.LCFI5:
+ 952              		.cfi_def_cfa_offset 16
+ 953              		.cfi_offset 4, -16
+ 954              		.cfi_offset 5, -12
+ 955              		.cfi_offset 6, -8
+ 956              		.cfi_offset 14, -4
+ 957 0004 0D46     		mov	r5, r1
+ 958 0006 0646     		mov	r6, r0
+ 178:Core/Src/app_uart_rx.c ****   {
+ 959              		.loc 1 178 22 discriminator 1 view .LVU232
+ 960 0008 39B1     		cbz	r1, .L78
+ 961              	.LBB8:
+ 183:Core/Src/app_uart_rx.c ****   {
+ 962              		.loc 1 183 15 view .LVU233
+ 963 000a 0024     		movs	r4, #0
+ 964 000c 03E0     		b	.L80
+ 965              	.LVL35:
+ 966              	.L81:
+ 185:Core/Src/app_uart_rx.c ****   }
+ 967              		.loc 1 185 5 is_stmt 1 discriminator 3 view .LVU234
+ 968 000e 305D     		ldrb	r0, [r6, r4]	@ zero_extendqisi2
+ 969 0010 FFF7FEFF 		bl	APP_UartRx_OnByte
+ 970              	.LVL36:
+ 183:Core/Src/app_uart_rx.c ****   {
+ 971              		.loc 1 183 32 discriminator 3 view .LVU235
+ 972 0014 0134     		adds	r4, r4, #1
+ 973              	.LVL37:
+ 974              	.L80:
+ 183:Core/Src/app_uart_rx.c ****   {
+ 975              		.loc 1 183 23 discriminator 1 view .LVU236
+ 183:Core/Src/app_uart_rx.c ****   {
+ 976              		.loc 1 183 3 is_stmt 0 discriminator 1 view .LVU237
+ 977 0016 AC42     		cmp	r4, r5
+ 978 0018 F9D3     		bcc	.L81
+ 979              	.LVL38:
+ 980              	.L78:
+ 183:Core/Src/app_uart_rx.c ****   {
+ 981              		.loc 1 183 3 discriminator 1 view .LVU238
+ 982              	.LBE8:
+ 187:Core/Src/app_uart_rx.c **** 
+ 983              		.loc 1 187 1 view .LVU239
+ 984 001a 70BD     		pop	{r4, r5, r6, pc}
+ 985              	.LVL39:
+ 986              	.L83:
+ 987              	.LCFI6:
+ 988              		.cfi_def_cfa_offset 0
+ 989              		.cfi_restore 4
+ 990              		.cfi_restore 5
+ 991              		.cfi_restore 6
+ 992              		.cfi_restore 14
+ 187:Core/Src/app_uart_rx.c **** 
+ 993              		.loc 1 187 1 view .LVU240
+ 994 001c 7047     		bx	lr
+ 995              		.cfi_endproc
+ 996              	.LFE7:
+ 998              		.section	.text.APP_UartRx_ProcessPending,"ax",%progbits
+ARM GAS  /tmp/ccmIGntK.s 			page 26
+
+
+ 999              		.align	1
+ 1000              		.global	APP_UartRx_ProcessPending
+ 1001              		.syntax unified
+ 1002              		.thumb
+ 1003              		.thumb_func
+ 1004              		.fpu softvfp
+ 1006              	APP_UartRx_ProcessPending:
+ 1007              	.LFB9:
+ 215:Core/Src/app_uart_rx.c ****   for (;;)
+ 1008              		.loc 1 215 1 is_stmt 1 view -0
+ 1009              		.cfi_startproc
+ 1010              		@ args = 0, pretend = 0, frame = 0
+ 1011              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1012 0000 70B5     		push	{r4, r5, r6, lr}
+ 1013              	.LCFI7:
+ 1014              		.cfi_def_cfa_offset 16
+ 1015              		.cfi_offset 4, -16
+ 1016              		.cfi_offset 5, -12
+ 1017              		.cfi_offset 6, -8
+ 1018              		.cfi_offset 14, -4
+ 1019 0002 0026     		movs	r6, #0
+ 1020 0004 11E0     		b	.L89
+ 1021              	.LVL40:
+ 1022              	.L91:
+ 1023              	.LBB9:
+ 224:Core/Src/app_uart_rx.c ****       s_isrRead = (uint16_t)((s_isrRead + 1u) % UART_ISR_RING_SIZE);
+ 1024              		.loc 1 224 7 view .LVU242
+ 224:Core/Src/app_uart_rx.c ****       s_isrRead = (uint16_t)((s_isrRead + 1u) % UART_ISR_RING_SIZE);
+ 1025              		.loc 1 224 23 is_stmt 0 view .LVU243
+ 1026 0006 0F4A     		ldr	r2, .L92
+ 1027 0008 1388     		ldrh	r3, [r2]
+ 1028 000a 9BB2     		uxth	r3, r3
+ 224:Core/Src/app_uart_rx.c ****       s_isrRead = (uint16_t)((s_isrRead + 1u) % UART_ISR_RING_SIZE);
+ 1029              		.loc 1 224 12 view .LVU244
+ 1030 000c 0E49     		ldr	r1, .L92+4
+ 1031 000e CE5C     		ldrb	r6, [r1, r3]	@ zero_extendqisi2
+ 1032              	.LVL41:
+ 225:Core/Src/app_uart_rx.c ****     }
+ 1033              		.loc 1 225 7 is_stmt 1 view .LVU245
+ 225:Core/Src/app_uart_rx.c ****     }
+ 1034              		.loc 1 225 19 is_stmt 0 view .LVU246
+ 1035 0010 1388     		ldrh	r3, [r2]
+ 1036 0012 9BB2     		uxth	r3, r3
+ 1037 0014 0133     		adds	r3, r3, #1
+ 1038 0016 C3F30803 		ubfx	r3, r3, #0, #9
+ 225:Core/Src/app_uart_rx.c ****     }
+ 1039              		.loc 1 225 17 view .LVU247
+ 1040 001a 1380     		strh	r3, [r2]	@ movhi
+ 1041              	.L87:
+ 227:Core/Src/app_uart_rx.c **** 
+ 1042              		.loc 1 227 5 is_stmt 1 view .LVU248
+ 1043 001c FFF7FEFF 		bl	vPortExitCritical
+ 1044              	.LVL42:
+ 229:Core/Src/app_uart_rx.c ****     {
+ 1045              		.loc 1 229 5 view .LVU249
+ 229:Core/Src/app_uart_rx.c ****     {
+ 1046              		.loc 1 229 8 is_stmt 0 view .LVU250
+ARM GAS  /tmp/ccmIGntK.s 			page 27
+
+
+ 1047 0020 A542     		cmp	r5, r4
+ 1048 0022 0DD0     		beq	.L86
+ 234:Core/Src/app_uart_rx.c ****   }
+ 1049              		.loc 1 234 5 is_stmt 1 view .LVU251
+ 1050 0024 3046     		mov	r0, r6
+ 1051 0026 FFF7FEFF 		bl	APP_UartRx_OnByte
+ 1052              	.LVL43:
+ 1053              	.LBE9:
+ 216:Core/Src/app_uart_rx.c ****   {
+ 1054              		.loc 1 216 9 view .LVU252
+ 1055              	.L89:
+ 216:Core/Src/app_uart_rx.c ****   {
+ 1056              		.loc 1 216 3 view .LVU253
+ 1057              	.LBB10:
+ 218:Core/Src/app_uart_rx.c **** 
+ 1058              		.loc 1 218 5 view .LVU254
+ 220:Core/Src/app_uart_rx.c ****     bool hasData = (s_isrRead != s_isrWrite);
+ 1059              		.loc 1 220 5 view .LVU255
+ 1060 002a FFF7FEFF 		bl	vPortEnterCritical
+ 1061              	.LVL44:
+ 221:Core/Src/app_uart_rx.c ****     if (hasData)
+ 1062              		.loc 1 221 5 view .LVU256
+ 221:Core/Src/app_uart_rx.c ****     if (hasData)
+ 1063              		.loc 1 221 31 is_stmt 0 view .LVU257
+ 1064 002e 054B     		ldr	r3, .L92
+ 1065 0030 1D88     		ldrh	r5, [r3]
+ 1066 0032 ADB2     		uxth	r5, r5
+ 1067 0034 054B     		ldr	r3, .L92+8
+ 1068 0036 1C88     		ldrh	r4, [r3]
+ 1069 0038 A4B2     		uxth	r4, r4
+ 1070              	.LVL45:
+ 222:Core/Src/app_uart_rx.c ****     {
+ 1071              		.loc 1 222 5 is_stmt 1 view .LVU258
+ 222:Core/Src/app_uart_rx.c ****     {
+ 1072              		.loc 1 222 8 is_stmt 0 view .LVU259
+ 1073 003a A542     		cmp	r5, r4
+ 1074 003c E3D1     		bne	.L91
+ 1075 003e EDE7     		b	.L87
+ 1076              	.L86:
+ 222:Core/Src/app_uart_rx.c ****     {
+ 1077              		.loc 1 222 8 view .LVU260
+ 1078              	.LBE10:
+ 236:Core/Src/app_uart_rx.c **** 
+ 1079              		.loc 1 236 1 view .LVU261
+ 1080 0040 70BD     		pop	{r4, r5, r6, pc}
+ 1081              	.LVL46:
+ 1082              	.L93:
+ 236:Core/Src/app_uart_rx.c **** 
+ 1083              		.loc 1 236 1 view .LVU262
+ 1084 0042 00BF     		.align	2
+ 1085              	.L92:
+ 1086 0044 00000000 		.word	.LANCHOR2
+ 1087 0048 00000000 		.word	.LANCHOR15
+ 1088 004c 00000000 		.word	.LANCHOR1
+ 1089              		.cfi_endproc
+ 1090              	.LFE9:
+ 1092              		.section	.bss.s_crcFailCount,"aw",%nobits
+ARM GAS  /tmp/ccmIGntK.s 			page 28
+
+
+ 1093              		.align	2
+ 1094              		.set	.LANCHOR5,. + 0
+ 1097              	s_crcFailCount:
+ 1098 0000 00000000 		.space	4
+ 1099              		.section	.bss.s_hasPrevByte,"aw",%nobits
+ 1100              		.set	.LANCHOR11,. + 0
+ 1103              	s_hasPrevByte:
+ 1104 0000 00       		.space	1
+ 1105              		.section	.bss.s_head7BitHitCount,"aw",%nobits
+ 1106              		.align	2
+ 1107              		.set	.LANCHOR8,. + 0
+ 1110              	s_head7BitHitCount:
+ 1111 0000 00000000 		.space	4
+ 1112              		.section	.bss.s_headHitCount,"aw",%nobits
+ 1113              		.align	2
+ 1114              		.set	.LANCHOR6,. + 0
+ 1117              	s_headHitCount:
+ 1118 0000 00000000 		.space	4
+ 1119              		.section	.bss.s_headInvertedHitCount,"aw",%nobits
+ 1120              		.align	2
+ 1121              		.set	.LANCHOR9,. + 0
+ 1124              	s_headInvertedHitCount:
+ 1125 0000 00000000 		.space	4
+ 1126              		.section	.bss.s_isrByteCount,"aw",%nobits
+ 1127              		.align	2
+ 1128              		.set	.LANCHOR3,. + 0
+ 1131              	s_isrByteCount:
+ 1132 0000 00000000 		.space	4
+ 1133              		.section	.bss.s_isrRead,"aw",%nobits
+ 1134              		.align	1
+ 1135              		.set	.LANCHOR2,. + 0
+ 1138              	s_isrRead:
+ 1139 0000 0000     		.space	2
+ 1140              		.section	.bss.s_isrRing,"aw",%nobits
+ 1141              		.align	2
+ 1142              		.set	.LANCHOR15,. + 0
+ 1145              	s_isrRing:
+ 1146 0000 00000000 		.space	512
+ 1146      00000000 
+ 1146      00000000 
+ 1146      00000000 
+ 1146      00000000 
+ 1147              		.section	.bss.s_isrWrite,"aw",%nobits
+ 1148              		.align	1
+ 1149              		.set	.LANCHOR1,. + 0
+ 1152              	s_isrWrite:
+ 1153 0000 0000     		.space	2
+ 1154              		.section	.bss.s_lastBurstByte0,"aw",%nobits
+ 1155              		.set	.LANCHOR12,. + 0
+ 1158              	s_lastBurstByte0:
+ 1159 0000 00       		.space	1
+ 1160              		.section	.bss.s_lastBurstLastByte,"aw",%nobits
+ 1161              		.set	.LANCHOR14,. + 0
+ 1164              	s_lastBurstLastByte:
+ 1165 0000 00       		.space	1
+ 1166              		.section	.bss.s_prevByte,"aw",%nobits
+ 1167              		.set	.LANCHOR10,. + 0
+ARM GAS  /tmp/ccmIGntK.s 			page 29
+
+
+ 1170              	s_prevByte:
+ 1171 0000 00       		.space	1
+ 1172              		.section	.bss.s_rxBuf,"aw",%nobits
+ 1173              		.align	2
+ 1174              		.set	.LANCHOR16,. + 0
+ 1177              	s_rxBuf:
+ 1178 0000 00000000 		.space	256
+ 1178      00000000 
+ 1178      00000000 
+ 1178      00000000 
+ 1178      00000000 
+ 1179              		.section	.bss.s_rxIndex,"aw",%nobits
+ 1180              		.align	1
+ 1181              		.set	.LANCHOR0,. + 0
+ 1184              	s_rxIndex:
+ 1185 0000 0000     		.space	2
+ 1186              		.section	.bss.s_tailHitCount,"aw",%nobits
+ 1187              		.align	2
+ 1188              		.set	.LANCHOR7,. + 0
+ 1191              	s_tailHitCount:
+ 1192 0000 00000000 		.space	4
+ 1193              		.section	.bss.s_validFrameCount,"aw",%nobits
+ 1194              		.align	2
+ 1195              		.set	.LANCHOR4,. + 0
+ 1198              	s_validFrameCount:
+ 1199 0000 00000000 		.space	4
+ 1200              		.section	.data.s_lastBurstByte1,"aw"
+ 1201              		.set	.LANCHOR13,. + 0
+ 1204              	s_lastBurstByte1:
+ 1205 0000 FF       		.byte	-1
+ 1206              		.text
+ 1207              	.Letext0:
+ 1208              		.file 2 "/usr/lib/gcc/arm-none-eabi/10.3.1/include/stdint.h"
+ 1209              		.file 3 "/usr/lib/gcc/arm-none-eabi/10.3.1/include/stddef.h"
+ 1210              		.file 4 "Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM3/portmacro.h"
+ 1211              		.file 5 "Core/Inc/app_uart_proto.h"
+ARM GAS  /tmp/ccmIGntK.s 			page 30
 
 
 DEFINED SYMBOLS
                             *ABS*:0000000000000000 app_uart_rx.c
-     /tmp/ccZ2H2pP.s:16     .text.uart_rx_reset:0000000000000000 $t
-     /tmp/ccZ2H2pP.s:23     .text.uart_rx_reset:0000000000000000 uart_rx_reset
-     /tmp/ccZ2H2pP.s:41     .text.uart_rx_reset:0000000000000008 $d
-     /tmp/ccZ2H2pP.s:46     .text.APP_UartRx_Init:0000000000000000 $t
-     /tmp/ccZ2H2pP.s:53     .text.APP_UartRx_Init:0000000000000000 APP_UartRx_Init
-     /tmp/ccZ2H2pP.s:78     .text.APP_UartRx_Init:0000000000000010 $d
-     /tmp/ccZ2H2pP.s:85     .text.APP_UartRx_PushFromISR:0000000000000000 $t
-     /tmp/ccZ2H2pP.s:92     .text.APP_UartRx_PushFromISR:0000000000000000 APP_UartRx_PushFromISR
-     /tmp/ccZ2H2pP.s:199    .text.APP_UartRx_PushFromISR:0000000000000054 $d
-     /tmp/ccZ2H2pP.s:206    .text.APP_UartRx_OnFrame:0000000000000000 $t
-     /tmp/ccZ2H2pP.s:213    .text.APP_UartRx_OnFrame:0000000000000000 APP_UartRx_OnFrame
-     /tmp/ccZ2H2pP.s:231    .text.APP_UartRx_OnByte:0000000000000000 $t
-     /tmp/ccZ2H2pP.s:238    .text.APP_UartRx_OnByte:0000000000000000 APP_UartRx_OnByte
-     /tmp/ccZ2H2pP.s:446    .text.APP_UartRx_OnByte:00000000000000b4 $d
-     /tmp/ccZ2H2pP.s:454    .text.APP_UartRx_OnBytes:0000000000000000 $t
-     /tmp/ccZ2H2pP.s:461    .text.APP_UartRx_OnBytes:0000000000000000 APP_UartRx_OnBytes
-     /tmp/ccZ2H2pP.s:521    .text.APP_UartRx_ProcessPending:0000000000000000 $t
-     /tmp/ccZ2H2pP.s:528    .text.APP_UartRx_ProcessPending:0000000000000000 APP_UartRx_ProcessPending
-     /tmp/ccZ2H2pP.s:608    .text.APP_UartRx_ProcessPending:0000000000000044 $d
-     /tmp/ccZ2H2pP.s:615    .bss.s_isrRead:0000000000000000 $d
-     /tmp/ccZ2H2pP.s:619    .bss.s_isrRead:0000000000000000 s_isrRead
-     /tmp/ccZ2H2pP.s:622    .bss.s_isrRing:0000000000000000 $d
-     /tmp/ccZ2H2pP.s:626    .bss.s_isrRing:0000000000000000 s_isrRing
-     /tmp/ccZ2H2pP.s:629    .bss.s_isrWrite:0000000000000000 $d
-     /tmp/ccZ2H2pP.s:633    .bss.s_isrWrite:0000000000000000 s_isrWrite
-     /tmp/ccZ2H2pP.s:636    .bss.s_rxBuf:0000000000000000 $d
-     /tmp/ccZ2H2pP.s:640    .bss.s_rxBuf:0000000000000000 s_rxBuf
-     /tmp/ccZ2H2pP.s:643    .bss.s_rxIndex:0000000000000000 $d
-     /tmp/ccZ2H2pP.s:647    .bss.s_rxIndex:0000000000000000 s_rxIndex
+     /tmp/ccmIGntK.s:16     .text.uart_rx_reset:0000000000000000 $t
+     /tmp/ccmIGntK.s:23     .text.uart_rx_reset:0000000000000000 uart_rx_reset
+     /tmp/ccmIGntK.s:41     .text.uart_rx_reset:0000000000000008 $d
+     /tmp/ccmIGntK.s:46     .text.APP_UartRx_Init:0000000000000000 $t
+     /tmp/ccmIGntK.s:53     .text.APP_UartRx_Init:0000000000000000 APP_UartRx_Init
+     /tmp/ccmIGntK.s:127    .text.APP_UartRx_Init:0000000000000044 $d
+     /tmp/ccmIGntK.s:146    .text.APP_UartRx_PushFromISR:0000000000000000 $t
+     /tmp/ccmIGntK.s:153    .text.APP_UartRx_PushFromISR:0000000000000000 APP_UartRx_PushFromISR
+     /tmp/ccmIGntK.s:309    .text.APP_UartRx_PushFromISR:0000000000000080 $d
+     /tmp/ccmIGntK.s:320    .text.APP_UartRx_GetValidFrameCount:0000000000000000 $t
+     /tmp/ccmIGntK.s:327    .text.APP_UartRx_GetValidFrameCount:0000000000000000 APP_UartRx_GetValidFrameCount
+     /tmp/ccmIGntK.s:343    .text.APP_UartRx_GetValidFrameCount:0000000000000008 $d
+     /tmp/ccmIGntK.s:348    .text.APP_UartRx_GetIsrByteCount:0000000000000000 $t
+     /tmp/ccmIGntK.s:355    .text.APP_UartRx_GetIsrByteCount:0000000000000000 APP_UartRx_GetIsrByteCount
+     /tmp/ccmIGntK.s:371    .text.APP_UartRx_GetIsrByteCount:0000000000000008 $d
+     /tmp/ccmIGntK.s:376    .text.APP_UartRx_GetCrcFailCount:0000000000000000 $t
+     /tmp/ccmIGntK.s:383    .text.APP_UartRx_GetCrcFailCount:0000000000000000 APP_UartRx_GetCrcFailCount
+     /tmp/ccmIGntK.s:399    .text.APP_UartRx_GetCrcFailCount:0000000000000008 $d
+     /tmp/ccmIGntK.s:404    .text.APP_UartRx_GetHeadHitCount:0000000000000000 $t
+     /tmp/ccmIGntK.s:411    .text.APP_UartRx_GetHeadHitCount:0000000000000000 APP_UartRx_GetHeadHitCount
+     /tmp/ccmIGntK.s:427    .text.APP_UartRx_GetHeadHitCount:0000000000000008 $d
+     /tmp/ccmIGntK.s:432    .text.APP_UartRx_GetTailHitCount:0000000000000000 $t
+     /tmp/ccmIGntK.s:439    .text.APP_UartRx_GetTailHitCount:0000000000000000 APP_UartRx_GetTailHitCount
+     /tmp/ccmIGntK.s:455    .text.APP_UartRx_GetTailHitCount:0000000000000008 $d
+     /tmp/ccmIGntK.s:460    .text.APP_UartRx_GetHead7BitHitCount:0000000000000000 $t
+     /tmp/ccmIGntK.s:467    .text.APP_UartRx_GetHead7BitHitCount:0000000000000000 APP_UartRx_GetHead7BitHitCount
+     /tmp/ccmIGntK.s:483    .text.APP_UartRx_GetHead7BitHitCount:0000000000000008 $d
+     /tmp/ccmIGntK.s:488    .text.APP_UartRx_GetHeadInvertedHitCount:0000000000000000 $t
+     /tmp/ccmIGntK.s:495    .text.APP_UartRx_GetHeadInvertedHitCount:0000000000000000 APP_UartRx_GetHeadInvertedHitCount
+     /tmp/ccmIGntK.s:511    .text.APP_UartRx_GetHeadInvertedHitCount:0000000000000008 $d
+     /tmp/ccmIGntK.s:516    .text.APP_UartRx_GetLastBurstByte0:0000000000000000 $t
+     /tmp/ccmIGntK.s:523    .text.APP_UartRx_GetLastBurstByte0:0000000000000000 APP_UartRx_GetLastBurstByte0
+     /tmp/ccmIGntK.s:539    .text.APP_UartRx_GetLastBurstByte0:0000000000000008 $d
+     /tmp/ccmIGntK.s:544    .text.APP_UartRx_GetLastBurstByte1:0000000000000000 $t
+     /tmp/ccmIGntK.s:551    .text.APP_UartRx_GetLastBurstByte1:0000000000000000 APP_UartRx_GetLastBurstByte1
+     /tmp/ccmIGntK.s:567    .text.APP_UartRx_GetLastBurstByte1:0000000000000008 $d
+     /tmp/ccmIGntK.s:572    .text.APP_UartRx_GetLastBurstLastByte:0000000000000000 $t
+     /tmp/ccmIGntK.s:579    .text.APP_UartRx_GetLastBurstLastByte:0000000000000000 APP_UartRx_GetLastBurstLastByte
+     /tmp/ccmIGntK.s:595    .text.APP_UartRx_GetLastBurstLastByte:0000000000000008 $d
+     /tmp/ccmIGntK.s:600    .text.APP_UartRx_OnFrame:0000000000000000 $t
+     /tmp/ccmIGntK.s:607    .text.APP_UartRx_OnFrame:0000000000000000 APP_UartRx_OnFrame
+     /tmp/ccmIGntK.s:625    .text.APP_UartRx_OnByte:0000000000000000 $t
+     /tmp/ccmIGntK.s:632    .text.APP_UartRx_OnByte:0000000000000000 APP_UartRx_OnByte
+     /tmp/ccmIGntK.s:916    .text.APP_UartRx_OnByte:0000000000000110 $d
+     /tmp/ccmIGntK.s:932    .text.APP_UartRx_OnBytes:0000000000000000 $t
+     /tmp/ccmIGntK.s:939    .text.APP_UartRx_OnBytes:0000000000000000 APP_UartRx_OnBytes
+     /tmp/ccmIGntK.s:999    .text.APP_UartRx_ProcessPending:0000000000000000 $t
+     /tmp/ccmIGntK.s:1006   .text.APP_UartRx_ProcessPending:0000000000000000 APP_UartRx_ProcessPending
+     /tmp/ccmIGntK.s:1086   .text.APP_UartRx_ProcessPending:0000000000000044 $d
+     /tmp/ccmIGntK.s:1093   .bss.s_crcFailCount:0000000000000000 $d
+     /tmp/ccmIGntK.s:1097   .bss.s_crcFailCount:0000000000000000 s_crcFailCount
+     /tmp/ccmIGntK.s:1103   .bss.s_hasPrevByte:0000000000000000 s_hasPrevByte
+     /tmp/ccmIGntK.s:1104   .bss.s_hasPrevByte:0000000000000000 $d
+     /tmp/ccmIGntK.s:1106   .bss.s_head7BitHitCount:0000000000000000 $d
+     /tmp/ccmIGntK.s:1110   .bss.s_head7BitHitCount:0000000000000000 s_head7BitHitCount
+ARM GAS  /tmp/ccmIGntK.s 			page 31
+
+
+     /tmp/ccmIGntK.s:1113   .bss.s_headHitCount:0000000000000000 $d
+     /tmp/ccmIGntK.s:1117   .bss.s_headHitCount:0000000000000000 s_headHitCount
+     /tmp/ccmIGntK.s:1120   .bss.s_headInvertedHitCount:0000000000000000 $d
+     /tmp/ccmIGntK.s:1124   .bss.s_headInvertedHitCount:0000000000000000 s_headInvertedHitCount
+     /tmp/ccmIGntK.s:1127   .bss.s_isrByteCount:0000000000000000 $d
+     /tmp/ccmIGntK.s:1131   .bss.s_isrByteCount:0000000000000000 s_isrByteCount
+     /tmp/ccmIGntK.s:1134   .bss.s_isrRead:0000000000000000 $d
+     /tmp/ccmIGntK.s:1138   .bss.s_isrRead:0000000000000000 s_isrRead
+     /tmp/ccmIGntK.s:1141   .bss.s_isrRing:0000000000000000 $d
+     /tmp/ccmIGntK.s:1145   .bss.s_isrRing:0000000000000000 s_isrRing
+     /tmp/ccmIGntK.s:1148   .bss.s_isrWrite:0000000000000000 $d
+     /tmp/ccmIGntK.s:1152   .bss.s_isrWrite:0000000000000000 s_isrWrite
+     /tmp/ccmIGntK.s:1158   .bss.s_lastBurstByte0:0000000000000000 s_lastBurstByte0
+     /tmp/ccmIGntK.s:1159   .bss.s_lastBurstByte0:0000000000000000 $d
+     /tmp/ccmIGntK.s:1164   .bss.s_lastBurstLastByte:0000000000000000 s_lastBurstLastByte
+     /tmp/ccmIGntK.s:1165   .bss.s_lastBurstLastByte:0000000000000000 $d
+     /tmp/ccmIGntK.s:1170   .bss.s_prevByte:0000000000000000 s_prevByte
+     /tmp/ccmIGntK.s:1171   .bss.s_prevByte:0000000000000000 $d
+     /tmp/ccmIGntK.s:1173   .bss.s_rxBuf:0000000000000000 $d
+     /tmp/ccmIGntK.s:1177   .bss.s_rxBuf:0000000000000000 s_rxBuf
+     /tmp/ccmIGntK.s:1180   .bss.s_rxIndex:0000000000000000 $d
+     /tmp/ccmIGntK.s:1184   .bss.s_rxIndex:0000000000000000 s_rxIndex
+     /tmp/ccmIGntK.s:1187   .bss.s_tailHitCount:0000000000000000 $d
+     /tmp/ccmIGntK.s:1191   .bss.s_tailHitCount:0000000000000000 s_tailHitCount
+     /tmp/ccmIGntK.s:1194   .bss.s_validFrameCount:0000000000000000 $d
+     /tmp/ccmIGntK.s:1198   .bss.s_validFrameCount:0000000000000000 s_validFrameCount
+     /tmp/ccmIGntK.s:1204   .data.s_lastBurstByte1:0000000000000000 s_lastBurstByte1
 
 UNDEFINED SYMBOLS
 APP_UartProto_CalcCrc

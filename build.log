@@ -1,0 +1,35 @@
+arm-none-eabi-gcc -c -mcpu=cortex-m3 -mthumb   -DUSE_HAL_DRIVER -DSTM32F103xB -ICore/Inc -IDrivers/STM32F1xx_HAL_Driver/Inc -IDrivers/STM32F1xx_HAL_Driver/Inc/Legacy -IMiddlewares/Third_Party/FreeRTOS/Source/include -IMiddlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2 -IMiddlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM3 -IDrivers/CMSIS/Device/ST/STM32F1xx/Include -IDrivers/CMSIS/Include -Og -Wall -fdata-sections -ffunction-sections -g -gdwarf-2 -MMD -MP -MF"build/app_menu.d" -Wa,-a,-ad,-alms=build/app_menu.lst Core/Src/app_menu.c -o build/app_menu.o
+Core/Src/app_menu.c: In function 'APP_Menu_DefaultRender':
+Core/Src/app_menu.c:730:32: error: 'PARAM_ID_UART_BAUDRATERATE' undeclared (first use in this function); did you mean 'PARAM_ID_UART_BAUDRATE'?
+  730 |     if (APP_ParamDict_GetValue(PARAM_ID_UART_BAUDRATERATE, &baud)) {
+      |                                ^~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                                PARAM_ID_UART_BAUDRATE
+Core/Src/app_menu.c:730:32: note: each undeclared identifier is reported only once for each function it appears in
+Core/Src/app_menu.c: In function 'MenuKeyHandler_UartBaud':
+Core/Src/app_menu.c:935:31: error: 'PARAM_ID_UART_BAUDRATERATE' undeclared (first use in this function); did you mean 'PARAM_ID_UART_BAUDRATE'?
+  935 |   if (!APP_ParamDict_GetValue(PARAM_ID_UART_BAUDRATERATE, &current))
+      |                               ^~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                               PARAM_ID_UART_BAUDRATE
+At top level:
+Core/Src/app_menu.c:1114:13: warning: 'Render_Stats' defined but not used [-Wunused-function]
+ 1114 | static void Render_Stats(const MenuNode_t *node)
+      |             ^~~~~~~~~~~~
+Core/Src/app_menu.c:1097:13: warning: 'Render_Member' defined but not used [-Wunused-function]
+ 1097 | static void Render_Member(const MenuNode_t *node)
+      |             ^~~~~~~~~~~~~
+Core/Src/app_menu.c:1078:13: warning: 'Render_SelfCheck' defined but not used [-Wunused-function]
+ 1078 | static void Render_SelfCheck(const MenuNode_t *node)
+      |             ^~~~~~~~~~~~~~~~
+Core/Src/app_menu.c:989:12: warning: 'MenuKeyHandler_OperationParam' defined but not used [-Wunused-function]
+  989 | static int MenuKeyHandler_OperationParam(MenuKey_t key)
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Core/Src/app_menu.c:50:25: warning: 's_function_selfcheck' defined but not used [-Wunused-const-variable=]
+   50 | static const MenuNode_t s_function_selfcheck;
+      |                         ^~~~~~~~~~~~~~~~~~~~
+Core/Src/app_menu.c:45:25: warning: 's_setting_uart' defined but not used [-Wunused-const-variable=]
+   45 | static const MenuNode_t s_setting_uart;
+      |                         ^~~~~~~~~~~~~~
+Core/Src/app_menu.c:43:25: warning: 's_operation_param' defined but not used [-Wunused-const-variable=]
+   43 | static const MenuNode_t s_operation_param;
+      |                         ^~~~~~~~~~~~~~~~~
+make: *** [Makefile:211：build/app_menu.o] 错误 1

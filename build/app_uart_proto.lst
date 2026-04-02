@@ -1,4 +1,4 @@
-ARM GAS  /tmp/ccFNgf0a.s 			page 1
+ARM GAS  /tmp/ccAWjcUT.s 			page 1
 
 
    1              		.cpu cortex-m3
@@ -48,7 +48,7 @@ ARM GAS  /tmp/ccFNgf0a.s 			page 1
   14:Core/Src/app_uart_proto.c ****   if ((data == NULL) || (len == 0U))
   33              		.loc 1 14 3 view .LVU2
   34              		.loc 1 14 6 is_stmt 0 view .LVU3
-  35 0000 F8B1     		cbz	r0, .L9
+  35 0000 28B3     		cbz	r0, .L9
   11:Core/Src/app_uart_proto.c ****   uint16_t crc = 0xFFFFu;
   36              		.loc 1 11 1 discriminator 1 view .LVU4
   37 0002 00B5     		push	{lr}
@@ -57,8 +57,8 @@ ARM GAS  /tmp/ccFNgf0a.s 			page 1
   40              		.cfi_offset 14, -4
   41 0004 8646     		mov	lr, r0
   42              		.loc 1 14 22 discriminator 1 view .LVU5
-  43 0006 F9B1     		cbz	r1, .L10
-ARM GAS  /tmp/ccFNgf0a.s 			page 2
+  43 0006 29B3     		cbz	r1, .L10
+ARM GAS  /tmp/ccAWjcUT.s 			page 2
 
 
   44              	.LBB2:
@@ -72,15 +72,12 @@ ARM GAS  /tmp/ccFNgf0a.s 			page 1
   47              	.LBE2:
   12:Core/Src/app_uart_proto.c **** 
   48              		.loc 1 12 12 view .LVU7
-  49 000c 4FF6FF70 		movw	r0, #65535
-  50              	.LVL1:
-  12:Core/Src/app_uart_proto.c **** 
-  51              		.loc 1 12 12 view .LVU8
-  52 0010 10E0     		b	.L3
-  53              	.LVL2:
-  54              	.L5:
-  55              	.LBB5:
-  56              	.LBB3:
+  49 000c 4FF6FF72 		movw	r2, #65535
+  50 0010 10E0     		b	.L3
+  51              	.LVL1:
+  52              	.L5:
+  53              	.LBB5:
+  54              	.LBB3:
   20:Core/Src/app_uart_proto.c ****   {
   21:Core/Src/app_uart_proto.c ****     crc ^= (uint16_t)data[i];
   22:Core/Src/app_uart_proto.c ****     for (uint8_t j = 0U; j < 8U; ++j)
@@ -92,484 +89,501 @@ ARM GAS  /tmp/ccFNgf0a.s 			page 1
   28:Core/Src/app_uart_proto.c ****       else
   29:Core/Src/app_uart_proto.c ****       {
   30:Core/Src/app_uart_proto.c ****         crc >>= 1;
-  57              		.loc 1 30 9 is_stmt 1 view .LVU9
-  58              		.loc 1 30 13 is_stmt 0 view .LVU10
-  59 0012 4008     		lsrs	r0, r0, #1
-  60              	.LVL3:
-  61              	.L6:
+  55              		.loc 1 30 9 is_stmt 1 view .LVU8
+  56              		.loc 1 30 13 is_stmt 0 view .LVU9
+  57 0012 5208     		lsrs	r2, r2, #1
+  58              	.LVL2:
+  59              	.L6:
   22:Core/Src/app_uart_proto.c ****     {
-  62              		.loc 1 22 34 is_stmt 1 discriminator 2 view .LVU11
-  63 0014 0133     		adds	r3, r3, #1
-  64              	.LVL4:
+  60              		.loc 1 22 34 is_stmt 1 discriminator 2 view .LVU10
+  61 0014 0133     		adds	r3, r3, #1
+  62              	.LVL3:
   22:Core/Src/app_uart_proto.c ****     {
-  65              		.loc 1 22 34 is_stmt 0 discriminator 2 view .LVU12
-  66 0016 DBB2     		uxtb	r3, r3
-  67              	.LVL5:
-  68              	.L4:
+  63              		.loc 1 22 34 is_stmt 0 discriminator 2 view .LVU11
+  64 0016 DBB2     		uxtb	r3, r3
+  65              	.LVL4:
+  66              	.L4:
   22:Core/Src/app_uart_proto.c ****     {
-  69              		.loc 1 22 26 is_stmt 1 discriminator 1 view .LVU13
+  67              		.loc 1 22 26 is_stmt 1 discriminator 1 view .LVU12
   22:Core/Src/app_uart_proto.c ****     {
-  70              		.loc 1 22 5 is_stmt 0 discriminator 1 view .LVU14
-  71 0018 072B     		cmp	r3, #7
-  72 001a 07D8     		bhi	.L15
+  68              		.loc 1 22 5 is_stmt 0 discriminator 1 view .LVU13
+  69 0018 072B     		cmp	r3, #7
+  70 001a 07D8     		bhi	.L15
   24:Core/Src/app_uart_proto.c ****       {
-  73              		.loc 1 24 7 is_stmt 1 view .LVU15
+  71              		.loc 1 24 7 is_stmt 1 view .LVU14
   24:Core/Src/app_uart_proto.c ****       {
-  74              		.loc 1 24 10 is_stmt 0 view .LVU16
-  75 001c 10F0010F 		tst	r0, #1
-  76 0020 F7D0     		beq	.L5
-ARM GAS  /tmp/ccFNgf0a.s 			page 3
+  72              		.loc 1 24 10 is_stmt 0 view .LVU15
+  73 001c 12F0010F 		tst	r2, #1
+  74 0020 F7D0     		beq	.L5
+  26:Core/Src/app_uart_proto.c ****       }
+  75              		.loc 1 26 9 is_stmt 1 view .LVU16
+  26:Core/Src/app_uart_proto.c ****       }
+ARM GAS  /tmp/ccAWjcUT.s 			page 3
 
 
+  76              		.loc 1 26 13 is_stmt 0 view .LVU17
+  77 0022 4AF20100 		movw	r0, #40961
+  78 0026 80EA5202 		eor	r2, r0, r2, lsr #1
+  79              	.LVL5:
   26:Core/Src/app_uart_proto.c ****       }
-  77              		.loc 1 26 9 is_stmt 1 view .LVU17
+  80              		.loc 1 26 13 view .LVU18
+  81 002a F3E7     		b	.L6
+  82              	.L15:
   26:Core/Src/app_uart_proto.c ****       }
-  78              		.loc 1 26 13 is_stmt 0 view .LVU18
-  79 0022 4AF20102 		movw	r2, #40961
-  80 0026 82EA5000 		eor	r0, r2, r0, lsr #1
-  81              	.LVL6:
-  26:Core/Src/app_uart_proto.c ****       }
-  82              		.loc 1 26 13 view .LVU19
-  83 002a F3E7     		b	.L6
-  84              	.L15:
-  26:Core/Src/app_uart_proto.c ****       }
-  85              		.loc 1 26 13 view .LVU20
-  86              	.LBE3:
+  83              		.loc 1 26 13 view .LVU19
+  84              	.LBE3:
   19:Core/Src/app_uart_proto.c ****   {
-  87              		.loc 1 19 34 is_stmt 1 discriminator 2 view .LVU21
-  88 002c 0CF1010C 		add	ip, ip, #1
-  89              	.LVL7:
+  85              		.loc 1 19 34 is_stmt 1 discriminator 2 view .LVU20
+  86 002c 0CF1010C 		add	ip, ip, #1
+  87              	.LVL6:
   19:Core/Src/app_uart_proto.c ****   {
-  90              		.loc 1 19 34 is_stmt 0 discriminator 2 view .LVU22
-  91 0030 1FFA8CFC 		uxth	ip, ip
-  92              	.LVL8:
-  93              	.L3:
+  88              		.loc 1 19 34 is_stmt 0 discriminator 2 view .LVU21
+  89 0030 1FFA8CFC 		uxth	ip, ip
+  90              	.LVL7:
+  91              	.L3:
   19:Core/Src/app_uart_proto.c ****   {
-  94              		.loc 1 19 25 is_stmt 1 discriminator 1 view .LVU23
+  92              		.loc 1 19 25 is_stmt 1 discriminator 1 view .LVU22
   19:Core/Src/app_uart_proto.c ****   {
-  95              		.loc 1 19 3 is_stmt 0 discriminator 1 view .LVU24
-  96 0034 8C45     		cmp	ip, r1
-  97 0036 09D2     		bcs	.L2
+  93              		.loc 1 19 3 is_stmt 0 discriminator 1 view .LVU23
+  94 0034 8C45     		cmp	ip, r1
+  95 0036 04D2     		bcs	.L16
   21:Core/Src/app_uart_proto.c ****     for (uint8_t j = 0U; j < 8U; ++j)
-  98              		.loc 1 21 5 is_stmt 1 view .LVU25
+  96              		.loc 1 21 5 is_stmt 1 view .LVU24
   21:Core/Src/app_uart_proto.c ****     for (uint8_t j = 0U; j < 8U; ++j)
-  99              		.loc 1 21 26 is_stmt 0 view .LVU26
- 100 0038 1EF80C30 		ldrb	r3, [lr, ip]	@ zero_extendqisi2
+  97              		.loc 1 21 26 is_stmt 0 view .LVU25
+  98 0038 1EF80C30 		ldrb	r3, [lr, ip]	@ zero_extendqisi2
   21:Core/Src/app_uart_proto.c ****     for (uint8_t j = 0U; j < 8U; ++j)
- 101              		.loc 1 21 9 view .LVU27
- 102 003c 5840     		eors	r0, r0, r3
- 103              	.LVL9:
+  99              		.loc 1 21 9 view .LVU26
+ 100 003c 5A40     		eors	r2, r2, r3
+ 101              	.LVL8:
   22:Core/Src/app_uart_proto.c ****     {
- 104              		.loc 1 22 5 is_stmt 1 view .LVU28
- 105              	.LBB4:
+ 102              		.loc 1 22 5 is_stmt 1 view .LVU27
+ 103              	.LBB4:
   22:Core/Src/app_uart_proto.c ****     {
- 106              		.loc 1 22 10 view .LVU29
+ 104              		.loc 1 22 10 view .LVU28
   22:Core/Src/app_uart_proto.c ****     {
- 107              		.loc 1 22 18 is_stmt 0 view .LVU30
- 108 003e 0023     		movs	r3, #0
+ 105              		.loc 1 22 18 is_stmt 0 view .LVU29
+ 106 003e 0023     		movs	r3, #0
   22:Core/Src/app_uart_proto.c ****     {
- 109              		.loc 1 22 5 view .LVU31
- 110 0040 EAE7     		b	.L4
- 111              	.LVL10:
- 112              	.L9:
- 113              	.LCFI1:
- 114              		.cfi_def_cfa_offset 0
- 115              		.cfi_restore 14
+ 107              		.loc 1 22 5 view .LVU30
+ 108 0040 EAE7     		b	.L4
+ 109              	.LVL9:
+ 110              	.L16:
   22:Core/Src/app_uart_proto.c ****     {
- 116              		.loc 1 22 5 view .LVU32
- 117              	.LBE4:
-ARM GAS  /tmp/ccFNgf0a.s 			page 4
-
-
- 118              	.LBE5:
-  16:Core/Src/app_uart_proto.c ****   }
- 119              		.loc 1 16 12 view .LVU33
- 120 0042 4FF6FF70 		movw	r0, #65535
- 121              	.LVL11:
+ 111              		.loc 1 22 5 view .LVU31
+ 112              	.LBE4:
+ 113              	.LBE5:
   31:Core/Src/app_uart_proto.c ****       }
   32:Core/Src/app_uart_proto.c ****     }
   33:Core/Src/app_uart_proto.c ****   }
   34:Core/Src/app_uart_proto.c **** 
-  35:Core/Src/app_uart_proto.c ****   return crc;
-  36:Core/Src/app_uart_proto.c **** }
- 122              		.loc 1 36 1 view .LVU34
- 123 0046 7047     		bx	lr
- 124              	.LVL12:
- 125              	.L10:
- 126              	.LCFI2:
- 127              		.cfi_def_cfa_offset 4
- 128              		.cfi_offset 14, -4
-  16:Core/Src/app_uart_proto.c ****   }
- 129              		.loc 1 16 12 view .LVU35
- 130 0048 4FF6FF70 		movw	r0, #65535
- 131              	.LVL13:
- 132              	.L2:
- 133              		.loc 1 36 1 view .LVU36
- 134 004c 5DF804FB 		ldr	pc, [sp], #4
- 135              		.cfi_endproc
- 136              	.LFE0:
- 138              		.section	.text.APP_UartProto_BuildFrame,"ax",%progbits
- 139              		.align	1
- 140              		.global	APP_UartProto_BuildFrame
- 141              		.syntax unified
- 142              		.thumb
- 143              		.thumb_func
- 144              		.fpu softvfp
- 146              	APP_UartProto_BuildFrame:
- 147              	.LVL14:
- 148              	.LFB1:
+  35:Core/Src/app_uart_proto.c ****   /* 与主控板 CRC_Check 保持一致：返回前交换高低字节。 */
+ARM GAS  /tmp/ccAWjcUT.s 			page 4
+
+
+  36:Core/Src/app_uart_proto.c ****   crc = (uint16_t)((crc >> 8) | (crc << 8));
+ 114              		.loc 1 36 3 is_stmt 1 view .LVU32
+ 115              		.loc 1 36 31 is_stmt 0 view .LVU33
+ 116 0042 100A     		lsrs	r0, r2, #8
+ 117 0044 40EA0222 		orr	r2, r0, r2, lsl #8
+ 118              	.LVL10:
+ 119              		.loc 1 36 7 view .LVU34
+ 120 0048 90B2     		uxth	r0, r2
+ 121              	.LVL11:
   37:Core/Src/app_uart_proto.c **** 
-  38:Core/Src/app_uart_proto.c **** size_t APP_UartProto_BuildFrame(uint8_t cmd,
-  39:Core/Src/app_uart_proto.c ****                                 uint8_t msgType,
-  40:Core/Src/app_uart_proto.c ****                                 const uint8_t *payload,
-  41:Core/Src/app_uart_proto.c ****                                 uint16_t payloadLen,
-  42:Core/Src/app_uart_proto.c ****                                 uint8_t *outBuf,
-  43:Core/Src/app_uart_proto.c ****                                 uint16_t outBufSize)
-  44:Core/Src/app_uart_proto.c **** {
- 149              		.loc 1 44 1 is_stmt 1 view -0
- 150              		.cfi_startproc
- 151              		@ args = 8, pretend = 0, frame = 0
- 152              		@ frame_needed = 0, uses_anonymous_args = 0
- 153              		.loc 1 44 1 is_stmt 0 view .LVU38
- 154 0000 38B5     		push	{r3, r4, r5, lr}
- 155              	.LCFI3:
- 156              		.cfi_def_cfa_offset 16
- 157              		.cfi_offset 3, -16
- 158              		.cfi_offset 4, -12
- 159              		.cfi_offset 5, -8
- 160              		.cfi_offset 14, -4
-ARM GAS  /tmp/ccFNgf0a.s 			page 5
+  38:Core/Src/app_uart_proto.c ****   return crc;
+ 122              		.loc 1 38 3 is_stmt 1 view .LVU35
+ 123              	.L2:
+  39:Core/Src/app_uart_proto.c **** }
+ 124              		.loc 1 39 1 is_stmt 0 view .LVU36
+ 125 004a 5DF804FB 		ldr	pc, [sp], #4
+ 126              	.LVL12:
+ 127              	.L9:
+ 128              	.LCFI1:
+ 129              		.cfi_def_cfa_offset 0
+ 130              		.cfi_restore 14
+  16:Core/Src/app_uart_proto.c ****   }
+ 131              		.loc 1 16 12 view .LVU37
+ 132 004e 4FF6FF70 		movw	r0, #65535
+ 133              	.LVL13:
+ 134              		.loc 1 39 1 view .LVU38
+ 135 0052 7047     		bx	lr
+ 136              	.LVL14:
+ 137              	.L10:
+ 138              	.LCFI2:
+ 139              		.cfi_def_cfa_offset 4
+ 140              		.cfi_offset 14, -4
+  16:Core/Src/app_uart_proto.c ****   }
+ 141              		.loc 1 16 12 view .LVU39
+ 142 0054 4FF6FF70 		movw	r0, #65535
+ 143              	.LVL15:
+  16:Core/Src/app_uart_proto.c ****   }
+ 144              		.loc 1 16 12 view .LVU40
+ 145 0058 F7E7     		b	.L2
+ 146              		.cfi_endproc
+ 147              	.LFE0:
+ 149              		.section	.text.APP_UartProto_BuildFrame,"ax",%progbits
+ 150              		.align	1
+ 151              		.global	APP_UartProto_BuildFrame
+ 152              		.syntax unified
+ 153              		.thumb
+ 154              		.thumb_func
+ 155              		.fpu softvfp
+ 157              	APP_UartProto_BuildFrame:
+ 158              	.LVL16:
+ 159              	.LFB1:
+  40:Core/Src/app_uart_proto.c **** 
+  41:Core/Src/app_uart_proto.c **** size_t APP_UartProto_BuildFrame(uint8_t cmd,
+  42:Core/Src/app_uart_proto.c ****                                 uint8_t msgType,
+  43:Core/Src/app_uart_proto.c ****                                 const uint8_t *payload,
+  44:Core/Src/app_uart_proto.c ****                                 uint16_t payloadLen,
+  45:Core/Src/app_uart_proto.c ****                                 uint8_t *outBuf,
+ARM GAS  /tmp/ccAWjcUT.s 			page 5
 
 
- 161 0002 049D     		ldr	r5, [sp, #16]
-  45:Core/Src/app_uart_proto.c ****   if (outBuf == NULL)
- 162              		.loc 1 45 3 is_stmt 1 view .LVU39
- 163              		.loc 1 45 6 is_stmt 0 view .LVU40
- 164 0004 ADB3     		cbz	r5, .L21
-  46:Core/Src/app_uart_proto.c ****   {
-  47:Core/Src/app_uart_proto.c ****     return 0U;
-  48:Core/Src/app_uart_proto.c ****   }
-  49:Core/Src/app_uart_proto.c **** 
-  50:Core/Src/app_uart_proto.c ****   /* 2(head) + 1(cmd) + 1(type) + N(payload) + 2(crc) + 2(tail) */
-  51:Core/Src/app_uart_proto.c ****   const uint16_t totalLen = (uint16_t)(2U + 1U + 1U + payloadLen + 2U + 2U);
- 165              		.loc 1 51 3 is_stmt 1 view .LVU41
- 166              		.loc 1 51 18 is_stmt 0 view .LVU42
- 167 0006 03F10804 		add	r4, r3, #8
- 168 000a A4B2     		uxth	r4, r4
- 169              	.LVL15:
-  52:Core/Src/app_uart_proto.c ****   if (outBufSize < totalLen)
- 170              		.loc 1 52 3 is_stmt 1 view .LVU43
- 171              		.loc 1 52 6 is_stmt 0 view .LVU44
- 172 000c BDF814C0 		ldrh	ip, [sp, #20]
- 173 0010 6445     		cmp	r4, ip
- 174 0012 30D8     		bhi	.L22
-  53:Core/Src/app_uart_proto.c ****   {
-  54:Core/Src/app_uart_proto.c ****     return 0U;
-  55:Core/Src/app_uart_proto.c ****   }
-  56:Core/Src/app_uart_proto.c **** 
-  57:Core/Src/app_uart_proto.c ****   uint16_t idx = 0U;
- 175              		.loc 1 57 3 is_stmt 1 view .LVU45
- 176              	.LVL16:
-  58:Core/Src/app_uart_proto.c **** 
-  59:Core/Src/app_uart_proto.c ****   /* 帧头 */
-  60:Core/Src/app_uart_proto.c ****   outBuf[idx++] = UART_FRAME_HEAD_H;
- 177              		.loc 1 60 3 view .LVU46
- 178              		.loc 1 60 17 is_stmt 0 view .LVU47
- 179 0014 D524     		movs	r4, #213
+  46:Core/Src/app_uart_proto.c ****                                 uint16_t outBufSize)
+  47:Core/Src/app_uart_proto.c **** {
+ 160              		.loc 1 47 1 is_stmt 1 view -0
+ 161              		.cfi_startproc
+ 162              		@ args = 8, pretend = 0, frame = 0
+ 163              		@ frame_needed = 0, uses_anonymous_args = 0
+ 164              		.loc 1 47 1 is_stmt 0 view .LVU42
+ 165 0000 38B5     		push	{r3, r4, r5, lr}
+ 166              	.LCFI3:
+ 167              		.cfi_def_cfa_offset 16
+ 168              		.cfi_offset 3, -16
+ 169              		.cfi_offset 4, -12
+ 170              		.cfi_offset 5, -8
+ 171              		.cfi_offset 14, -4
+ 172 0002 049D     		ldr	r5, [sp, #16]
+  48:Core/Src/app_uart_proto.c ****   if (outBuf == NULL)
+ 173              		.loc 1 48 3 is_stmt 1 view .LVU43
+ 174              		.loc 1 48 6 is_stmt 0 view .LVU44
+ 175 0004 ADB3     		cbz	r5, .L22
+  49:Core/Src/app_uart_proto.c ****   {
+  50:Core/Src/app_uart_proto.c ****     return 0U;
+  51:Core/Src/app_uart_proto.c ****   }
+  52:Core/Src/app_uart_proto.c **** 
+  53:Core/Src/app_uart_proto.c ****   /* 2(head) + 1(cmd) + 1(type) + N(payload) + 2(crc) + 2(tail) */
+  54:Core/Src/app_uart_proto.c ****   const uint16_t totalLen = (uint16_t)(2U + 1U + 1U + payloadLen + 2U + 2U);
+ 176              		.loc 1 54 3 is_stmt 1 view .LVU45
+ 177              		.loc 1 54 18 is_stmt 0 view .LVU46
+ 178 0006 03F10804 		add	r4, r3, #8
+ 179 000a A4B2     		uxth	r4, r4
  180              	.LVL17:
- 181              		.loc 1 60 17 view .LVU48
- 182 0016 2C70     		strb	r4, [r5]
-  61:Core/Src/app_uart_proto.c ****   outBuf[idx++] = UART_FRAME_HEAD_L;
- 183              		.loc 1 61 3 is_stmt 1 view .LVU49
- 184              	.LVL18:
- 185              		.loc 1 61 17 is_stmt 0 view .LVU50
- 186 0018 5D24     		movs	r4, #93
- 187 001a 6C70     		strb	r4, [r5, #1]
-  62:Core/Src/app_uart_proto.c **** 
-  63:Core/Src/app_uart_proto.c ****   /* 命令字 + 消息类型 */
-  64:Core/Src/app_uart_proto.c ****   outBuf[idx++] = cmd;
- 188              		.loc 1 64 3 is_stmt 1 view .LVU51
- 189              	.LVL19:
- 190              		.loc 1 64 17 is_stmt 0 view .LVU52
- 191 001c A870     		strb	r0, [r5, #2]
-  65:Core/Src/app_uart_proto.c ****   outBuf[idx++] = msgType;
- 192              		.loc 1 65 3 is_stmt 1 view .LVU53
- 193              	.LVL20:
- 194              		.loc 1 65 17 is_stmt 0 view .LVU54
- 195 001e E970     		strb	r1, [r5, #3]
-  66:Core/Src/app_uart_proto.c **** 
-ARM GAS  /tmp/ccFNgf0a.s 			page 6
+  55:Core/Src/app_uart_proto.c ****   if (outBufSize < totalLen)
+ 181              		.loc 1 55 3 is_stmt 1 view .LVU47
+ 182              		.loc 1 55 6 is_stmt 0 view .LVU48
+ 183 000c BDF814C0 		ldrh	ip, [sp, #20]
+ 184 0010 6445     		cmp	r4, ip
+ 185 0012 30D8     		bhi	.L23
+  56:Core/Src/app_uart_proto.c ****   {
+  57:Core/Src/app_uart_proto.c ****     return 0U;
+  58:Core/Src/app_uart_proto.c ****   }
+  59:Core/Src/app_uart_proto.c **** 
+  60:Core/Src/app_uart_proto.c ****   uint16_t idx = 0U;
+ 186              		.loc 1 60 3 is_stmt 1 view .LVU49
+ 187              	.LVL18:
+  61:Core/Src/app_uart_proto.c **** 
+  62:Core/Src/app_uart_proto.c ****   /* 帧头 */
+  63:Core/Src/app_uart_proto.c ****   outBuf[idx++] = UART_FRAME_HEAD_H;
+ 188              		.loc 1 63 3 view .LVU50
+ 189              		.loc 1 63 17 is_stmt 0 view .LVU51
+ 190 0014 D524     		movs	r4, #213
+ 191              	.LVL19:
+ 192              		.loc 1 63 17 view .LVU52
+ 193 0016 2C70     		strb	r4, [r5]
+  64:Core/Src/app_uart_proto.c ****   outBuf[idx++] = UART_FRAME_HEAD_L;
+ 194              		.loc 1 64 3 is_stmt 1 view .LVU53
+ 195              	.LVL20:
+ 196              		.loc 1 64 17 is_stmt 0 view .LVU54
+ 197 0018 5D24     		movs	r4, #93
+ARM GAS  /tmp/ccAWjcUT.s 			page 6
 
 
-  67:Core/Src/app_uart_proto.c ****   /* 数据域 */
-  68:Core/Src/app_uart_proto.c ****   if ((payload != NULL) && (payloadLen > 0U))
- 196              		.loc 1 68 3 is_stmt 1 view .LVU55
- 197              		.loc 1 68 6 is_stmt 0 view .LVU56
- 198 0020 2AB3     		cbz	r2, .L23
- 199              		.loc 1 68 25 discriminator 1 view .LVU57
- 200 0022 0BBB     		cbnz	r3, .L24
-  65:Core/Src/app_uart_proto.c ****   outBuf[idx++] = msgType;
- 201              		.loc 1 65 13 view .LVU58
- 202 0024 0424     		movs	r4, #4
- 203              	.LVL21:
- 204              	.L18:
-  69:Core/Src/app_uart_proto.c ****   {
-  70:Core/Src/app_uart_proto.c ****     for (uint16_t i = 0U; i < payloadLen; ++i)
-  71:Core/Src/app_uart_proto.c ****     {
-  72:Core/Src/app_uart_proto.c ****       outBuf[idx++] = payload[i];
-  73:Core/Src/app_uart_proto.c ****     }
-  74:Core/Src/app_uart_proto.c ****   }
-  75:Core/Src/app_uart_proto.c **** 
-  76:Core/Src/app_uart_proto.c ****   /* CRC 计算范围：从 cmd 到数据域最后一个字节 */
-  77:Core/Src/app_uart_proto.c ****   uint16_t crc = APP_UartProto_CalcCrc(&outBuf[2], (uint16_t)(2U + payloadLen));
- 205              		.loc 1 77 3 is_stmt 1 view .LVU59
- 206              		.loc 1 77 18 is_stmt 0 view .LVU60
- 207 0026 0233     		adds	r3, r3, #2
- 208              	.LVL22:
- 209              		.loc 1 77 18 view .LVU61
- 210 0028 99B2     		uxth	r1, r3
- 211 002a A81C     		adds	r0, r5, #2
- 212 002c FFF7FEFF 		bl	APP_UartProto_CalcCrc
- 213              	.LVL23:
+ 198 001a 6C70     		strb	r4, [r5, #1]
+  65:Core/Src/app_uart_proto.c **** 
+  66:Core/Src/app_uart_proto.c ****   /* 命令字 + 消息类型 */
+  67:Core/Src/app_uart_proto.c ****   outBuf[idx++] = cmd;
+ 199              		.loc 1 67 3 is_stmt 1 view .LVU55
+ 200              	.LVL21:
+ 201              		.loc 1 67 17 is_stmt 0 view .LVU56
+ 202 001c A870     		strb	r0, [r5, #2]
+  68:Core/Src/app_uart_proto.c ****   outBuf[idx++] = msgType;
+ 203              		.loc 1 68 3 is_stmt 1 view .LVU57
+ 204              	.LVL22:
+ 205              		.loc 1 68 17 is_stmt 0 view .LVU58
+ 206 001e E970     		strb	r1, [r5, #3]
+  69:Core/Src/app_uart_proto.c **** 
+  70:Core/Src/app_uart_proto.c ****   /* 数据域 */
+  71:Core/Src/app_uart_proto.c ****   if ((payload != NULL) && (payloadLen > 0U))
+ 207              		.loc 1 71 3 is_stmt 1 view .LVU59
+ 208              		.loc 1 71 6 is_stmt 0 view .LVU60
+ 209 0020 2AB3     		cbz	r2, .L24
+ 210              		.loc 1 71 25 discriminator 1 view .LVU61
+ 211 0022 0BBB     		cbnz	r3, .L25
+  68:Core/Src/app_uart_proto.c ****   outBuf[idx++] = msgType;
+ 212              		.loc 1 68 13 view .LVU62
+ 213 0024 0424     		movs	r4, #4
+ 214              	.LVL23:
+ 215              	.L19:
+  72:Core/Src/app_uart_proto.c ****   {
+  73:Core/Src/app_uart_proto.c ****     for (uint16_t i = 0U; i < payloadLen; ++i)
+  74:Core/Src/app_uart_proto.c ****     {
+  75:Core/Src/app_uart_proto.c ****       outBuf[idx++] = payload[i];
+  76:Core/Src/app_uart_proto.c ****     }
+  77:Core/Src/app_uart_proto.c ****   }
   78:Core/Src/app_uart_proto.c **** 
-  79:Core/Src/app_uart_proto.c ****   /* 协议采用大端: 高字节在前 */
-  80:Core/Src/app_uart_proto.c ****   outBuf[idx++] = (uint8_t)((crc >> 8) & 0xFFu);
- 214              		.loc 1 80 3 is_stmt 1 view .LVU62
- 215              		.loc 1 80 13 is_stmt 0 view .LVU63
- 216 0030 631C     		adds	r3, r4, #1
- 217 0032 9BB2     		uxth	r3, r3
- 218              	.LVL24:
- 219              		.loc 1 80 19 view .LVU64
- 220 0034 C0F30722 		ubfx	r2, r0, #8, #8
- 221              		.loc 1 80 17 view .LVU65
- 222 0038 2A55     		strb	r2, [r5, r4]
-  81:Core/Src/app_uart_proto.c ****   outBuf[idx++] = (uint8_t)(crc & 0xFFu);
- 223              		.loc 1 81 3 is_stmt 1 view .LVU66
- 224              		.loc 1 81 13 is_stmt 0 view .LVU67
- 225 003a A21C     		adds	r2, r4, #2
- 226 003c 92B2     		uxth	r2, r2
- 227              	.LVL25:
- 228              		.loc 1 81 17 view .LVU68
- 229 003e E854     		strb	r0, [r5, r3]
-  82:Core/Src/app_uart_proto.c **** 
-  83:Core/Src/app_uart_proto.c ****   /* 帧尾 */
-  84:Core/Src/app_uart_proto.c ****   outBuf[idx++] = UART_FRAME_TAIL_H;
- 230              		.loc 1 84 3 is_stmt 1 view .LVU69
- 231              		.loc 1 84 13 is_stmt 0 view .LVU70
- 232 0040 E31C     		adds	r3, r4, #3
- 233 0042 9BB2     		uxth	r3, r3
-ARM GAS  /tmp/ccFNgf0a.s 			page 7
+  79:Core/Src/app_uart_proto.c ****   /* CRC 计算范围：从 cmd 到数据域最后一个字节 */
+  80:Core/Src/app_uart_proto.c ****   uint16_t crc = APP_UartProto_CalcCrc(&outBuf[2], (uint16_t)(2U + payloadLen));
+ 216              		.loc 1 80 3 is_stmt 1 view .LVU63
+ 217              		.loc 1 80 18 is_stmt 0 view .LVU64
+ 218 0026 0233     		adds	r3, r3, #2
+ 219              	.LVL24:
+ 220              		.loc 1 80 18 view .LVU65
+ 221 0028 99B2     		uxth	r1, r3
+ 222 002a A81C     		adds	r0, r5, #2
+ 223 002c FFF7FEFF 		bl	APP_UartProto_CalcCrc
+ 224              	.LVL25:
+  81:Core/Src/app_uart_proto.c **** 
+  82:Core/Src/app_uart_proto.c ****   /* 协议采用大端: 高字节在前 */
+  83:Core/Src/app_uart_proto.c ****   outBuf[idx++] = (uint8_t)((crc >> 8) & 0xFFu);
+ 225              		.loc 1 83 3 is_stmt 1 view .LVU66
+ 226              		.loc 1 83 13 is_stmt 0 view .LVU67
+ 227 0030 631C     		adds	r3, r4, #1
+ 228 0032 9BB2     		uxth	r3, r3
+ 229              	.LVL26:
+ 230              		.loc 1 83 19 view .LVU68
+ 231 0034 C0F30722 		ubfx	r2, r0, #8, #8
+ 232              		.loc 1 83 17 view .LVU69
+ 233 0038 2A55     		strb	r2, [r5, r4]
+  84:Core/Src/app_uart_proto.c ****   outBuf[idx++] = (uint8_t)(crc & 0xFFu);
+ARM GAS  /tmp/ccAWjcUT.s 			page 7
 
 
- 234              	.LVL26:
- 235              		.loc 1 84 17 view .LVU71
- 236 0044 5D21     		movs	r1, #93
- 237 0046 A954     		strb	r1, [r5, r2]
-  85:Core/Src/app_uart_proto.c ****   outBuf[idx++] = UART_FRAME_TAIL_L;
- 238              		.loc 1 85 3 is_stmt 1 view .LVU72
- 239              		.loc 1 85 13 is_stmt 0 view .LVU73
- 240 0048 201D     		adds	r0, r4, #4
- 241              	.LVL27:
- 242              		.loc 1 85 17 view .LVU74
- 243 004a D522     		movs	r2, #213
- 244 004c EA54     		strb	r2, [r5, r3]
-  86:Core/Src/app_uart_proto.c **** 
-  87:Core/Src/app_uart_proto.c ****   return idx;
- 245              		.loc 1 87 3 is_stmt 1 view .LVU75
- 246              		.loc 1 87 10 is_stmt 0 view .LVU76
- 247 004e 80B2     		uxth	r0, r0
- 248              	.LVL28:
- 249              	.L16:
-  88:Core/Src/app_uart_proto.c **** }
- 250              		.loc 1 88 1 view .LVU77
- 251 0050 38BD     		pop	{r3, r4, r5, pc}
+ 234              		.loc 1 84 3 is_stmt 1 view .LVU70
+ 235              		.loc 1 84 13 is_stmt 0 view .LVU71
+ 236 003a A21C     		adds	r2, r4, #2
+ 237 003c 92B2     		uxth	r2, r2
+ 238              	.LVL27:
+ 239              		.loc 1 84 17 view .LVU72
+ 240 003e E854     		strb	r0, [r5, r3]
+  85:Core/Src/app_uart_proto.c **** 
+  86:Core/Src/app_uart_proto.c ****   /* 帧尾 */
+  87:Core/Src/app_uart_proto.c ****   outBuf[idx++] = UART_FRAME_TAIL_H;
+ 241              		.loc 1 87 3 is_stmt 1 view .LVU73
+ 242              		.loc 1 87 13 is_stmt 0 view .LVU74
+ 243 0040 E31C     		adds	r3, r4, #3
+ 244 0042 9BB2     		uxth	r3, r3
+ 245              	.LVL28:
+ 246              		.loc 1 87 17 view .LVU75
+ 247 0044 5D21     		movs	r1, #93
+ 248 0046 A954     		strb	r1, [r5, r2]
+  88:Core/Src/app_uart_proto.c ****   outBuf[idx++] = UART_FRAME_TAIL_L;
+ 249              		.loc 1 88 3 is_stmt 1 view .LVU76
+ 250              		.loc 1 88 13 is_stmt 0 view .LVU77
+ 251 0048 201D     		adds	r0, r4, #4
  252              	.LVL29:
- 253              	.L20:
- 254              	.LBB6:
-  72:Core/Src/app_uart_proto.c ****     }
- 255              		.loc 1 72 7 is_stmt 1 discriminator 3 view .LVU78
-  72:Core/Src/app_uart_proto.c ****     }
- 256              		.loc 1 72 17 is_stmt 0 discriminator 3 view .LVU79
- 257 0052 611C     		adds	r1, r4, #1
- 258              	.LVL30:
-  72:Core/Src/app_uart_proto.c ****     }
- 259              		.loc 1 72 30 discriminator 3 view .LVU80
- 260 0054 12F800C0 		ldrb	ip, [r2, r0]	@ zero_extendqisi2
-  72:Core/Src/app_uart_proto.c ****     }
- 261              		.loc 1 72 21 discriminator 3 view .LVU81
- 262 0058 05F804C0 		strb	ip, [r5, r4]
-  70:Core/Src/app_uart_proto.c ****     {
- 263              		.loc 1 70 43 is_stmt 1 discriminator 3 view .LVU82
- 264 005c 0130     		adds	r0, r0, #1
- 265              	.LVL31:
-  70:Core/Src/app_uart_proto.c ****     {
- 266              		.loc 1 70 43 is_stmt 0 discriminator 3 view .LVU83
- 267 005e 80B2     		uxth	r0, r0
- 268              	.LVL32:
-  72:Core/Src/app_uart_proto.c ****     }
- 269              		.loc 1 72 17 discriminator 3 view .LVU84
- 270 0060 8CB2     		uxth	r4, r1
- 271              	.LVL33:
- 272              	.L19:
-  70:Core/Src/app_uart_proto.c ****     {
- 273              		.loc 1 70 27 is_stmt 1 discriminator 1 view .LVU85
-  70:Core/Src/app_uart_proto.c ****     {
- 274              		.loc 1 70 5 is_stmt 0 discriminator 1 view .LVU86
- 275 0062 9842     		cmp	r0, r3
- 276 0064 F5D3     		bcc	.L20
- 277 0066 DEE7     		b	.L18
-ARM GAS  /tmp/ccFNgf0a.s 			page 8
-
-
- 278              	.LVL34:
- 279              	.L24:
-  70:Core/Src/app_uart_proto.c ****     {
- 280              		.loc 1 70 19 view .LVU87
- 281 0068 0020     		movs	r0, #0
- 282              	.LVL35:
-  70:Core/Src/app_uart_proto.c ****     {
- 283              		.loc 1 70 19 view .LVU88
- 284              	.LBE6:
-  65:Core/Src/app_uart_proto.c **** 
- 285              		.loc 1 65 13 view .LVU89
- 286 006a 0424     		movs	r4, #4
- 287 006c F9E7     		b	.L19
- 288              	.LVL36:
- 289              	.L23:
-  65:Core/Src/app_uart_proto.c **** 
- 290              		.loc 1 65 13 view .LVU90
- 291 006e 0424     		movs	r4, #4
- 292 0070 D9E7     		b	.L18
- 293              	.LVL37:
- 294              	.L21:
-  47:Core/Src/app_uart_proto.c ****   }
- 295              		.loc 1 47 12 view .LVU91
- 296 0072 0020     		movs	r0, #0
- 297              	.LVL38:
-  47:Core/Src/app_uart_proto.c ****   }
- 298              		.loc 1 47 12 view .LVU92
- 299 0074 ECE7     		b	.L16
- 300              	.LVL39:
- 301              	.L22:
-  54:Core/Src/app_uart_proto.c ****   }
- 302              		.loc 1 54 12 view .LVU93
- 303 0076 0020     		movs	r0, #0
- 304              	.LVL40:
-  54:Core/Src/app_uart_proto.c ****   }
- 305              		.loc 1 54 12 view .LVU94
- 306 0078 EAE7     		b	.L16
- 307              		.cfi_endproc
- 308              	.LFE1:
- 310              		.section	.text.APP_UartProto_SendRaw,"ax",%progbits
- 311              		.align	1
- 312              		.global	APP_UartProto_SendRaw
- 313              		.syntax unified
- 314              		.thumb
- 315              		.thumb_func
- 316              		.fpu softvfp
- 318              	APP_UartProto_SendRaw:
- 319              	.LVL41:
- 320              	.LFB2:
+ 253              		.loc 1 88 17 view .LVU78
+ 254 004a D522     		movs	r2, #213
+ 255 004c EA54     		strb	r2, [r5, r3]
   89:Core/Src/app_uart_proto.c **** 
-  90:Core/Src/app_uart_proto.c **** bool APP_UartProto_SendRaw(uint8_t cmd,
-  91:Core/Src/app_uart_proto.c ****                            uint8_t msgType,
-  92:Core/Src/app_uart_proto.c ****                            const uint8_t *payload,
-  93:Core/Src/app_uart_proto.c ****                            uint16_t payloadLen)
-  94:Core/Src/app_uart_proto.c **** {
- 321              		.loc 1 94 1 is_stmt 1 view -0
- 322              		.cfi_startproc
-ARM GAS  /tmp/ccFNgf0a.s 			page 9
+  90:Core/Src/app_uart_proto.c ****   return idx;
+ 256              		.loc 1 90 3 is_stmt 1 view .LVU79
+ 257              		.loc 1 90 10 is_stmt 0 view .LVU80
+ 258 004e 80B2     		uxth	r0, r0
+ 259              	.LVL30:
+ 260              	.L17:
+  91:Core/Src/app_uart_proto.c **** }
+ 261              		.loc 1 91 1 view .LVU81
+ 262 0050 38BD     		pop	{r3, r4, r5, pc}
+ 263              	.LVL31:
+ 264              	.L21:
+ 265              	.LBB6:
+  75:Core/Src/app_uart_proto.c ****     }
+ 266              		.loc 1 75 7 is_stmt 1 discriminator 3 view .LVU82
+  75:Core/Src/app_uart_proto.c ****     }
+ 267              		.loc 1 75 17 is_stmt 0 discriminator 3 view .LVU83
+ 268 0052 611C     		adds	r1, r4, #1
+ 269              	.LVL32:
+  75:Core/Src/app_uart_proto.c ****     }
+ 270              		.loc 1 75 30 discriminator 3 view .LVU84
+ 271 0054 12F800C0 		ldrb	ip, [r2, r0]	@ zero_extendqisi2
+  75:Core/Src/app_uart_proto.c ****     }
+ 272              		.loc 1 75 21 discriminator 3 view .LVU85
+ 273 0058 05F804C0 		strb	ip, [r5, r4]
+  73:Core/Src/app_uart_proto.c ****     {
+ 274              		.loc 1 73 43 is_stmt 1 discriminator 3 view .LVU86
+ 275 005c 0130     		adds	r0, r0, #1
+ 276              	.LVL33:
+  73:Core/Src/app_uart_proto.c ****     {
+ 277              		.loc 1 73 43 is_stmt 0 discriminator 3 view .LVU87
+ARM GAS  /tmp/ccAWjcUT.s 			page 8
 
 
- 323              		@ args = 0, pretend = 0, frame = 128
- 324              		@ frame_needed = 0, uses_anonymous_args = 0
- 325              		.loc 1 94 1 is_stmt 0 view .LVU96
- 326 0000 10B5     		push	{r4, lr}
- 327              	.LCFI4:
- 328              		.cfi_def_cfa_offset 8
- 329              		.cfi_offset 4, -8
- 330              		.cfi_offset 14, -4
- 331 0002 A2B0     		sub	sp, sp, #136
- 332              	.LCFI5:
- 333              		.cfi_def_cfa_offset 144
-  95:Core/Src/app_uart_proto.c ****   /* 临时栈缓冲区：根据协议，典型控制帧长度一般较短 */
-  96:Core/Src/app_uart_proto.c ****   uint8_t buf[128];
- 334              		.loc 1 96 3 is_stmt 1 view .LVU97
-  97:Core/Src/app_uart_proto.c ****   size_t len = APP_UartProto_BuildFrame(cmd, msgType, payload, payloadLen, buf, (uint16_t)sizeof(bu
- 335              		.loc 1 97 3 view .LVU98
- 336              		.loc 1 97 16 is_stmt 0 view .LVU99
- 337 0004 8024     		movs	r4, #128
- 338 0006 0194     		str	r4, [sp, #4]
- 339 0008 02AC     		add	r4, sp, #8
- 340 000a 0094     		str	r4, [sp]
- 341 000c FFF7FEFF 		bl	APP_UartProto_BuildFrame
- 342              	.LVL42:
-  98:Core/Src/app_uart_proto.c ****   if (len == 0U)
- 343              		.loc 1 98 3 is_stmt 1 view .LVU100
- 344              		.loc 1 98 6 is_stmt 0 view .LVU101
- 345 0010 10B9     		cbnz	r0, .L30
-  99:Core/Src/app_uart_proto.c ****   {
- 100:Core/Src/app_uart_proto.c ****     return false;
- 346              		.loc 1 100 12 view .LVU102
- 347 0012 0020     		movs	r0, #0
- 348              	.LVL43:
- 349              	.L27:
- 101:Core/Src/app_uart_proto.c ****   }
- 102:Core/Src/app_uart_proto.c **** 
- 103:Core/Src/app_uart_proto.c ****   return (BSP_Uart_Send(buf, len) == len);
- 104:Core/Src/app_uart_proto.c **** }
- 350              		.loc 1 104 1 view .LVU103
- 351 0014 22B0     		add	sp, sp, #136
- 352              	.LCFI6:
- 353              		.cfi_remember_state
- 354              		.cfi_def_cfa_offset 8
- 355              		@ sp needed
- 356 0016 10BD     		pop	{r4, pc}
- 357              	.LVL44:
- 358              	.L30:
- 359              	.LCFI7:
- 360              		.cfi_restore_state
- 361              		.loc 1 104 1 view .LVU104
- 362 0018 0446     		mov	r4, r0
- 103:Core/Src/app_uart_proto.c **** }
- 363              		.loc 1 103 3 is_stmt 1 view .LVU105
- 103:Core/Src/app_uart_proto.c **** }
- 364              		.loc 1 103 11 is_stmt 0 view .LVU106
- 365 001a 0146     		mov	r1, r0
- 366 001c 02A8     		add	r0, sp, #8
- 367              	.LVL45:
-ARM GAS  /tmp/ccFNgf0a.s 			page 10
+ 278 005e 80B2     		uxth	r0, r0
+ 279              	.LVL34:
+  75:Core/Src/app_uart_proto.c ****     }
+ 280              		.loc 1 75 17 discriminator 3 view .LVU88
+ 281 0060 8CB2     		uxth	r4, r1
+ 282              	.LVL35:
+ 283              	.L20:
+  73:Core/Src/app_uart_proto.c ****     {
+ 284              		.loc 1 73 27 is_stmt 1 discriminator 1 view .LVU89
+  73:Core/Src/app_uart_proto.c ****     {
+ 285              		.loc 1 73 5 is_stmt 0 discriminator 1 view .LVU90
+ 286 0062 9842     		cmp	r0, r3
+ 287 0064 F5D3     		bcc	.L21
+ 288 0066 DEE7     		b	.L19
+ 289              	.LVL36:
+ 290              	.L25:
+  73:Core/Src/app_uart_proto.c ****     {
+ 291              		.loc 1 73 19 view .LVU91
+ 292 0068 0020     		movs	r0, #0
+ 293              	.LVL37:
+  73:Core/Src/app_uart_proto.c ****     {
+ 294              		.loc 1 73 19 view .LVU92
+ 295              	.LBE6:
+  68:Core/Src/app_uart_proto.c **** 
+ 296              		.loc 1 68 13 view .LVU93
+ 297 006a 0424     		movs	r4, #4
+ 298 006c F9E7     		b	.L20
+ 299              	.LVL38:
+ 300              	.L24:
+  68:Core/Src/app_uart_proto.c **** 
+ 301              		.loc 1 68 13 view .LVU94
+ 302 006e 0424     		movs	r4, #4
+ 303 0070 D9E7     		b	.L19
+ 304              	.LVL39:
+ 305              	.L22:
+  50:Core/Src/app_uart_proto.c ****   }
+ 306              		.loc 1 50 12 view .LVU95
+ 307 0072 0020     		movs	r0, #0
+ 308              	.LVL40:
+  50:Core/Src/app_uart_proto.c ****   }
+ 309              		.loc 1 50 12 view .LVU96
+ 310 0074 ECE7     		b	.L17
+ 311              	.LVL41:
+ 312              	.L23:
+  57:Core/Src/app_uart_proto.c ****   }
+ 313              		.loc 1 57 12 view .LVU97
+ 314 0076 0020     		movs	r0, #0
+ 315              	.LVL42:
+  57:Core/Src/app_uart_proto.c ****   }
+ 316              		.loc 1 57 12 view .LVU98
+ 317 0078 EAE7     		b	.L17
+ 318              		.cfi_endproc
+ 319              	.LFE1:
+ 321              		.section	.text.APP_UartProto_SendRaw,"ax",%progbits
+ 322              		.align	1
+ 323              		.global	APP_UartProto_SendRaw
+ 324              		.syntax unified
+ARM GAS  /tmp/ccAWjcUT.s 			page 9
 
 
- 103:Core/Src/app_uart_proto.c **** }
- 368              		.loc 1 103 11 view .LVU107
- 369 001e FFF7FEFF 		bl	BSP_Uart_Send
- 370              	.LVL46:
- 103:Core/Src/app_uart_proto.c **** }
- 371              		.loc 1 103 35 view .LVU108
- 372 0022 A042     		cmp	r0, r4
- 373 0024 14BF     		ite	ne
- 374 0026 0020     		movne	r0, #0
- 375 0028 0120     		moveq	r0, #1
- 376 002a F3E7     		b	.L27
- 377              		.cfi_endproc
- 378              	.LFE2:
- 380              		.text
- 381              	.Letext0:
- 382              		.file 2 "/usr/lib/gcc/arm-none-eabi/10.3.1/include/stdint.h"
- 383              		.file 3 "/usr/lib/gcc/arm-none-eabi/10.3.1/include/stddef.h"
- 384              		.file 4 "Core/Inc/bsp.h"
-ARM GAS  /tmp/ccFNgf0a.s 			page 11
+ 325              		.thumb
+ 326              		.thumb_func
+ 327              		.fpu softvfp
+ 329              	APP_UartProto_SendRaw:
+ 330              	.LVL43:
+ 331              	.LFB2:
+  92:Core/Src/app_uart_proto.c **** 
+  93:Core/Src/app_uart_proto.c **** bool APP_UartProto_SendRaw(uint8_t cmd,
+  94:Core/Src/app_uart_proto.c ****                            uint8_t msgType,
+  95:Core/Src/app_uart_proto.c ****                            const uint8_t *payload,
+  96:Core/Src/app_uart_proto.c ****                            uint16_t payloadLen)
+  97:Core/Src/app_uart_proto.c **** {
+ 332              		.loc 1 97 1 is_stmt 1 view -0
+ 333              		.cfi_startproc
+ 334              		@ args = 0, pretend = 0, frame = 128
+ 335              		@ frame_needed = 0, uses_anonymous_args = 0
+ 336              		.loc 1 97 1 is_stmt 0 view .LVU100
+ 337 0000 10B5     		push	{r4, lr}
+ 338              	.LCFI4:
+ 339              		.cfi_def_cfa_offset 8
+ 340              		.cfi_offset 4, -8
+ 341              		.cfi_offset 14, -4
+ 342 0002 A2B0     		sub	sp, sp, #136
+ 343              	.LCFI5:
+ 344              		.cfi_def_cfa_offset 144
+  98:Core/Src/app_uart_proto.c ****   /* 临时栈缓冲区：根据协议，典型控制帧长度一般较短 */
+  99:Core/Src/app_uart_proto.c ****   uint8_t buf[128];
+ 345              		.loc 1 99 3 is_stmt 1 view .LVU101
+ 100:Core/Src/app_uart_proto.c ****   size_t len = APP_UartProto_BuildFrame(cmd, msgType, payload, payloadLen, buf, (uint16_t)sizeof(bu
+ 346              		.loc 1 100 3 view .LVU102
+ 347              		.loc 1 100 16 is_stmt 0 view .LVU103
+ 348 0004 8024     		movs	r4, #128
+ 349 0006 0194     		str	r4, [sp, #4]
+ 350 0008 02AC     		add	r4, sp, #8
+ 351 000a 0094     		str	r4, [sp]
+ 352 000c FFF7FEFF 		bl	APP_UartProto_BuildFrame
+ 353              	.LVL44:
+ 101:Core/Src/app_uart_proto.c ****   if (len == 0U)
+ 354              		.loc 1 101 3 is_stmt 1 view .LVU104
+ 355              		.loc 1 101 6 is_stmt 0 view .LVU105
+ 356 0010 10B9     		cbnz	r0, .L31
+ 102:Core/Src/app_uart_proto.c ****   {
+ 103:Core/Src/app_uart_proto.c ****     return false;
+ 357              		.loc 1 103 12 view .LVU106
+ 358 0012 0020     		movs	r0, #0
+ 359              	.LVL45:
+ 360              	.L28:
+ 104:Core/Src/app_uart_proto.c ****   }
+ 105:Core/Src/app_uart_proto.c **** 
+ 106:Core/Src/app_uart_proto.c ****   return (BSP_Uart_Send(buf, len) == len);
+ 107:Core/Src/app_uart_proto.c **** }
+ 361              		.loc 1 107 1 view .LVU107
+ 362 0014 22B0     		add	sp, sp, #136
+ 363              	.LCFI6:
+ 364              		.cfi_remember_state
+ 365              		.cfi_def_cfa_offset 8
+ 366              		@ sp needed
+ARM GAS  /tmp/ccAWjcUT.s 			page 10
+
+
+ 367 0016 10BD     		pop	{r4, pc}
+ 368              	.LVL46:
+ 369              	.L31:
+ 370              	.LCFI7:
+ 371              		.cfi_restore_state
+ 372              		.loc 1 107 1 view .LVU108
+ 373 0018 0446     		mov	r4, r0
+ 106:Core/Src/app_uart_proto.c **** }
+ 374              		.loc 1 106 3 is_stmt 1 view .LVU109
+ 106:Core/Src/app_uart_proto.c **** }
+ 375              		.loc 1 106 11 is_stmt 0 view .LVU110
+ 376 001a 0146     		mov	r1, r0
+ 377 001c 02A8     		add	r0, sp, #8
+ 378              	.LVL47:
+ 106:Core/Src/app_uart_proto.c **** }
+ 379              		.loc 1 106 11 view .LVU111
+ 380 001e FFF7FEFF 		bl	BSP_Uart_Send
+ 381              	.LVL48:
+ 106:Core/Src/app_uart_proto.c **** }
+ 382              		.loc 1 106 35 view .LVU112
+ 383 0022 A042     		cmp	r0, r4
+ 384 0024 14BF     		ite	ne
+ 385 0026 0020     		movne	r0, #0
+ 386 0028 0120     		moveq	r0, #1
+ 387 002a F3E7     		b	.L28
+ 388              		.cfi_endproc
+ 389              	.LFE2:
+ 391              		.text
+ 392              	.Letext0:
+ 393              		.file 2 "/usr/lib/gcc/arm-none-eabi/10.3.1/include/stdint.h"
+ 394              		.file 3 "/usr/lib/gcc/arm-none-eabi/10.3.1/include/stddef.h"
+ 395              		.file 4 "Core/Inc/bsp.h"
+ARM GAS  /tmp/ccAWjcUT.s 			page 11
 
 
 DEFINED SYMBOLS
                             *ABS*:0000000000000000 app_uart_proto.c
-     /tmp/ccFNgf0a.s:16     .text.APP_UartProto_CalcCrc:0000000000000000 $t
-     /tmp/ccFNgf0a.s:24     .text.APP_UartProto_CalcCrc:0000000000000000 APP_UartProto_CalcCrc
-     /tmp/ccFNgf0a.s:139    .text.APP_UartProto_BuildFrame:0000000000000000 $t
-     /tmp/ccFNgf0a.s:146    .text.APP_UartProto_BuildFrame:0000000000000000 APP_UartProto_BuildFrame
-     /tmp/ccFNgf0a.s:311    .text.APP_UartProto_SendRaw:0000000000000000 $t
-     /tmp/ccFNgf0a.s:318    .text.APP_UartProto_SendRaw:0000000000000000 APP_UartProto_SendRaw
+     /tmp/ccAWjcUT.s:16     .text.APP_UartProto_CalcCrc:0000000000000000 $t
+     /tmp/ccAWjcUT.s:24     .text.APP_UartProto_CalcCrc:0000000000000000 APP_UartProto_CalcCrc
+     /tmp/ccAWjcUT.s:150    .text.APP_UartProto_BuildFrame:0000000000000000 $t
+     /tmp/ccAWjcUT.s:157    .text.APP_UartProto_BuildFrame:0000000000000000 APP_UartProto_BuildFrame
+     /tmp/ccAWjcUT.s:322    .text.APP_UartProto_SendRaw:0000000000000000 $t
+     /tmp/ccAWjcUT.s:329    .text.APP_UartProto_SendRaw:0000000000000000 APP_UartProto_SendRaw
 
 UNDEFINED SYMBOLS
 BSP_Uart_Send

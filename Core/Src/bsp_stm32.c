@@ -54,9 +54,14 @@ size_t BSP_Uart_Send(const uint8_t *data, size_t len)
     return 0u;
   }
 
-  if (HAL_UART_Transmit(&huart1, (uint8_t *)data, (uint16_t)len, 100u) == HAL_OK)
+  /* 有并发发送时 HAL 可能短暂返回 BUSY，重试可避免丢包。 */
+  for (uint8_t retry = 0u; retry < 3u; ++retry)
   {
-    return len;
+    HAL_StatusTypeDef st = HAL_UART_Transmit(&huart1, (uint8_t *)data, (uint16_t)len, 200u);
+    if (st == HAL_OK)
+    {
+      return len;
+    }
   }
 
   return 0u;

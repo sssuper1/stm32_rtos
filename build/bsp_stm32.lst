@@ -1,4 +1,4 @@
-ARM GAS  /tmp/cchWBekZ.s 			page 1
+ARM GAS  /tmp/ccRx83LU.s 			page 1
 
 
    1              		.cpu cortex-m3
@@ -58,7 +58,7 @@ ARM GAS  /tmp/cchWBekZ.s 			page 1
   46              	.LVL0:
   47              	.LFB66:
   13:Core/Src/bsp_stm32.c **** 
-ARM GAS  /tmp/cchWBekZ.s 			page 2
+ARM GAS  /tmp/ccRx83LU.s 			page 2
 
 
   14:Core/Src/bsp_stm32.c **** void BSP_Led_Set(BspLedId led, bool on)
@@ -118,7 +118,7 @@ ARM GAS  /tmp/cchWBekZ.s 			page 1
   95              		.cfi_offset 3, -8
   96              		.cfi_offset 14, -4
   23:Core/Src/bsp_stm32.c ****   BSP_Oled_Init();
-ARM GAS  /tmp/cchWBekZ.s 			page 3
+ARM GAS  /tmp/ccRx83LU.s 			page 3
 
 
   97              		.loc 1 23 3 view .LVU10
@@ -178,7 +178,7 @@ ARM GAS  /tmp/cchWBekZ.s 			page 1
  146              		@ args = 0, pretend = 0, frame = 0
  147              		@ frame_needed = 0, uses_anonymous_args = 0
  148 0000 08B5     		push	{r3, lr}
-ARM GAS  /tmp/cchWBekZ.s 			page 4
+ARM GAS  /tmp/ccRx83LU.s 			page 4
 
 
  149              	.LCFI3:
@@ -238,7 +238,7 @@ ARM GAS  /tmp/cchWBekZ.s 			page 1
  200              	.LVL10:
  201              	.LFB71:
   40:Core/Src/bsp_stm32.c **** 
-ARM GAS  /tmp/cchWBekZ.s 			page 5
+ARM GAS  /tmp/ccRx83LU.s 			page 5
 
 
   41:Core/Src/bsp_stm32.c **** void BSP_Uart_Init(uint32_t baudrate)
@@ -298,7 +298,7 @@ ARM GAS  /tmp/cchWBekZ.s 			page 1
  249              	BSP_Uart_Send:
  250              	.LVL13:
  251              	.LFB72:
-ARM GAS  /tmp/cchWBekZ.s 			page 6
+ARM GAS  /tmp/ccRx83LU.s 			page 6
 
 
   49:Core/Src/bsp_stm32.c **** 
@@ -308,114 +308,162 @@ ARM GAS  /tmp/cchWBekZ.s 			page 1
  253              		.cfi_startproc
  254              		@ args = 0, pretend = 0, frame = 0
  255              		@ frame_needed = 0, uses_anonymous_args = 0
- 256              		.loc 1 51 1 is_stmt 0 view .LVU36
- 257 0000 10B5     		push	{r4, lr}
- 258              	.LCFI6:
- 259              		.cfi_def_cfa_offset 8
- 260              		.cfi_offset 4, -8
- 261              		.cfi_offset 14, -4
   52:Core/Src/bsp_stm32.c ****   if ((data == NULL) || (len == 0u))
- 262              		.loc 1 52 3 is_stmt 1 view .LVU37
- 263              		.loc 1 52 6 is_stmt 0 view .LVU38
- 264 0002 68B1     		cbz	r0, .L25
- 265 0004 0C46     		mov	r4, r1
- 266 0006 0146     		mov	r1, r0
- 267              	.LVL14:
- 268              		.loc 1 52 22 discriminator 1 view .LVU39
- 269 0008 0CB9     		cbnz	r4, .L27
- 270              	.LVL15:
- 271              	.L24:
+ 256              		.loc 1 52 3 view .LVU36
+ 257              		.loc 1 52 6 is_stmt 0 view .LVU37
+ 258 0000 A8B1     		cbz	r0, .L27
+  51:Core/Src/bsp_stm32.c ****   if ((data == NULL) || (len == 0u))
+ 259              		.loc 1 51 1 discriminator 1 view .LVU38
+ 260 0002 70B5     		push	{r4, r5, r6, lr}
+ 261              	.LCFI6:
+ 262              		.cfi_def_cfa_offset 16
+ 263              		.cfi_offset 4, -16
+ 264              		.cfi_offset 5, -12
+ 265              		.cfi_offset 6, -8
+ 266              		.cfi_offset 14, -4
+ 267 0004 0D46     		mov	r5, r1
+ 268 0006 0646     		mov	r6, r0
+ 269              		.loc 1 52 22 discriminator 1 view .LVU39
+ 270 0008 99B1     		cbz	r1, .L28
+ 271              	.LBB2:
   53:Core/Src/bsp_stm32.c ****   {
   54:Core/Src/bsp_stm32.c ****     return 0u;
   55:Core/Src/bsp_stm32.c ****   }
   56:Core/Src/bsp_stm32.c **** 
-  57:Core/Src/bsp_stm32.c ****   if (HAL_UART_Transmit(&huart1, (uint8_t *)data, (uint16_t)len, 100u) == HAL_OK)
-  58:Core/Src/bsp_stm32.c ****   {
-  59:Core/Src/bsp_stm32.c ****     return len;
-  60:Core/Src/bsp_stm32.c ****   }
-  61:Core/Src/bsp_stm32.c **** 
-  62:Core/Src/bsp_stm32.c ****   return 0u;
-  63:Core/Src/bsp_stm32.c **** }
- 272              		.loc 1 63 1 view .LVU40
- 273 000a 2046     		mov	r0, r4
- 274 000c 10BD     		pop	{r4, pc}
- 275              	.LVL16:
- 276              	.L27:
-  57:Core/Src/bsp_stm32.c ****   {
- 277              		.loc 1 57 3 is_stmt 1 view .LVU41
-  57:Core/Src/bsp_stm32.c ****   {
- 278              		.loc 1 57 7 is_stmt 0 view .LVU42
- 279 000e 6423     		movs	r3, #100
- 280 0010 A2B2     		uxth	r2, r4
- 281 0012 0448     		ldr	r0, .L28
- 282              	.LVL17:
-  57:Core/Src/bsp_stm32.c ****   {
- 283              		.loc 1 57 7 view .LVU43
- 284 0014 FFF7FEFF 		bl	HAL_UART_Transmit
- 285              	.LVL18:
-  57:Core/Src/bsp_stm32.c ****   {
- 286              		.loc 1 57 6 view .LVU44
- 287 0018 0028     		cmp	r0, #0
- 288 001a F6D0     		beq	.L24
-  62:Core/Src/bsp_stm32.c **** }
-ARM GAS  /tmp/cchWBekZ.s 			page 7
+  57:Core/Src/bsp_stm32.c ****   /* 有并发发送时 HAL 可能短暂返回 BUSY，重试可避免丢包。 */
+  58:Core/Src/bsp_stm32.c ****   for (uint8_t retry = 0u; retry < 3u; ++retry)
+ 272              		.loc 1 58 16 view .LVU40
+ 273 000a 0024     		movs	r4, #0
+ 274 000c 01E0     		b	.L25
+ 275              	.LVL14:
+ 276              	.L35:
+ 277              		.loc 1 58 40 is_stmt 1 discriminator 2 view .LVU41
+ 278 000e 0134     		adds	r4, r4, #1
+ 279              	.LVL15:
+ 280              		.loc 1 58 40 is_stmt 0 discriminator 2 view .LVU42
+ 281 0010 E4B2     		uxtb	r4, r4
+ 282              	.LVL16:
+ 283              	.L25:
+ 284              		.loc 1 58 28 is_stmt 1 discriminator 1 view .LVU43
+ 285              		.loc 1 58 3 is_stmt 0 discriminator 1 view .LVU44
+ 286 0012 022C     		cmp	r4, #2
+ 287 0014 09D8     		bhi	.L34
+ 288              	.LBB3:
+  59:Core/Src/bsp_stm32.c ****   {
+  60:Core/Src/bsp_stm32.c ****     HAL_StatusTypeDef st = HAL_UART_Transmit(&huart1, (uint8_t *)data, (uint16_t)len, 200u);
+ 289              		.loc 1 60 5 is_stmt 1 view .LVU45
+ 290              		.loc 1 60 28 is_stmt 0 view .LVU46
+ 291 0016 C823     		movs	r3, #200
+ 292 0018 AAB2     		uxth	r2, r5
+ 293 001a 3146     		mov	r1, r6
+ 294 001c 0648     		ldr	r0, .L36
+ 295 001e FFF7FEFF 		bl	HAL_UART_Transmit
+ARM GAS  /tmp/ccRx83LU.s 			page 7
 
 
- 289              		.loc 1 62 10 view .LVU45
- 290 001c 0024     		movs	r4, #0
- 291              	.LVL19:
-  62:Core/Src/bsp_stm32.c **** }
- 292              		.loc 1 62 10 view .LVU46
- 293 001e F4E7     		b	.L24
- 294              	.LVL20:
- 295              	.L25:
+ 296              	.LVL17:
+  61:Core/Src/bsp_stm32.c ****     if (st == HAL_OK)
+ 297              		.loc 1 61 5 is_stmt 1 view .LVU47
+ 298              		.loc 1 61 8 is_stmt 0 view .LVU48
+ 299 0022 0028     		cmp	r0, #0
+ 300 0024 F3D1     		bne	.L35
+  62:Core/Src/bsp_stm32.c ****     {
+  63:Core/Src/bsp_stm32.c ****       return len;
+ 301              		.loc 1 63 14 view .LVU49
+ 302 0026 2846     		mov	r0, r5
+ 303              	.LVL18:
+ 304              		.loc 1 63 14 view .LVU50
+ 305 0028 00E0     		b	.L23
+ 306              	.L34:
+ 307              		.loc 1 63 14 view .LVU51
+ 308              	.LBE3:
+ 309              	.LBE2:
+  64:Core/Src/bsp_stm32.c ****     }
+  65:Core/Src/bsp_stm32.c ****   }
+  66:Core/Src/bsp_stm32.c **** 
+  67:Core/Src/bsp_stm32.c ****   return 0u;
+ 310              		.loc 1 67 10 view .LVU52
+ 311 002a 0020     		movs	r0, #0
+ 312              	.LVL19:
+ 313              	.L23:
+  68:Core/Src/bsp_stm32.c **** }
+ 314              		.loc 1 68 1 view .LVU53
+ 315 002c 70BD     		pop	{r4, r5, r6, pc}
+ 316              	.LVL20:
+ 317              	.L27:
+ 318              	.LCFI7:
+ 319              		.cfi_def_cfa_offset 0
+ 320              		.cfi_restore 4
+ 321              		.cfi_restore 5
+ 322              		.cfi_restore 6
+ 323              		.cfi_restore 14
   54:Core/Src/bsp_stm32.c ****   }
- 296              		.loc 1 54 12 view .LVU47
- 297 0020 0024     		movs	r4, #0
- 298 0022 F2E7     		b	.L24
- 299              	.L29:
- 300              		.align	2
- 301              	.L28:
- 302 0024 00000000 		.word	huart1
- 303              		.cfi_endproc
- 304              	.LFE72:
- 306              		.text
- 307              	.Letext0:
- 308              		.file 2 "/usr/lib/gcc/arm-none-eabi/10.3.1/include/stddef.h"
- 309              		.file 3 "/usr/lib/gcc/arm-none-eabi/10.3.1/include/stdint.h"
- 310              		.file 4 "Core/Inc/bsp.h"
- 311              		.file 5 "Drivers/CMSIS/Device/ST/STM32F1xx/Include/stm32f103xb.h"
- 312              		.file 6 "Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_def.h"
- 313              		.file 7 "Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_gpio.h"
- 314              		.file 8 "Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_dma.h"
- 315              		.file 9 "Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h"
- 316              		.file 10 "Core/Inc/bsp_keys.h"
- 317              		.file 11 "Core/Inc/bsp_oled.h"
- 318              		.file 12 "Core/Inc/usart.h"
-ARM GAS  /tmp/cchWBekZ.s 			page 8
+ 324              		.loc 1 54 12 view .LVU54
+ 325 002e 0020     		movs	r0, #0
+ 326              	.LVL21:
+ 327              		.loc 1 68 1 view .LVU55
+ 328 0030 7047     		bx	lr
+ 329              	.LVL22:
+ 330              	.L28:
+ 331              	.LCFI8:
+ 332              		.cfi_def_cfa_offset 16
+ 333              		.cfi_offset 4, -16
+ 334              		.cfi_offset 5, -12
+ 335              		.cfi_offset 6, -8
+ 336              		.cfi_offset 14, -4
+  54:Core/Src/bsp_stm32.c ****   }
+ 337              		.loc 1 54 12 view .LVU56
+ 338 0032 0846     		mov	r0, r1
+ 339              	.LVL23:
+  54:Core/Src/bsp_stm32.c ****   }
+ 340              		.loc 1 54 12 view .LVU57
+ 341 0034 FAE7     		b	.L23
+ARM GAS  /tmp/ccRx83LU.s 			page 8
+
+
+ 342              	.L37:
+ 343 0036 00BF     		.align	2
+ 344              	.L36:
+ 345 0038 00000000 		.word	huart1
+ 346              		.cfi_endproc
+ 347              	.LFE72:
+ 349              		.text
+ 350              	.Letext0:
+ 351              		.file 2 "/usr/lib/gcc/arm-none-eabi/10.3.1/include/stddef.h"
+ 352              		.file 3 "/usr/lib/gcc/arm-none-eabi/10.3.1/include/stdint.h"
+ 353              		.file 4 "Core/Inc/bsp.h"
+ 354              		.file 5 "Drivers/CMSIS/Device/ST/STM32F1xx/Include/stm32f103xb.h"
+ 355              		.file 6 "Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_def.h"
+ 356              		.file 7 "Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_gpio.h"
+ 357              		.file 8 "Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_dma.h"
+ 358              		.file 9 "Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h"
+ 359              		.file 10 "Core/Inc/usart.h"
+ 360              		.file 11 "Core/Inc/bsp_keys.h"
+ 361              		.file 12 "Core/Inc/bsp_oled.h"
+ARM GAS  /tmp/ccRx83LU.s 			page 9
 
 
 DEFINED SYMBOLS
                             *ABS*:0000000000000000 bsp_stm32.c
-     /tmp/cchWBekZ.s:16     .text.BSP_Init:0000000000000000 $t
-     /tmp/cchWBekZ.s:24     .text.BSP_Init:0000000000000000 BSP_Init
-     /tmp/cchWBekZ.s:38     .text.BSP_Led_Set:0000000000000000 $t
-     /tmp/cchWBekZ.s:45     .text.BSP_Led_Set:0000000000000000 BSP_Led_Set
-     /tmp/cchWBekZ.s:74     .text.BSP_Led_Set:0000000000000014 $d
-     /tmp/cchWBekZ.s:79     .text.BSP_Lcd_Init:0000000000000000 $t
-     /tmp/cchWBekZ.s:86     .text.BSP_Lcd_Init:0000000000000000 BSP_Lcd_Init
-     /tmp/cchWBekZ.s:106    .text.BSP_Lcd_PrintLine:0000000000000000 $t
-     /tmp/cchWBekZ.s:113    .text.BSP_Lcd_PrintLine:0000000000000000 BSP_Lcd_PrintLine
-     /tmp/cchWBekZ.s:135    .text.BSP_Keys_Init:0000000000000000 $t
-     /tmp/cchWBekZ.s:142    .text.BSP_Keys_Init:0000000000000000 BSP_Keys_Init
-     /tmp/cchWBekZ.s:162    .text.BSP_Keys_GetEvent:0000000000000000 $t
-     /tmp/cchWBekZ.s:169    .text.BSP_Keys_GetEvent:0000000000000000 BSP_Keys_GetEvent
-     /tmp/cchWBekZ.s:192    .text.BSP_Uart_Init:0000000000000000 $t
-     /tmp/cchWBekZ.s:199    .text.BSP_Uart_Init:0000000000000000 BSP_Uart_Init
-     /tmp/cchWBekZ.s:237    .text.BSP_Uart_Init:0000000000000018 $d
-     /tmp/cchWBekZ.s:242    .text.BSP_Uart_Send:0000000000000000 $t
-     /tmp/cchWBekZ.s:249    .text.BSP_Uart_Send:0000000000000000 BSP_Uart_Send
-     /tmp/cchWBekZ.s:302    .text.BSP_Uart_Send:0000000000000024 $d
+     /tmp/ccRx83LU.s:16     .text.BSP_Init:0000000000000000 $t
+     /tmp/ccRx83LU.s:24     .text.BSP_Init:0000000000000000 BSP_Init
+     /tmp/ccRx83LU.s:38     .text.BSP_Led_Set:0000000000000000 $t
+     /tmp/ccRx83LU.s:45     .text.BSP_Led_Set:0000000000000000 BSP_Led_Set
+     /tmp/ccRx83LU.s:74     .text.BSP_Led_Set:0000000000000014 $d
+     /tmp/ccRx83LU.s:79     .text.BSP_Lcd_Init:0000000000000000 $t
+     /tmp/ccRx83LU.s:86     .text.BSP_Lcd_Init:0000000000000000 BSP_Lcd_Init
+     /tmp/ccRx83LU.s:106    .text.BSP_Lcd_PrintLine:0000000000000000 $t
+     /tmp/ccRx83LU.s:113    .text.BSP_Lcd_PrintLine:0000000000000000 BSP_Lcd_PrintLine
+     /tmp/ccRx83LU.s:135    .text.BSP_Keys_Init:0000000000000000 $t
+     /tmp/ccRx83LU.s:142    .text.BSP_Keys_Init:0000000000000000 BSP_Keys_Init
+     /tmp/ccRx83LU.s:162    .text.BSP_Keys_GetEvent:0000000000000000 $t
+     /tmp/ccRx83LU.s:169    .text.BSP_Keys_GetEvent:0000000000000000 BSP_Keys_GetEvent
+     /tmp/ccRx83LU.s:192    .text.BSP_Uart_Init:0000000000000000 $t
+     /tmp/ccRx83LU.s:199    .text.BSP_Uart_Init:0000000000000000 BSP_Uart_Init
+     /tmp/ccRx83LU.s:237    .text.BSP_Uart_Init:0000000000000018 $d
+     /tmp/ccRx83LU.s:242    .text.BSP_Uart_Send:0000000000000000 $t
+     /tmp/ccRx83LU.s:249    .text.BSP_Uart_Send:0000000000000000 BSP_Uart_Send
+     /tmp/ccRx83LU.s:345    .text.BSP_Uart_Send:0000000000000038 $d
 
 UNDEFINED SYMBOLS
 HAL_GPIO_WritePin

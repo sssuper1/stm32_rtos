@@ -43,6 +43,10 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
+/* 临时串口硬件诊断：每 1s 发送一帧最小合法包。
+ * 若将 PA9 与 PA10 短接，屏幕 B/V 计数应自动增长。 */
+#define UART_DIAG_SELF_TX_ENABLE 0
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -76,27 +80,28 @@ const osMessageQueueAttr_t gParamUpdateQueue_attributes = {
 osThreadId_t HMI_TaskHandle;
 const osThreadAttr_t HMI_Task_attributes = {
   .name = "HMI_Task",
-  .stack_size = 128 * 4,
+  .stack_size = 512 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
 /* Definitions for UART_Task */
 osThreadId_t UART_TaskHandle;
 const osThreadAttr_t UART_Task_attributes = {
   .name = "UART_Task",
-  .stack_size = 128 * 4,
+  .stack_size = 512 * 4,
   .priority = (osPriority_t) osPriorityAboveNormal,
 };
 /* Definitions for Logic_Task */
 osThreadId_t Logic_TaskHandle;
 const osThreadAttr_t Logic_Task_attributes = {
   .name = "Logic_Task",
-  .stack_size = 128 * 4,
+  .stack_size = 512 * 4,
   .priority = (osPriority_t) osPriorityBelowNormal,
 };
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
 static MenuKey_t HMI_ReadKey(void);
+static bool UART_SendParamWrite(const ParamUpdateMsg_t *msg);
 
 /* Simple helpers for locking/unlocking parameter dictionary */
 static inline void ParamDict_Lock(void)
@@ -111,16 +116,44 @@ static inline void ParamDict_Unlock(void)
 
 bool APP_ParamUpdate_RequestValue(ParamId_t id, int32_t value)
 {
-  if (gParamUpdateQueueHandle == NULL)
-  {
-    return false;
-  }
-
   ParamUpdateMsg_t txMsg;
   txMsg.id = id;
   txMsg.value = value;
 
-  return (osMessageQueuePut(gParamUpdateQueueHandle, &txMsg, 0U, 0U) == osOK);
+  ParamDict_Lock();
+  (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_UART_ACK_STATE, 3); /* pending */
+  (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_UART_ACK_CMD, 0xA1); /* request entered */
+  ParamDict_Unlock();
+
+  /* 优先同步直发：确保按 OK 后立刻尝试组帧并发送。 */
+  if (UART_SendParamWrite(&txMsg))
+  {
+    return true;
+  }
+
+  /* 直发失败时再尝试入队，交给 UART 线程重试。 */
+  if (gParamUpdateQueueHandle != NULL)
+  {
+    if (osMessageQueuePut(gParamUpdateQueueHandle, &txMsg, 0U, 0U) == osOK)
+    {
+      ParamDict_Lock();
+      (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_UART_ACK_CMD, 0xA2); /* queued */
+      ParamDict_Unlock();
+      return true;
+    }
+
+    ParamDict_Lock();
+    (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_UART_ACK_CMD, 0xA3); /* queue put failed */
+    ParamDict_Unlock();
+  }
+  else
+  {
+    ParamDict_Lock();
+    (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_UART_ACK_CMD, 0xA4); /* queue null */
+    ParamDict_Unlock();
+  }
+
+  return false;
 }
 
 bool APP_ParamUpdate_Request(ParamId_t id)
@@ -135,7 +168,6 @@ bool APP_ParamUpdate_Request(ParamId_t id)
 }
 
 /* Map ParamUpdateMsg to UART write-frame payload and send it (example). */
-static void UART_SendParamWrite(const ParamUpdateMsg_t *msg);
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void *argument);
@@ -212,10 +244,14 @@ void StartDefaultTask(void *argument)
 
   (void)APP_Menu_Init();
   uint32_t ignoreKeysUntil = osKernelGetTickCount() + 300U;
+  uint32_t lastActionTick = osKernelGetTickCount();
 
   /* Infinite loop */
   for(;;)
   {
+    /* 兜底解析：确保即使 UART/Logic 任务异常，也能消费 ISR 缓冲字节。 */
+    APP_UartRx_ProcessPending();
+
     /* 1. Read key input (polling or from buffer) */
     MenuKey_t key = HMI_ReadKey();
     if (osKernelGetTickCount() < ignoreKeysUntil)
@@ -226,7 +262,20 @@ void StartDefaultTask(void *argument)
     /* 2. Drive menu state machine if there is a key event */
     if (key != MENU_KEY_NONE)
     {
+      lastActionTick = osKernelGetTickCount();
       (void)APP_Menu_HandleKey(key);
+    }
+    else
+    {
+      if ((osKernelGetTickCount() - lastActionTick) > 60000U)
+      {
+        const MenuNode_t *curr = APP_Menu_GetCurrent();
+        if ((curr != NULL) && (curr->id != MENU_ID_ROOT))
+        {
+          APP_Menu_ReturnToRoot();
+        }
+        lastActionTick = osKernelGetTickCount();
+      }
     }
 
     /* 3. Delay to control polling period (e.g. 10ms) */
@@ -245,17 +294,25 @@ void StartDefaultTask(void *argument)
 void StartTask02(void *argument)
 {
   /* USER CODE BEGIN StartTask02 */
-  /* UART_Comm_Task: wait for parameter update messages and send via UART (skeleton) */
+  /* UART_Comm_Task: Receive DMA UART data and wait for parameter update messages */
   ParamUpdateMsg_t msg;
+
+  /* Initialize UART RX state machine */
+  APP_UartRx_Init();
 
   /* Infinite loop */
   for(;;)
   {
-    /* Block until there is a new parameter update request from HMI */
-    if (osMessageQueueGet(gParamUpdateQueueHandle, &msg, NULL, osWaitForever) == osOK)
+    /* 1. Process any pending UART RX bytes mapped from IDLE interrupt DMA */
+    APP_UartRx_ProcessPending();
+
+    /* 2. Block for a short time to wait for a new parameter update request from HMI,
+     *    timeout 10ms so we can loop back and check RX quickly.
+     */
+    if (osMessageQueueGet(gParamUpdateQueueHandle, &msg, NULL, 10U) == osOK)
     {
       /* Assemble UART frame and transmit according to protocol. */
-      UART_SendParamWrite(&msg);
+      (void)UART_SendParamWrite(&msg);
     }
   }
   /* USER CODE END StartTask02 */
@@ -274,7 +331,20 @@ void StartTask03(void *argument)
   /* Infinite loop */
   for(;;)
   {
+#if UART_DIAG_SELF_TX_ENABLE
+    {
+      static uint32_t lastSelfTxTick = 0u;
+      uint32_t now = osKernelGetTickCount();
+      if ((now - lastSelfTxTick) >= 1000u)
+      {
+        lastSelfTxTick = now;
+        (void)APP_UartProto_SendRaw(0x02u, 0x00u, NULL, 0u);
+      }
+    }
+#endif
+
     APP_UartRx_ProcessPending();
+
     osDelay(5);
   }
   /* USER CODE END StartTask03 */
@@ -337,12 +407,17 @@ static MenuKey_t HMI_ReadKey(void)
  *
  * 这里以“路由协议”参数为示例，对应地址 0x12310000。
  */
-static void UART_SendParamWrite(const ParamUpdateMsg_t *msg)
+static bool UART_SendParamWrite(const ParamUpdateMsg_t *msg)
 {
   if (msg == NULL)
   {
-    return;
+    return false;
   }
+
+  ParamDict_Lock();
+  (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_UART_ACK_STATE, 3); /* pending */
+  (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_UART_ACK_CMD, 0xB1); /* send entered */
+  ParamDict_Unlock();
 
   uint8_t payload[1U + 4U + 4U]; /* 最大预留 4 字节 value */
   uint16_t payloadLen = 0U;
@@ -355,9 +430,10 @@ static void UART_SendParamWrite(const ParamUpdateMsg_t *msg)
   {
     ParamDict_Lock();
     (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_UART_ACK_STATE, 2); /* fail */
-    (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_UART_ACK_CMD, 0x01);
+    (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_UART_ACK_CMD, 0xB2); /* map fail */
     ParamDict_Unlock();
-    return;
+    APP_Menu_RefreshCurrent();
+    return false;
   }
 
   /* 长度字段: 命令字(1) + 地址(4) + valueLen */
@@ -392,9 +468,19 @@ static void UART_SendParamWrite(const ParamUpdateMsg_t *msg)
   {
     ParamDict_Lock();
     (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_UART_ACK_STATE, 2); /* fail */
-    (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_UART_ACK_CMD, 0x01);
+    (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_UART_ACK_CMD, 0xB3); /* tx fail */
     ParamDict_Unlock();
+    APP_Menu_RefreshCurrent();
+    return false;
   }
+
+  ParamDict_Lock();
+  (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_UART_ACK_STATE, 1); /* success */
+  (void)APP_ParamDict_SetValueUnsafe(PARAM_ID_UART_ACK_CMD, 0xB4); /* tx ok */
+  ParamDict_Unlock();
+  APP_Menu_RefreshCurrent();
+
+  return true;
 }
 
 /* USER CODE END Application */

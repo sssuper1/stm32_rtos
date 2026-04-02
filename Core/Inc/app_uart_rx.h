@@ -21,6 +21,7 @@ extern "C" {
 
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 
 void APP_UartRx_Init(void);
 
@@ -45,6 +46,56 @@ void APP_UartRx_PushFromISR(const uint8_t *data, size_t len);
 void APP_UartRx_ProcessPending(void);
 
 /**
+ * @brief 获取 CRC 校验通过的有效帧计数（调试用途）。
+ */
+uint32_t APP_UartRx_GetValidFrameCount(void);
+
+/**
+ * @brief 获取 ISR 推入的总字节数（物理层收包迹象）。
+ */
+uint32_t APP_UartRx_GetIsrByteCount(void);
+
+/**
+ * @brief 获取帧尾匹配但 CRC 校验失败次数（协议层错误迹象）。
+ */
+uint32_t APP_UartRx_GetCrcFailCount(void);
+
+/**
+ * @brief 获取帧头命中次数（0xD5 0x5D）。
+ */
+uint32_t APP_UartRx_GetHeadHitCount(void);
+
+/**
+ * @brief 获取帧尾命中次数（0x5D 0xD5）。
+ */
+uint32_t APP_UartRx_GetTailHitCount(void);
+
+/**
+ * @brief 获取疑似 7 位数据截断帧头命中次数（0x55 0x5D）。
+ */
+uint32_t APP_UartRx_GetHead7BitHitCount(void);
+
+/**
+ * @brief 获取疑似电平反相帧头命中次数（0x2A 0xA2）。
+ */
+uint32_t APP_UartRx_GetHeadInvertedHitCount(void);
+
+/**
+ * @brief 获取最近一次 ISR 批次的首字节。
+ */
+uint8_t APP_UartRx_GetLastBurstByte0(void);
+
+/**
+ * @brief 获取最近一次 ISR 批次的次字节（若无则为 0xFF）。
+ */
+uint8_t APP_UartRx_GetLastBurstByte1(void);
+
+/**
+ * @brief 获取最近一次 ISR 批次的末字节。
+ */
+uint8_t APP_UartRx_GetLastBurstLastByte(void);
+
+/**
  * @brief 收到完整、CRC 校验通过的一帧时的回调。
  *
  * 默认提供一个弱实现，用户可在其他 C 文件中重新实现此函数，
@@ -59,6 +110,21 @@ void APP_UartRx_OnFrame(uint8_t cmd,
                         uint8_t msgType,
                         const uint8_t *payload,
                         uint16_t payloadLen);
+
+/**
+ * @brief 获取最近一次 0x09 缓存的在网节点数量。
+ */
+uint8_t APP_UartRx_GetNeighborCountCached(void);
+
+/**
+ * @brief 按 1-based 索引获取在网节点 ID。
+ */
+bool APP_UartRx_GetNeighborNodeIdByIndex(uint8_t oneBasedIndex, uint8_t *outMemberId);
+
+/**
+ * @brief 按 1-based 索引将在网节点信息写入当前显示参数（ID/IP/HOPS/RSSI/DELAY/LON/LAT/ALT）。
+ */
+bool APP_UartRx_LoadNeighborByIndexToParams(uint8_t oneBasedIndex);
 
 #ifdef __cplusplus
 }

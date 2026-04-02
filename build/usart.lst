@@ -1,4 +1,4 @@
-ARM GAS  /tmp/ccTenlbH.s 			page 1
+ARM GAS  /tmp/ccf9JEL3.s 			page 1
 
 
    1              		.cpu cortex-m3
@@ -58,7 +58,7 @@ ARM GAS  /tmp/ccTenlbH.s 			page 1
   30:Core/Src/usart.c **** 
   31:Core/Src/usart.c **** void APP_USART1_RxCheckIdle(void)
   32:Core/Src/usart.c **** {
-ARM GAS  /tmp/ccTenlbH.s 			page 2
+ARM GAS  /tmp/ccf9JEL3.s 			page 2
 
 
   27              		.loc 1 32 1 view -0
@@ -118,7 +118,7 @@ ARM GAS  /tmp/ccTenlbH.s 			page 1
   50:Core/Src/usart.c ****     }
   51:Core/Src/usart.c ****   }
   52:Core/Src/usart.c **** 
-ARM GAS  /tmp/ccTenlbH.s 			page 3
+ARM GAS  /tmp/ccf9JEL3.s 			page 3
 
 
   53:Core/Src/usart.c ****   s_uart1LastPos = pos;
@@ -178,7 +178,7 @@ ARM GAS  /tmp/ccTenlbH.s 			page 1
   61:Core/Src/usart.c **** /* USART1 init function */
   62:Core/Src/usart.c **** 
   63:Core/Src/usart.c **** void MX_USART1_UART_Init(void)
-ARM GAS  /tmp/ccTenlbH.s 			page 4
+ARM GAS  /tmp/ccf9JEL3.s 			page 4
 
 
   64:Core/Src/usart.c **** {
@@ -205,10 +205,10 @@ ARM GAS  /tmp/ccTenlbH.s 			page 1
  119 0002 1548     		ldr	r0, .L14
  120 0004 154B     		ldr	r3, .L14+4
  121 0006 0360     		str	r3, [r0]
-  74:Core/Src/usart.c ****   huart1.Init.BaudRate = 9600;
+  74:Core/Src/usart.c ****   huart1.Init.BaudRate = 115200;
  122              		.loc 1 74 3 is_stmt 1 view .LVU21
  123              		.loc 1 74 24 is_stmt 0 view .LVU22
- 124 0008 4FF41653 		mov	r3, #9600
+ 124 0008 4FF4E133 		mov	r3, #115200
  125 000c 4360     		str	r3, [r0, #4]
   75:Core/Src/usart.c ****   huart1.Init.WordLength = UART_WORDLENGTH_8B;
  126              		.loc 1 75 3 is_stmt 1 view .LVU23
@@ -238,7 +238,7 @@ ARM GAS  /tmp/ccTenlbH.s 			page 1
  145 001c C361     		str	r3, [r0, #28]
   81:Core/Src/usart.c ****   if (HAL_UART_Init(&huart1) != HAL_OK)
  146              		.loc 1 81 3 is_stmt 1 view .LVU35
-ARM GAS  /tmp/ccTenlbH.s 			page 5
+ARM GAS  /tmp/ccf9JEL3.s 			page 5
 
 
  147              		.loc 1 81 7 is_stmt 0 view .LVU36
@@ -298,7 +298,7 @@ ARM GAS  /tmp/ccTenlbH.s 			page 1
  182              	.LVL8:
  183 004e E9E7     		b	.L9
  184              	.L13:
-ARM GAS  /tmp/ccTenlbH.s 			page 6
+ARM GAS  /tmp/ccf9JEL3.s 			page 6
 
 
   92:Core/Src/usart.c ****   }
@@ -358,7 +358,7 @@ ARM GAS  /tmp/ccTenlbH.s 			page 1
  234 000e 0268     		ldr	r2, [r0]
  235              		.loc 1 105 5 view .LVU54
  236 0010 264B     		ldr	r3, .L22
-ARM GAS  /tmp/ccTenlbH.s 			page 7
+ARM GAS  /tmp/ccf9JEL3.s 			page 7
 
 
  237 0012 9A42     		cmp	r2, r3
@@ -418,7 +418,7 @@ ARM GAS  /tmp/ccTenlbH.s 			page 1
  244              		.cfi_remember_state
  245              		.cfi_def_cfa_offset 16
  246              		@ sp needed
-ARM GAS  /tmp/ccTenlbH.s 			page 8
+ARM GAS  /tmp/ccf9JEL3.s 			page 8
 
 
  247 0018 70BD     		pop	{r4, r5, r6, pc}
@@ -478,7 +478,7 @@ ARM GAS  /tmp/ccTenlbH.s 			page 1
  287 0044 4FF40073 		mov	r3, #512
  288 0048 0293     		str	r3, [sp, #8]
  119:Core/Src/usart.c ****     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-ARM GAS  /tmp/ccTenlbH.s 			page 9
+ARM GAS  /tmp/ccf9JEL3.s 			page 9
 
 
  289              		.loc 1 119 5 is_stmt 1 view .LVU71
@@ -538,7 +538,7 @@ ARM GAS  /tmp/ccTenlbH.s 			page 1
  327              		.loc 1 131 35 is_stmt 0 view .LVU87
  328 0076 4560     		str	r5, [r0, #4]
  132:Core/Src/usart.c ****     hdma_usart1_rx.Init.MemInc = DMA_MINC_ENABLE;
-ARM GAS  /tmp/ccTenlbH.s 			page 10
+ARM GAS  /tmp/ccf9JEL3.s 			page 10
 
 
  329              		.loc 1 132 5 is_stmt 1 view .LVU88
@@ -598,7 +598,7 @@ ARM GAS  /tmp/ccTenlbH.s 			page 1
  364 0094 0022     		movs	r2, #0
  365 0096 0521     		movs	r1, #5
  366 0098 2520     		movs	r0, #37
-ARM GAS  /tmp/ccTenlbH.s 			page 11
+ARM GAS  /tmp/ccf9JEL3.s 			page 11
 
 
  367 009a FFF7FEFF 		bl	HAL_NVIC_SetPriority
@@ -658,7 +658,7 @@ ARM GAS  /tmp/ccTenlbH.s 			page 1
  415 000a 10B5     		push	{r4, lr}
  416              	.LCFI6:
  417              		.cfi_def_cfa_offset 8
-ARM GAS  /tmp/ccTenlbH.s 			page 12
+ARM GAS  /tmp/ccf9JEL3.s 			page 12
 
 
  418              		.cfi_offset 4, -8
@@ -718,7 +718,7 @@ ARM GAS  /tmp/ccTenlbH.s 			page 1
  449 0034 00100240 		.word	1073876992
  450 0038 00080140 		.word	1073809408
  451              		.cfi_endproc
-ARM GAS  /tmp/ccTenlbH.s 			page 13
+ARM GAS  /tmp/ccf9JEL3.s 			page 13
 
 
  452              	.LFE68:
@@ -769,31 +769,31 @@ ARM GAS  /tmp/ccTenlbH.s 			page 1
  494              		.file 10 "Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_cortex.h"
  495              		.file 11 "Core/Inc/main.h"
  496              		.file 12 "Core/Inc/app_uart_rx.h"
-ARM GAS  /tmp/ccTenlbH.s 			page 14
+ARM GAS  /tmp/ccf9JEL3.s 			page 14
 
 
 DEFINED SYMBOLS
                             *ABS*:0000000000000000 usart.c
-     /tmp/ccTenlbH.s:16     .text.APP_USART1_RxCheckIdle:0000000000000000 $t
-     /tmp/ccTenlbH.s:24     .text.APP_USART1_RxCheckIdle:0000000000000000 APP_USART1_RxCheckIdle
-     /tmp/ccTenlbH.s:92     .text.APP_USART1_RxCheckIdle:0000000000000044 $d
-     /tmp/ccTenlbH.s:99     .text.MX_USART1_UART_Init:0000000000000000 $t
-     /tmp/ccTenlbH.s:106    .text.MX_USART1_UART_Init:0000000000000000 MX_USART1_UART_Init
-     /tmp/ccTenlbH.s:192    .text.MX_USART1_UART_Init:0000000000000058 $d
-     /tmp/ccTenlbH.s:200    .text.HAL_UART_MspInit:0000000000000000 $t
-     /tmp/ccTenlbH.s:207    .text.HAL_UART_MspInit:0000000000000000 HAL_UART_MspInit
-     /tmp/ccTenlbH.s:383    .text.HAL_UART_MspInit:00000000000000ac $d
-     /tmp/ccTenlbH.s:391    .text.HAL_UART_MspDeInit:0000000000000000 $t
-     /tmp/ccTenlbH.s:398    .text.HAL_UART_MspDeInit:0000000000000000 HAL_UART_MspDeInit
-     /tmp/ccTenlbH.s:448    .text.HAL_UART_MspDeInit:0000000000000030 $d
-     /tmp/ccTenlbH.s:461    .bss.hdma_usart1_rx:0000000000000000 hdma_usart1_rx
-     /tmp/ccTenlbH.s:468    .bss.huart1:0000000000000000 huart1
-     /tmp/ccTenlbH.s:457    .bss.hdma_usart1_rx:0000000000000000 $d
-     /tmp/ccTenlbH.s:464    .bss.huart1:0000000000000000 $d
-     /tmp/ccTenlbH.s:471    .bss.s_uart1DmaRxBuf:0000000000000000 $d
-     /tmp/ccTenlbH.s:475    .bss.s_uart1DmaRxBuf:0000000000000000 s_uart1DmaRxBuf
-     /tmp/ccTenlbH.s:478    .bss.s_uart1LastPos:0000000000000000 $d
-     /tmp/ccTenlbH.s:482    .bss.s_uart1LastPos:0000000000000000 s_uart1LastPos
+     /tmp/ccf9JEL3.s:16     .text.APP_USART1_RxCheckIdle:0000000000000000 $t
+     /tmp/ccf9JEL3.s:24     .text.APP_USART1_RxCheckIdle:0000000000000000 APP_USART1_RxCheckIdle
+     /tmp/ccf9JEL3.s:92     .text.APP_USART1_RxCheckIdle:0000000000000044 $d
+     /tmp/ccf9JEL3.s:99     .text.MX_USART1_UART_Init:0000000000000000 $t
+     /tmp/ccf9JEL3.s:106    .text.MX_USART1_UART_Init:0000000000000000 MX_USART1_UART_Init
+     /tmp/ccf9JEL3.s:192    .text.MX_USART1_UART_Init:0000000000000058 $d
+     /tmp/ccf9JEL3.s:200    .text.HAL_UART_MspInit:0000000000000000 $t
+     /tmp/ccf9JEL3.s:207    .text.HAL_UART_MspInit:0000000000000000 HAL_UART_MspInit
+     /tmp/ccf9JEL3.s:383    .text.HAL_UART_MspInit:00000000000000ac $d
+     /tmp/ccf9JEL3.s:391    .text.HAL_UART_MspDeInit:0000000000000000 $t
+     /tmp/ccf9JEL3.s:398    .text.HAL_UART_MspDeInit:0000000000000000 HAL_UART_MspDeInit
+     /tmp/ccf9JEL3.s:448    .text.HAL_UART_MspDeInit:0000000000000030 $d
+     /tmp/ccf9JEL3.s:461    .bss.hdma_usart1_rx:0000000000000000 hdma_usart1_rx
+     /tmp/ccf9JEL3.s:468    .bss.huart1:0000000000000000 huart1
+     /tmp/ccf9JEL3.s:457    .bss.hdma_usart1_rx:0000000000000000 $d
+     /tmp/ccf9JEL3.s:464    .bss.huart1:0000000000000000 $d
+     /tmp/ccf9JEL3.s:471    .bss.s_uart1DmaRxBuf:0000000000000000 $d
+     /tmp/ccf9JEL3.s:475    .bss.s_uart1DmaRxBuf:0000000000000000 s_uart1DmaRxBuf
+     /tmp/ccf9JEL3.s:478    .bss.s_uart1LastPos:0000000000000000 $d
+     /tmp/ccf9JEL3.s:482    .bss.s_uart1LastPos:0000000000000000 s_uart1LastPos
 
 UNDEFINED SYMBOLS
 APP_UartRx_PushFromISR

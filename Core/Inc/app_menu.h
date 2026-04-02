@@ -94,6 +94,12 @@ const MenuNode_t *APP_Menu_GetCurrent(void);
  */
 void APP_Menu_RefreshCurrent(void);
 
+void APP_Menu_ReturnToRoot(void);
+
+uint8_t APP_Menu_IsAdaptHopProtectActive(void);
+
+void APP_Menu_ClearAdaptHopProtect(void);
+
 /**
  * @brief 处理一次按键事件，内部完成节点跳转。
  *

@@ -122,6 +122,8 @@ bool APP_ParamDict_SetValueUnsafe(ParamId_t id, int32_t newVal);
   PARAM_ID_ENV_TEMPERATURE = 4, /**< 环境温度 (状态量，只读示例) */
 
   PARAM_ID_ROUTING_PROTOCOL = 10, /**< 路由协议：0=OLSR,1=AODV,2=BATMAN 等 */
+  PARAM_ID_ACCESS_PROTOCOL  = 11, /**< 接入协议：当前仅 0=TDMA */
+  PARAM_ID_DEVICE_ID        = 12, /**< 设备 ID（来自 0x05） */
 
   /* 0x05 设备基础信息 */
   PARAM_ID_GPS_LONGITUDE   = 20, /**< 经度（协议原始缩放值） */
@@ -138,6 +140,12 @@ bool APP_ParamDict_SetValueUnsafe(ParamId_t id, int32_t newVal);
   /* 0x07 自检状态 */
   PARAM_ID_BATTERY_CAP     = 40, /**< 电池余量(%) */
   PARAM_ID_FAN_STATE       = 41, /**< 风机状态 */
+  PARAM_ID_SELFTEST_STATE  = 42, /**< 自检总状态 */
+  PARAM_ID_CLOCK_SELECTION = 43, /**< 时钟选择状态 */
+  PARAM_ID_ADC_STATUS      = 44, /**< ADC 状态 */
+  PARAM_ID_CLOCK_SRC_TEMP  = 45, /**< 时钟源温度 */
+  PARAM_ID_FREQ_WORD_CNT   = 46, /**< 频率字下发计数 */
+  PARAM_ID_COMM_SENSE_ST   = 47, /**< 通信感知状态 */
 
   /* 0x08 开机显示参数 */
   PARAM_ID_TIME_HOUR       = 60,
@@ -156,14 +164,54 @@ bool APP_ParamDict_SetValueUnsafe(ParamId_t id, int32_t newVal);
   PARAM_ID_SYNC_MODE       = 73,
   PARAM_ID_TX_POWER        = 74,
   PARAM_ID_TX_POWER_ATTEN  = 75,
+  PARAM_ID_MCS             = 76,
+  PARAM_ID_SLOTLEN         = 77,
 
   /* 0x09 邻居信息 */
   PARAM_ID_NEIGHBOR_COUNT  = 80,
   PARAM_ID_NEIGHBOR_RSSI   = 81, /**< 最近邻/首邻 RSSI */
+  PARAM_ID_NEIGHBOR_NODE_ID    = 82,
+  PARAM_ID_NEIGHBOR_NODE_IP    = 83,
+  PARAM_ID_NEIGHBOR_NODE_HOPS  = 84,
+  PARAM_ID_NEIGHBOR_NODE_DELAY = 85,
+  PARAM_ID_NEIGHBOR_NODE_LON   = 86,
+  PARAM_ID_NEIGHBOR_NODE_LAT   = 87,
+  PARAM_ID_NEIGHBOR_NODE_ALT   = 88,
+
+  /* 0x0A 节点详细信息 */
+  PARAM_ID_DETAIL_MEMBER_ID    = 100,
+  PARAM_ID_DETAIL_SPATIAL      = 101,
+  PARAM_ID_DETAIL_IP           = 102,
+  PARAM_ID_DETAIL_CH1_HOP      = 103,
+  PARAM_ID_DETAIL_CH1_FREQ     = 104,
+  PARAM_ID_DETAIL_CH1_BW       = 105,
+  PARAM_ID_DETAIL_CH1_WAVE     = 106,
+  PARAM_ID_DETAIL_CH1_TXPWR    = 107,
+  PARAM_ID_DETAIL_CH1_TXATTEN  = 108,
+  PARAM_ID_DETAIL_CH1_ROUTE    = 109,
+  PARAM_ID_DETAIL_CH1_ACCESS   = 110,
 
   /* UART 写参数应答状态 */
   PARAM_ID_UART_ACK_STATE  = 90, /**< 0=idle,1=ok,2=fail,3=pending */
-  PARAM_ID_UART_ACK_CMD    = 91  /**< 最近 ACK 的命令字 */
+  PARAM_ID_UART_ACK_CMD    = 91, /**< 最近 ACK 的命令字 */
+
+  /* 0x06 统计操作（00开始/01停止/02清零） */
+  PARAM_ID_TXRX_OPERATION  = 92,
+
+  /* 设置页 WR 参数（按菜单目录地址） */
+  PARAM_ID_DEVICE_NAME_TOKEN = 120,
+  PARAM_ID_NET_BIZ_PORT      = 121,
+  PARAM_ID_NET_MGMT_IP       = 122,
+  PARAM_ID_NET_MGMT_PORT     = 123,
+  PARAM_ID_NET_SENSE_IP      = 124,
+  PARAM_ID_NET_SENSE_PORT    = 125,
+  PARAM_ID_UART_BAUD_IDX     = 126,
+  PARAM_ID_UART_DATABITS     = 127,
+  PARAM_ID_UART_STOPBITS     = 128,
+  PARAM_ID_UART_PARITY       = 129,
+  PARAM_ID_UART_FLOW         = 130,
+  PARAM_ID_LOC_AUTO_SYNC     = 131,
+  PARAM_ID_TIME_AUTO_SYNC    = 132
  };
  
  #ifdef __cplusplus

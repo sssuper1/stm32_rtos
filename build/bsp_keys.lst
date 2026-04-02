@@ -1,4 +1,4 @@
-ARM GAS  /tmp/cc7K8UJE.s 			page 1
+ARM GAS  /tmp/ccYC6oWX.s 			page 1
 
 
    1              		.cpu cortex-m3
@@ -58,7 +58,7 @@ ARM GAS  /tmp/cc7K8UJE.s 			page 1
   31:Core/Src/bsp_keys.c ****  * 4x4 键盘映射：
   32:Core/Src/bsp_keys.c ****  * - 左 3 列：数字键区（1~9,*,0,#）
   33:Core/Src/bsp_keys.c ****  * - 第 4 列：导航键（UP,DOWN,OK,BACK）
-ARM GAS  /tmp/cc7K8UJE.s 			page 2
+ARM GAS  /tmp/ccYC6oWX.s 			page 2
 
 
   34:Core/Src/bsp_keys.c ****  */
@@ -102,7 +102,7 @@ ARM GAS  /tmp/cc7K8UJE.s 			page 1
   50:Core/Src/bsp_keys.c **** 	init.Pin = KEY_R1_Pin | KEY_R2_Pin | KEY_R3_Pin | KEY_R4_Pin;
   48              		.loc 1 50 2 is_stmt 1 view .LVU3
   49              		.loc 1 50 11 is_stmt 0 view .LVU4
-  50 000e 4FF4F073 		mov	r3, #480
+  50 000e 47F22003 		movw	r3, #28704
   51 0012 0093     		str	r3, [sp]
   51:Core/Src/bsp_keys.c **** 	init.Mode = GPIO_MODE_INPUT;
   52              		.loc 1 51 2 is_stmt 1 view .LVU5
@@ -118,14 +118,14 @@ ARM GAS  /tmp/cc7K8UJE.s 			page 1
   60 001c 2846     		mov	r0, r5
   61 001e FFF7FEFF 		bl	HAL_GPIO_Init
   62              	.LVL0:
-ARM GAS  /tmp/cc7K8UJE.s 			page 3
+ARM GAS  /tmp/ccYC6oWX.s 			page 3
 
 
   54:Core/Src/bsp_keys.c **** 
   55:Core/Src/bsp_keys.c **** 	init.Pin = KEY_C1_Pin | KEY_C2_Pin | KEY_C3_Pin | KEY_C4_Pin;
   63              		.loc 1 55 2 view .LVU9
   64              		.loc 1 55 11 is_stmt 0 view .LVU10
-  65 0022 4FF4E446 		mov	r6, #29184
+  65 0022 4FF47076 		mov	r6, #960
   66 0026 0096     		str	r6, [sp]
   56:Core/Src/bsp_keys.c **** 	init.Mode = GPIO_MODE_OUTPUT_PP;
   67              		.loc 1 56 2 is_stmt 1 view .LVU11
@@ -178,7 +178,7 @@ ARM GAS  /tmp/cc7K8UJE.s 			page 1
  108              	Keys_AllColsLow:
  109              	.LFB67:
   65:Core/Src/bsp_keys.c **** 
-ARM GAS  /tmp/cc7K8UJE.s 			page 4
+ARM GAS  /tmp/ccYC6oWX.s 			page 4
 
 
   66:Core/Src/bsp_keys.c **** static inline uint8_t key_index(uint8_t row, uint8_t col)
@@ -238,7 +238,7 @@ ARM GAS  /tmp/cc7K8UJE.s 			page 1
   77:Core/Src/bsp_keys.c **** }
  149              		.loc 1 77 1 view .LVU30
  150 0020 10BD     		pop	{r4, pc}
-ARM GAS  /tmp/cc7K8UJE.s 			page 5
+ARM GAS  /tmp/ccYC6oWX.s 			page 5
 
 
  151              	.LVL8:
@@ -298,7 +298,7 @@ ARM GAS  /tmp/cc7K8UJE.s 			page 1
   85:Core/Src/bsp_keys.c **** 		Keys_AllColsLow();
   86:Core/Src/bsp_keys.c **** 		HAL_GPIO_WritePin(s_colPins[col].port, s_colPins[col].pin, GPIO_PIN_SET);
   87:Core/Src/bsp_keys.c **** 
-ARM GAS  /tmp/cc7K8UJE.s 			page 6
+ARM GAS  /tmp/ccYC6oWX.s 			page 6
 
 
   88:Core/Src/bsp_keys.c **** 		for (volatile uint32_t i = 0u; i < 200u; ++i)
@@ -358,7 +358,7 @@ ARM GAS  /tmp/cc7K8UJE.s 			page 1
  241 0030 FFF7FEFF 		bl	HAL_GPIO_ReadPin
  242              	.LVL14:
  243              		.loc 1 95 7 view .LVU51
-ARM GAS  /tmp/cc7K8UJE.s 			page 7
+ARM GAS  /tmp/ccYC6oWX.s 			page 7
 
 
  244 0034 0128     		cmp	r0, #1
@@ -418,7 +418,7 @@ ARM GAS  /tmp/cc7K8UJE.s 			page 1
   85:Core/Src/bsp_keys.c **** 		HAL_GPIO_WritePin(s_colPins[col].port, s_colPins[col].pin, GPIO_PIN_SET);
  287              		.loc 1 85 3 is_stmt 1 view .LVU67
  288 0054 FFF7FEFF 		bl	Keys_AllColsLow
-ARM GAS  /tmp/cc7K8UJE.s 			page 8
+ARM GAS  /tmp/ccYC6oWX.s 			page 8
 
 
  289              	.LVL20:
@@ -478,7 +478,7 @@ ARM GAS  /tmp/cc7K8UJE.s 			page 1
  332              		.global	BSP_KeysDrv_Init
  333              		.syntax unified
  334              		.thumb
-ARM GAS  /tmp/cc7K8UJE.s 			page 9
+ARM GAS  /tmp/ccYC6oWX.s 			page 9
 
 
  335              		.thumb_func
@@ -538,7 +538,7 @@ ARM GAS  /tmp/cc7K8UJE.s 			page 1
  383              		.thumb
  384              		.thumb_func
  385              		.fpu softvfp
-ARM GAS  /tmp/cc7K8UJE.s 			page 10
+ARM GAS  /tmp/ccYC6oWX.s 			page 10
 
 
  387              	BSP_KeysDrv_GetEvent:
@@ -598,7 +598,7 @@ ARM GAS  /tmp/cc7K8UJE.s 			page 1
  426              		.loc 1 126 17 is_stmt 0 view .LVU100
  427 001a 214B     		ldr	r3, .L45
  428 001c 1C80     		strh	r4, [r3]	@ movhi
-ARM GAS  /tmp/cc7K8UJE.s 			page 11
+ARM GAS  /tmp/ccYC6oWX.s 			page 11
 
 
  127:Core/Src/bsp_keys.c **** 		s_lastChangeTick = now;
@@ -658,7 +658,7 @@ ARM GAS  /tmp/cc7K8UJE.s 			page 1
  131:Core/Src/bsp_keys.c **** 	{
  443              		.loc 1 131 11 is_stmt 0 view .LVU107
  444 0026 1F4B     		ldr	r3, .L45+4
-ARM GAS  /tmp/cc7K8UJE.s 			page 12
+ARM GAS  /tmp/ccYC6oWX.s 			page 12
 
 
  445 0028 1B68     		ldr	r3, [r3]
@@ -718,7 +718,7 @@ ARM GAS  /tmp/cc7K8UJE.s 			page 1
  146:Core/Src/bsp_keys.c **** 		{
  485              		.loc 1 146 42 is_stmt 1 discriminator 2 view .LVU122
  486 004c 0132     		adds	r2, r2, #1
-ARM GAS  /tmp/cc7K8UJE.s 			page 13
+ARM GAS  /tmp/ccYC6oWX.s 			page 13
 
 
  487              	.LVL37:
@@ -778,7 +778,7 @@ ARM GAS  /tmp/cc7K8UJE.s 			page 1
  526              		.loc 1 151 13 is_stmt 0 view .LVU137
  527 006c 0F49     		ldr	r1, .L45+12
  528 006e 01EB8001 		add	r1, r1, r0, lsl #2
-ARM GAS  /tmp/cc7K8UJE.s 			page 14
+ARM GAS  /tmp/ccYC6oWX.s 			page 14
 
 
  529 0072 8B5C     		ldrb	r3, [r1, r2]	@ zero_extendqisi2
@@ -838,7 +838,7 @@ ARM GAS  /tmp/cc7K8UJE.s 			page 1
  568              	.LVL48:
  569              	.L43:
  144:Core/Src/bsp_keys.c **** 	{
-ARM GAS  /tmp/cc7K8UJE.s 			page 15
+ARM GAS  /tmp/ccYC6oWX.s 			page 15
 
 
  570              		.loc 1 144 41 discriminator 2 view .LVU153
@@ -898,7 +898,7 @@ ARM GAS  /tmp/cc7K8UJE.s 			page 1
  619              		.align	2
  620              		.set	.LANCHOR4,. + 0
  623              	s_lastChangeTick:
-ARM GAS  /tmp/cc7K8UJE.s 			page 16
+ARM GAS  /tmp/ccYC6oWX.s 			page 16
 
 
  624 0000 00000000 		.space	4
@@ -917,16 +917,16 @@ ARM GAS  /tmp/cc7K8UJE.s 			page 1
  641              		.set	.LANCHOR0,. + 0
  644              	s_colPins:
  645 0000 000C0140 		.word	1073810432
- 646 0004 0002     		.short	512
+ 646 0004 4000     		.short	64
  647 0006 0000     		.space	2
  648 0008 000C0140 		.word	1073810432
- 649 000c 0010     		.short	4096
+ 649 000c 8000     		.short	128
  650 000e 0000     		.space	2
  651 0010 000C0140 		.word	1073810432
- 652 0014 0020     		.short	8192
+ 652 0014 0001     		.short	256
  653 0016 0000     		.space	2
  654 0018 000C0140 		.word	1073810432
- 655 001c 0040     		.short	16384
+ 655 001c 0002     		.short	512
  656 001e 0000     		.space	2
  657              		.section	.rodata.s_keyMap,"a"
  658              		.align	2
@@ -953,19 +953,19 @@ ARM GAS  /tmp/cc7K8UJE.s 			page 1
  681              		.set	.LANCHOR1,. + 0
  684              	s_rowPins:
  685 0000 000C0140 		.word	1073810432
- 686 0004 2000     		.short	32
+ 686 0004 0010     		.short	4096
  687 0006 0000     		.space	2
  688 0008 000C0140 		.word	1073810432
- 689 000c 4000     		.short	64
+ 689 000c 0020     		.short	8192
  690 000e 0000     		.space	2
-ARM GAS  /tmp/cc7K8UJE.s 			page 17
+ARM GAS  /tmp/ccYC6oWX.s 			page 17
 
 
  691 0010 000C0140 		.word	1073810432
- 692 0014 8000     		.short	128
+ 692 0014 0040     		.short	16384
  693 0016 0000     		.space	2
  694 0018 000C0140 		.word	1073810432
- 695 001c 0001     		.short	256
+ 695 001c 2000     		.short	32
  696 001e 0000     		.space	2
  697              		.text
  698              	.Letext0:
@@ -974,38 +974,38 @@ ARM GAS  /tmp/cc7K8UJE.s 			page 1
  701              		.file 4 "Drivers/CMSIS/Device/ST/STM32F1xx/Include/stm32f103xb.h"
  702              		.file 5 "Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_gpio.h"
  703              		.file 6 "Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h"
-ARM GAS  /tmp/cc7K8UJE.s 			page 18
+ARM GAS  /tmp/ccYC6oWX.s 			page 18
 
 
 DEFINED SYMBOLS
                             *ABS*:0000000000000000 bsp_keys.c
-     /tmp/cc7K8UJE.s:16     .text.Keys_ConfigGpio:0000000000000000 $t
-     /tmp/cc7K8UJE.s:23     .text.Keys_ConfigGpio:0000000000000000 Keys_ConfigGpio
-     /tmp/cc7K8UJE.s:97     .text.Keys_ConfigGpio:0000000000000048 $d
-     /tmp/cc7K8UJE.s:102    .text.Keys_AllColsLow:0000000000000000 $t
-     /tmp/cc7K8UJE.s:108    .text.Keys_AllColsLow:0000000000000000 Keys_AllColsLow
-     /tmp/cc7K8UJE.s:156    .text.Keys_AllColsLow:0000000000000024 $d
-     /tmp/cc7K8UJE.s:161    .text.Keys_ScanRawMask:0000000000000000 $t
-     /tmp/cc7K8UJE.s:167    .text.Keys_ScanRawMask:0000000000000000 Keys_ScanRawMask
-     /tmp/cc7K8UJE.s:325    .text.Keys_ScanRawMask:000000000000007c $d
-     /tmp/cc7K8UJE.s:331    .text.BSP_KeysDrv_Init:0000000000000000 $t
-     /tmp/cc7K8UJE.s:338    .text.BSP_KeysDrv_Init:0000000000000000 BSP_KeysDrv_Init
-     /tmp/cc7K8UJE.s:373    .text.BSP_KeysDrv_Init:000000000000001c $d
-     /tmp/cc7K8UJE.s:380    .text.BSP_KeysDrv_GetEvent:0000000000000000 $t
-     /tmp/cc7K8UJE.s:387    .text.BSP_KeysDrv_GetEvent:0000000000000000 BSP_KeysDrv_GetEvent
-     /tmp/cc7K8UJE.s:611    .text.BSP_KeysDrv_GetEvent:00000000000000a0 $d
-     /tmp/cc7K8UJE.s:619    .bss.s_lastChangeTick:0000000000000000 $d
-     /tmp/cc7K8UJE.s:623    .bss.s_lastChangeTick:0000000000000000 s_lastChangeTick
-     /tmp/cc7K8UJE.s:626    .bss.s_lastRawMask:0000000000000000 $d
-     /tmp/cc7K8UJE.s:630    .bss.s_lastRawMask:0000000000000000 s_lastRawMask
-     /tmp/cc7K8UJE.s:633    .bss.s_stableMask:0000000000000000 $d
-     /tmp/cc7K8UJE.s:637    .bss.s_stableMask:0000000000000000 s_stableMask
-     /tmp/cc7K8UJE.s:640    .rodata.s_colPins:0000000000000000 $d
-     /tmp/cc7K8UJE.s:644    .rodata.s_colPins:0000000000000000 s_colPins
-     /tmp/cc7K8UJE.s:658    .rodata.s_keyMap:0000000000000000 $d
-     /tmp/cc7K8UJE.s:662    .rodata.s_keyMap:0000000000000000 s_keyMap
-     /tmp/cc7K8UJE.s:680    .rodata.s_rowPins:0000000000000000 $d
-     /tmp/cc7K8UJE.s:684    .rodata.s_rowPins:0000000000000000 s_rowPins
+     /tmp/ccYC6oWX.s:16     .text.Keys_ConfigGpio:0000000000000000 $t
+     /tmp/ccYC6oWX.s:23     .text.Keys_ConfigGpio:0000000000000000 Keys_ConfigGpio
+     /tmp/ccYC6oWX.s:97     .text.Keys_ConfigGpio:0000000000000048 $d
+     /tmp/ccYC6oWX.s:102    .text.Keys_AllColsLow:0000000000000000 $t
+     /tmp/ccYC6oWX.s:108    .text.Keys_AllColsLow:0000000000000000 Keys_AllColsLow
+     /tmp/ccYC6oWX.s:156    .text.Keys_AllColsLow:0000000000000024 $d
+     /tmp/ccYC6oWX.s:161    .text.Keys_ScanRawMask:0000000000000000 $t
+     /tmp/ccYC6oWX.s:167    .text.Keys_ScanRawMask:0000000000000000 Keys_ScanRawMask
+     /tmp/ccYC6oWX.s:325    .text.Keys_ScanRawMask:000000000000007c $d
+     /tmp/ccYC6oWX.s:331    .text.BSP_KeysDrv_Init:0000000000000000 $t
+     /tmp/ccYC6oWX.s:338    .text.BSP_KeysDrv_Init:0000000000000000 BSP_KeysDrv_Init
+     /tmp/ccYC6oWX.s:373    .text.BSP_KeysDrv_Init:000000000000001c $d
+     /tmp/ccYC6oWX.s:380    .text.BSP_KeysDrv_GetEvent:0000000000000000 $t
+     /tmp/ccYC6oWX.s:387    .text.BSP_KeysDrv_GetEvent:0000000000000000 BSP_KeysDrv_GetEvent
+     /tmp/ccYC6oWX.s:611    .text.BSP_KeysDrv_GetEvent:00000000000000a0 $d
+     /tmp/ccYC6oWX.s:619    .bss.s_lastChangeTick:0000000000000000 $d
+     /tmp/ccYC6oWX.s:623    .bss.s_lastChangeTick:0000000000000000 s_lastChangeTick
+     /tmp/ccYC6oWX.s:626    .bss.s_lastRawMask:0000000000000000 $d
+     /tmp/ccYC6oWX.s:630    .bss.s_lastRawMask:0000000000000000 s_lastRawMask
+     /tmp/ccYC6oWX.s:633    .bss.s_stableMask:0000000000000000 $d
+     /tmp/ccYC6oWX.s:637    .bss.s_stableMask:0000000000000000 s_stableMask
+     /tmp/ccYC6oWX.s:640    .rodata.s_colPins:0000000000000000 $d
+     /tmp/ccYC6oWX.s:644    .rodata.s_colPins:0000000000000000 s_colPins
+     /tmp/ccYC6oWX.s:658    .rodata.s_keyMap:0000000000000000 $d
+     /tmp/ccYC6oWX.s:662    .rodata.s_keyMap:0000000000000000 s_keyMap
+     /tmp/ccYC6oWX.s:680    .rodata.s_rowPins:0000000000000000 $d
+     /tmp/ccYC6oWX.s:684    .rodata.s_rowPins:0000000000000000 s_rowPins
 
 UNDEFINED SYMBOLS
 HAL_GPIO_Init
